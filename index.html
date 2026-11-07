@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183e36">
+  <meta name="description" content="Create memorable NPCs for your next story or tabletop adventure. A free, browser-based character generator by Team Eimi.">
+  <title>Beloved NPC Gen | Team Eimi</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.js"></script>
+  <script defer src="generator.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="./" aria-label="Beloved NPC Gen home"><span class="brand-symbol"><i data-lucide="sprout"></i></span><span>beloved<span class="brand-small">NPC GENERATOR</span></span></a>
+    <nav aria-label="Main navigation">
+      <button id="generator-tab" class="nav-button active" aria-current="page"><i data-lucide="sparkles"></i> Generator</button>
+      <button id="saved-tab" class="nav-button"><i data-lucide="bookmark"></i> Saved characters <span id="saved-count" class="count">0</span></button>
+    </nav>
+    <div class="sidebar-bottom"><span class="edition">A LITTLE WORLD, WELL LOVED.</span><a href="https://github.com/Team-Eimi/beloved-npc-gen" target="_blank" rel="noopener noreferrer"><i data-lucide="github"></i> Team Eimi <i class="external" data-lucide="arrow-up-right"></i></a></div>
+  </aside>
+  <main>
+    <header class="topbar"><span>THE CHARACTER WORKSHOP</span><span class="local-note"><i data-lucide="hard-drive"></i> Stored on this device</span></header>
+    <div class="workspace">
+      <section class="intro" aria-labelledby="page-title">
+        <div class="intro-copy"><p class="eyebrow">EVERYONE HAS A STORY</p><h1 id="page-title">Beloved NPC Gen</h1><p>A familiar face. A little mystery. Someone worth remembering.</p></div>
+        <img src="https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1000&q=85" alt="A quiet lakeside village beneath mountain peaks" width="1000" height="650">
+      </section>
+      <div id="generator-view" class="generator-layout">
+        <section class="settings" aria-labelledby="settings-title">
+          <div class="section-heading"><span class="section-number">01</span><h2 id="settings-title">Set the scene</h2></div>
+          <label for="setting">World</label><select id="setting"><option value="fantasy">Fantasy</option><option value="modern">Modern day</option><option value="scifi">Science fiction</option></select>
+          <label for="role">Occupation</label><select id="role"><option value="">Surprise me</option></select>
+          <fieldset><legend>Disposition</legend><div class="segmented"><label><input type="radio" name="disposition" value="warm" checked><span>Warm</span></label><label><input type="radio" name="disposition" value="guarded"><span>Guarded</span></label><label><input type="radio" name="disposition" value="eccentric"><span>Eccentric</span></label></div></fieldset>
+          <button id="generate" class="button primary"><i data-lucide="shuffle"></i> Meet someone new</button>
+          <div class="setting-footer"><i data-lucide="leaf"></i><span>A small spark for your next adventure.</span></div>
+        </section>
+        <article class="character" aria-labelledby="character-name">
+          <div class="sheet-top"><span class="eyebrow">YOUR NEXT FAMILIAR FACE</span><div class="sheet-actions"><button id="copy" class="icon-button" title="Copy character" aria-label="Copy character"><i data-lucide="copy"></i></button><button id="download" class="icon-button" title="Download character" aria-label="Download character"><i data-lucide="download"></i></button></div></div>
+          <div class="identity"><div id="monogram" class="monogram" aria-hidden="true">MV</div><div class="identity-text"><div class="name-row"><h2 id="character-name"></h2><button id="lock-name" class="icon-button" aria-label="Keep this name when generating" aria-pressed="false" title="Keep this name when generating"><i data-lucide="lock-open"></i></button></div><p id="character-role"></p></div></div>
+          <div class="tags"><span id="world-tag"></span><span id="disposition-tag"></span></div>
+          <div class="character-details"><section><h3><i data-lucide="fingerprint"></i> A little quirk</h3><p id="trait"></p></section><section><h3><i data-lucide="heart"></i> What they want</h3><p id="want"></p></section><section><h3><i data-lucide="key-round"></i> What they hide</h3><p id="secret"></p></section><section><h3><i data-lucide="map"></i> A thread to follow</h3><p id="hook"></p></section></div>
+          <div class="voice"><i data-lucide="message-circle"></i><div><h3>At the table</h3><p id="voice"></p></div></div>
+          <footer class="sheet-footer"><span>Some strangers become favorites.</span><button id="save" class="button secondary" aria-pressed="false"><i data-lucide="bookmark"></i><span>Save character</span></button></footer>
+        </article>
+      </div>
+      <section id="saved-view" hidden aria-labelledby="saved-title"><div class="saved-heading"><h2 id="saved-title">Your familiar faces</h2><span id="saved-total"></span></div><p id="empty-saved">No saved characters yet.</p><div id="saved-list" class="saved-list"></div></section>
+      <footer class="page-footer"><span>Made with care by Team Eimi</span><span>For the people in your stories.</span></footer>
+    </div>
+  </main>
+  <p id="status" class="status" role="status" aria-live="polite"></p>
+  <noscript><p class="noscript">Enable JavaScript to generate characters. No account is required.</p></noscript>
+</body>
+</html>
