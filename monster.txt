@@ -1,0 +1,204 @@
+Monster generator:
+**Basic**: Choose level (5, 10, 20, 30, 40, 50, 60, 70, 80)
+- selected level varies +/- 5 (aka a level 5 area ranges levels 1-10). Define this value as LEVEL
+Outputs:
+STR
+Attack
+CON
+Defense
+HP
+AGI
+Dodge
+INT
+Accuracy
+Resist
+CHA
+MAG
+Power
+Mana
+All stats are determined by: LEVEL = 1d4xLEVEL (you can RNG 1-4). All substats are stat/5, except for Accuracy, which is INT/5 + AGI/5
+Unless the creature is defined MAGICAL, make output show number *and* (Not Applicable)
+
+**Extra**: Randomly selected, modifies Outputs. Roll 2 extras
+1) Boss
+2) Animal
+3) Animal
+4) Animal
+5) Trait
+6) Trait
+7) Magical (add MAGICAL tag to enable MAG stat)
+
+Boss list:
+1) Immortal. Add Skill: Revive. When this creature hits 0 HP, if >DM created condition<, it is revived at 50% HP. Add Level x 5 to HP.
+2) Dweller. Add Skill: Tunneler. This creature lives deep, deep beneath, and attacks from the earth. Add LEVEL x 2 to CON.
+3) Gamemaster. Add Skill: Gamemaster. This creature puppets others to its will. Enable MAG. Add LEVEL x 2 to INT and MAG.
+4) Pretends to be human. Add Skill: Shapeshifting. Has a human form. Add LEVEL x 2 to CHA.
+5) Lair. Add Skill: Terraforming. Create traps in the creature's territory. Each one costs 1 Mana. Add Level x 5 to Mana.
+6) Sheds magic. Add Skill: Magical tap. All creatures associated with this creature have MAG enabled. Add LEVEL x 10 to MAG. Decrease CON and STR by LEVEL x 2, for a minimum of 1.
+7) Healer. Add Skill: Heal (Monster). Heal an amount of HP = to ⅕ of your MAG stat within a radius of ft = to your MAG. Costs 5 Mana. Enable MAG stat. Add LEVEL x 5 to MAG.
+8) Antimagic. Enable MAG stat. Add Skill: Antimagic. All Magic cast within a radius = to this creature's MAG is invalidated, unless the Power of the caster is twice this creature's Power. Add LEVEL x 2 to MAG.
+9) Weaponmaster. Add Skill: Boss Weapon. +40% to skill. Drops special loot. Add LEVEL x 2 to STR.
+- weapons: Fists, Dagger, Sword, Spear, Ranged (RNG it). 
+10) Spellcaster. Enable MAG. Add two Magic skills.
+11) Emotion manipulator. Add Skill: Manipulator. This creature will do all it can to manipulate its targets using their emotions. Add LEVEL x 2 to CHA and INT, subtract LEVEL x 2 to STR.
+12) Multiattack. Add Skill: Multiattack. This creature acts twice per turn if the action is an attack.
+13) Petrifier. Add Skill: Petrification. When this creature's attack hits, make a Resist roll or become petrified.
+
+Animal List: (Output animal type and modify stats accordingly)
+1) Bird: Add Skill: Flying. This creature can fly.
+2) Bear: Add LEVEL to CON and LEVEL to STR.
+3) Insect. Add LEVEL to AGI and LEVEL to CON, subtract LEVEL from STR
+4) Cat. Add LEVEL to CHA
+5) Rabbit. Add LEVEL to AGI
+6) Wolf. Add LEVEL to INT
+7) Fish. Add Skill: Semiaquatic. Can breathe underwater and in air.
+8) Frog. 
+9) Deer.
+10) Goat.
+11) Horse. Add LEVEL to AGI.
+12) Sheep.
+13) Lion. Add LEVELx2 to STR.
+14) Horrible Goose. Subtract LEVEL from INT
+15) Pig. 
+16) Mouse
+17) Owl. Add LEVEL to INT and LEVEL to AGI
+18) Dog.
+19) Shark
+20) Toad
+21) Tiger
+22) Turtle. Add LEVELx2 to CON, subtract LEVEL from AGI
+23) Worm
+24) Alligator. Add LEVEL to STR
+25) Beaver
+26) Elk
+27) Gorilla
+28) Humanlike
+29) Porcupine. Add Skill: Sharp. Whenever this creature is successfully melee attacked, it deals damage = to its Defense.
+30) Raccoon.
+31) Rhino. Add LEVEL x2 to CON. Enable Skill: Defensive dealer. Deal damage = to Defense stat, not Attack.
+32) Sloth. Subtract LEVEL x 2 from AGI
+33) Walrus
+34) Hog
+35) Yak
+36) Tentacle creature. Add Skill: Multiattack. This creature acts twice per turn if the action is an attack.
+
+Trait List: Output trait and modify stats.
+1) Human intelligence. if INT is <50, make = 50.
+2) Decays. Add Skill: Decay. When this creature harms another creature, they take additional damage = to 1/5 of Attack (minimum 1) for a # of turns = to Attack.
+3) Gelatinous. Add Skill: Swallow. Any melee attack against this creature that fails results in the attacker being swallowed up. They take damage = to the creature's attack until they can escape.
+4) Infected. Add Skill: Disease. Any creature successfully injured by this creature becomes sick.
+5) Cannibalistic
+6) Vampiric. Add Skill: Vampirism. When this creature bites, it can regain HP = to 1/2 damage dealed
+7) Brutal and sadistic
+8) Very slow. Subtract LEVEL x 2 AGI
+9) Very fast. Add LEVEL x 2 AGI
+10) Loud
+11) Suicidal hunter
+12) Aggressive
+13) Hunter
+14) Useless. Subtract LEVEL x 2 from all traits for a minimum of 1
+15) Echolocation
+16) Dancer
+17) Egg-layer
+18) Valuable body parts
+19) Loyal
+20) Aquatic hunter. Add Skill: Semiaquatic. Can breathe underwater and in air.
+21) Long horns
+22) Tiny. Subtract LEVEL x 2 from CON
+23) Curious
+24) Many-teethed
+25) Ridable
+26) Buff. Add LEVEL x 2 to CON
+27) Peaceful
+28) light-attracted
+29) movement-attracted
+30) pheremone-attracted
+31) pack
+32) big ass mouth
+33) mates for life
+34) asexual reproduction
+35) reproduces using humans in some way
+36) queen colony
+37) migratory
+38) blood-attracted
+39) cute
+40) attracted to maidens
+41) hates men
+42) King
+43) regrows limbs. Add Skill: Regrow. If a limb is severed, sacrifice 2 HP to regrow it.
+44) good hearing
+45) night hunter
+46) insatiable appetite
+47) playful
+48) stalker
+49) parasite. Decrease all Stats by LEVEL x 5, for a minimum of 1. Add Skill: Parasitic. This creature roots into its host, slowly killing it.
+50) burrower
+51) poisoner. Add Skill: Poison. When this creature successfully attacks, they poison the target. Poisoned targets take 1 damage every turn for a # of turns = to the poisoner's Defense
+52) Tortures to kill
+53) sociable
+54) high kill count
+55) male harem leader
+56) eats everything, even bones
+57) tree-climbing
+58) protective
+59) ranged fighter
+60) hypnotic. Add Skill: Hypnosis. On a successfully Power vs Resist check, the opponent is charmed. This charm lasts until they are injured.
+61) uses bait
+62) assassin
+63) impaler
+64) drops prey from high height to kill
+65) sets traps
+66) immobilizer (ropes, slime, chemicals)
+67) corpse-eater
+68) siphoning. Add Skill: Mana lust. Attacks done by this creature steal Mana = to the amount of damage dealed
+69) frenzy
+70) corrosive to objects
+71) wants something 
+
+Magical List: Choose 1 Magic skill.
+Magic:
+Light Magic
+Heal: Heal an amount of HP = to ⅕ of your MAGIC stat on touch. Costs 5 Mana. 
+Light mote: Create light in a radius of 30 ft. Costs 1 Mana.
+Seal: Seal a creature in glowing chains of light. Costs 10 Mana. Competed Power  vs target Resist per turn to maintain.
+Purify: Deal light damage = to your Power. Maximum distance = Magic.  Costs 2 Mana.
+Halo: Shroud yourself in light magic, healing 4 HP in a radius of 5 ft every turn for 10 turns.. Costs 5 Mana.
+Darkness Magic
+Destroy: Deal damage = to your Power. Maximum distance = Magic.  Costs 1 Mana.
+Darkness: Create darkness in a radius of 30 ft. Costs 1 Mana.
+Curse: Curse a creature. For every turn your Power wins against their Resist, they will be confused, unable to act except to take random actions. Random action d4: 1- attack self, 2- wander aimlessly, 3- do nothing, 4- attack random nearby target
+Shadow stalker: Enter someone’s shadow. You are hidden until you leave. Costs 10 Mana.
+Vacuum: Obliterate the air in a radius = to your Power. Costs 2 Mana.
+Hide: Obfuscate your presence. Lasts until you move. Costs 2 Mana.
+Fire Magic
+Create flame: Light a small flame, like a lighter would. No Mana cost.
+Fireball: Cast a fireball that goes 30ft forward and hits all targets within its path for damage = to your Power. Costs 5 Mana.
+Manipulate flames: Manipulate flames in a radius of ft = to your Magic stat.
+Flame arc: Create flames in a burst originating from your body and going out in all directions for 30 ft, dealing damage = to your Power to all targets.
+Water Magic
+Create water: Create a small amount of water, enough to fit into a cup. No Mana cost.
+Rain of Icicles: Create a # of icicles = to your Power. Each deals damage = to ½ your Power, rounded down. Maximum distance = Magic. Costs 4 Mana.
+Fog: Create a thick fog in a 100 ft radius. All creatures within have to succeed on a Perception task to take their actions. Costs 2 Mana.
+Manipulate water: Manipulate water in a radius of ft = to your Magic stat.
+Water bindings: Grapple a target. They may initiate a Power vs Strength check every turn to get out. Costs 2 Mana.
+Sublimate: Boil the blood within a living target on touch, dealing damage = to Power, ignoring Resistances. Costs 10 Mana.
+Earth Magic
+Terraform: Manipulate a square footage of earth = to your Power stat. Costs 2 Mana. Rocks have HP = to how much square footage they are before crumbling.
+Earth armor: By touch, grant someone additional damage resistance = to your Power. Lasts for 10 minutes. Costs 3 Mana.
+Sharpen edge: Sharpen metal to a razor edge, granting it additional damage = to your Power for a # of uses = to ½ your Power rounded down. Costs 4 Mana.
+Catapult: Fling rock in the air, dealing damage = to your Power. Maximum distance = Magic. Costs 2 Mana.
+Influence creature: Influence a creature whose Intelligence is lower than your Magic. They can obey minor commands, such as attack, sit, and carry, but will not harm themself and will still prioritize their own instincts. Costs 3 Mana.
+Venom strike: Adds poison to a weapon attack. This poison reduces the opponent’s Physical Damage Resistance by your Power, minus their Poison Resistance, for 1 minute. Costs 2 Mana.
+Wind Magic
+Air pocket: Create a pocket of air in a radius = to your Power. Lasts 10 minutes. Costs 3 Mana.
+Wind Blade: Slash with a blade of wind, dealing damage = to your Power. Maximum distance = Magic. 2 Mana.
+Tornado: Create a swirling vortex, pulling all those in a radius = to your Magic who fail a Constitution roll inside for as many turns as they fail a Power vs Strength check. Costs 5 Mana.
+Levitation: Float a # of feet = to your Power off the ground. Lasts 10 minutes. Costs 2 Mana.
+Speed Boost: Double movement speed for those in a 5 ft radius next to you for 10 minutes. Costs 2 Mana.
+Move: Move a small object a # of feet = to your Power. Costs 1 Mana.
+Electricity
+Lightning: Call forth a great bolt, causing damage = to your Power to everyone in a 20 ft radius (or more if in water). Must be outdoors. Double damage for targets wearing metal. Maximum distance = Magic.Costs 3 Mana.
+Spark: Cast a small arc of electricity towards someone, shocking them for as many turns as they fail a Power vs. Constitution roll.
+Surge: On touch, cause damage = to Power. Costs 1 Mana.
+Supercharge: Charge reflexes on touch, granting a bonus = to Power to all Agility tasks for 10 minutes. Costs 3 Mana.
+Manipulate electronic: Force an electronic to turn off, surge, or explode. Damage of explosion is always 4. Costs 2 Mana.
