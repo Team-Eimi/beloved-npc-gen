@@ -79,7 +79,67 @@
       ]
     },
     
-    { "type": "ELEMENTAL", "weight": 6 },
+    {
+      "type": "ELEMENTAL",
+      "weight": 6,
+      "subtypes": [
+        {
+          "subtype": "Sprite",
+          "weight": null,
+          "magic": true,
+          "traits": [],
+          "levelRange": [1, 5],
+          "levelBonus": { "randomCount": 3, "randomAmount": 1 },
+          "rolls": {
+            "titles": 1
+          }
+        },
+        {
+          "subtype": "Fairy",
+          "weight": null,
+          "magic": true,
+          "traits": [],
+          "levelRange": [1, 80],
+          "levelBonus": {
+            "randomCount": 2,
+            "randomAmount": 1,
+            "fixed": { "MAG": 2 }
+          },
+          "rolls": {
+            "titles": 1,
+            "magicTypeTitles": 1
+          }
+        },
+        {
+          "subtype": "Elemental",
+          "weight": null,
+          "magic": true,
+          "traits": [],
+          "levelRange": [1, 25],
+          "levelBonus": {
+            "randomCount": 0,
+            "randomAmount": 0,
+            "fixed": { "MAG": 1, "CON": 1, "STR": 1 }
+          },
+          "rolls": {
+            "titles": 1,
+            "magicTypeTitles": 1
+          }
+        },
+        {
+          "subtype": "Genasi",
+          "weight": null,
+          "magic": true,
+          "traits": [],
+          "levelRange": [1, 20],
+          "levelBonus": { "randomCount": 3, "randomAmount": 3 },
+          "rolls": {
+            "titles": 1,
+            "magicTypeTitles": 1
+          }
+        }
+      ]
+    },
     { "type": "OMNISCIENT", "weight": 0.5 },
     { "type": "DRAGON", "weight": 5.5 },
     { "type": "VAMPIRE", "weight": 6 },

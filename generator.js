@@ -53,6 +53,10 @@
     return weighted(typeRules.types, random)?.type;
   }
 
+  function listTypes() {
+    return (typeRules?.types ?? []).map(value => ({ type: value.type, subtypes: (value.subtypes ?? []).map(subtype => subtype.subtype) }));
+  }
+
   function generateStats(selection, random = Math.random) {
     const stats = Object.fromEntries(statKeys.map(key => [key, roll(rules.stats.base, random)]));
     for (const group of [rules.stats.weaknesses, rules.stats.strengths]) {
@@ -92,7 +96,11 @@
   }
 
   function generateResistancesAndVulnerabilities(selection, stats) {}
-  function generateTitles(selection, stats) {}
+  function generateTitles(selection, stats, random = Math.random) {
+    const count = selection.rolls?.magicTypeTitles ?? 0;
+    const magicTypes = rules.titles?.magicTypes ?? [];
+    return sample(magicTypes, count, random).map(value => value.charAt(0).toUpperCase() + value.slice(1));
+  }
   function generateSkills(selection, stats) {}
   function generateSpecialitySkills(selection, stats) {}
 
@@ -138,7 +146,7 @@
       traits: traitData.traits ?? [],
       traitRolls: traitData.rolls ?? [],
       resistancesAndVulnerabilities: api.generateResistancesAndVulnerabilities(selection, stats) ?? [],
-      titles: api.generateTitles(selection, stats) ?? [],
+      titles: api.generateTitles(selection, stats, random) ?? [],
       skills: [...(typeof generatedSkills === 'string' ? [generatedSkills] : generatedSkills), ...(traitData.skills ?? [])],
       specialitySkills: api.generateSpecialitySkills(selection, stats) ?? []
     };
@@ -172,7 +180,7 @@
 
   const api = {
     statKeys, statLabels, configure, roll, rollLevel, sample, weighted, applyModifiers, rollTrait, visibleStatKeys,
-    selectType, generateStats, generateTraits,
+    selectType, listTypes, generateStats, generateTraits,
     generateResistancesAndVulnerabilities, generateTitles,
     generateSkills, generateSpecialitySkills, generate, formatType, formatSection, format
   };

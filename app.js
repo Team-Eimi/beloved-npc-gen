@@ -55,8 +55,28 @@
     }
     return content.outerHTML;
   }
+  function fillSelect(select, options, placeholder) {
+    select.replaceChildren();
+    if (placeholder) select.append(new Option(placeholder, ''));
+    for (const value of options) select.append(new Option(value, value));
+  }
+  function renderSubtypeOptions() {
+    const entry = NPCGenerator.listTypes().find(value => value.type === byId('type-select').value);
+    const subtypes = entry?.subtypes ?? [];
+    fillSelect(byId('subtype-select'), subtypes, subtypes.length ? '' : '—');
+    byId('subtype-select').disabled = !subtypes.length;
+  }
+  function selectionOptions() {
+    const type = byId('type-select').value;
+    return {
+      type: type || undefined,
+      subtype: type ? byId('subtype-select').value || undefined : undefined,
+      includeMagic: byId('include-magic').checked
+    };
+  }
+  byId('type-select').addEventListener('change', renderSubtypeOptions);
   byId('generate').addEventListener('click', () => {
-    current = generate({ includeMagic: byId('include-magic').checked });
+    current = generate(selectionOptions());
     render();
     notify('Stat block updated.');
   });
@@ -89,7 +109,10 @@
       if (responses.some(response => !response.ok)) throw new Error('Rules could not be loaded.');
       const [rolls, types] = await Promise.all(responses.map(response => response.json()));
       NPCGenerator.configure(rolls, types);
-      current = generate({ includeMagic: byId('include-magic').checked });
+      fillSelect(byId('type-select'), NPCGenerator.listTypes().map(value => value.type), 'Random');
+      renderSubtypeOptions();
+      byId('type-select').disabled = false;
+      current = generate(selectionOptions());
       render();
       byId('generate').disabled = false;
       byId('copy').disabled = false;

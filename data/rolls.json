@@ -7,9 +7,16 @@
   },
   "levels": {
     "1-4": [{ "range": [1, 4], "weight": 100 }],
+    "1-5": [{ "range": [1, 2], "weight": 70 }, { "range": [3, 4], "weight": 20 }, { "range": [5, 5], "weight": 10 }],
     "1-10": [{ "range": [1, 4], "weight": 70 }, { "range": [5, 7], "weight": 20 }, { "range": [8, 10], "weight": 10 }],
+    "1-20": [{ "range": [1, 8], "weight": 70 }, { "range": [9, 14], "weight": 20 }, { "range": [15, 20], "weight": 10 }],
+    "1-25": [{ "range": [1, 10], "weight": 70 }, { "range": [11, 18], "weight": 20 }, { "range": [19, 25], "weight": 10 }],
     "1-30": [{ "range": [1, 10], "weight": 70 }, { "range": [11, 20], "weight": 20 }, { "range": [21, 30], "weight": 10 }],
-    "1-45": [{ "range": [1, 18], "weight": 70 }, { "range": [19, 30], "weight": 20 }, { "range": [31, 45], "weight": 10 }]
+    "1-45": [{ "range": [1, 18], "weight": 70 }, { "range": [19, 30], "weight": 20 }, { "range": [31, 45], "weight": 10 }],
+    "1-80": [{ "range": [1, 32], "weight": 70 }, { "range": [33, 56], "weight": 20 }, { "range": [57, 80], "weight": 10 }]
+  },
+  "titles": {
+    "magicTypes": ["light", "darkness", "fire", "water", "earth", "wind", "electricity"]
   },
   "age": {
     "range": [10, 70],
