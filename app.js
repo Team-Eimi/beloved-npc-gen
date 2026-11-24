@@ -1,6 +1,13 @@
 (() => {
-  const { generate, format, formatType, formatSection, statKeys, statLabels, visibleStatKeys } = NPCGenerator;
+  const { generate, format, formatType, formatSection, statLabels, visibleStatKeys } = NPCGenerator;
   const byId = id => document.getElementById(id);
+  const npcSections = [
+    ['traits', 'Traits:'],
+    ['resistancesAndVulnerabilities', 'Resistances & Vulnerabilities:'],
+    ['titles', 'Titles:'],
+    ['skills', 'Skills:'],
+    ['specialitySkills', 'Speciality Skills:']
+  ];
   let current;
   let statusTimer;
   function notify(message) {
@@ -8,49 +15,102 @@
     byId('status').textContent = message;
     statusTimer = setTimeout(() => { byId('status').textContent = ''; }, 4500);
   }
+  function npcView(npc) {
+    const keys = visibleStatKeys(npc);
+    return {
+      heading: formatType(npc),
+      layout: 'row',
+      headers: keys.map(key => statLabels[key]),
+      rows: [keys.map(key => String(npc.stats[key]))],
+      sections: npcSections
+        .filter(([field]) => field !== 'traits' || formatSection(npc.traits))
+        .map(([field, label]) => ({ label, text: formatSection(npc[field]) })),
+      plainText: format(npc)
+    };
+  }
+  function monsterView(monster) {
+    const rows = MonsterGenerator.statRows(monster);
+    return {
+      heading: MonsterGenerator.formatHeading(monster),
+      layout: 'grid',
+      headers: ['Stat', 'Value', 'Derived'],
+      rows: rows.map(row => [row.label, row.value, row.derived.map(entry => `${entry.key}: ${entry.value}`).join('\n')]),
+      sections: MonsterGenerator.sections(monster),
+      plainText: MonsterGenerator.format(monster)
+    };
+  }
+  function currentView() {
+    return current.kind === 'monster' ? monsterView(current) : npcView(current);
+  }
   function render() {
-    byId('npc-type').textContent = formatType(current);
-    byId('include-magic').checked = current.includeMagic;
-    byId('include-magic').disabled = false;
-    for (const key of statKeys) {
-      byId(`stat-${key}`).textContent = current.stats[key];
-      byId(`stat-${key}`).hidden = key === 'MAG' && !current.includeMagic;
-      byId(`label-${key}`).hidden = key === 'MAG' && !current.includeMagic;
+    const view = currentView();
+    const isMonster = current.kind === 'monster';
+    byId('npc-type').textContent = view.heading;
+    byId('include-magic').checked = isMonster ? current.magical : current.includeMagic;
+    byId('include-magic').disabled = isMonster;
+    const table = byId('stats-table');
+    table.classList.toggle('stats-row', view.layout === 'row');
+    table.classList.toggle('stats-grid', view.layout === 'grid');
+    const headerRow = document.createElement('tr');
+    for (const header of view.headers) {
+      const cell = document.createElement('th');
+      cell.scope = 'col';
+      cell.textContent = header;
+      headerRow.append(cell);
     }
-    for (const field of ['traits', 'resistancesAndVulnerabilities', 'titles', 'skills', 'specialitySkills']) {
-      byId(field).textContent = formatSection(current[field]);
-    }
-    byId('traits').parentElement.hidden = !formatSection(current.traits);
+    byId('stat-headers').replaceChildren(headerRow);
+    byId('stat-values').replaceChildren(...view.rows.map(values => {
+      const row = document.createElement('tr');
+      for (const value of values) {
+        const cell = document.createElement('td');
+        cell.textContent = value;
+        row.append(cell);
+      }
+      return row;
+    }));
+    byId('details').replaceChildren(...view.sections.map(section => {
+      const wrapper = document.createElement('div');
+      const term = document.createElement('dt');
+      term.textContent = section.label;
+      const definition = document.createElement('dd');
+      definition.textContent = section.text;
+      wrapper.append(term, definition);
+      return wrapper;
+    }));
   }
   function formatHtml() {
+    const view = currentView();
     const content = document.createElement('div');
     content.style.cssText = 'font-family: Georgia, serif; font-size: 12pt; color: #243d36;';
     const heading = document.createElement('p');
     heading.style.cssText = 'font-size: 18pt; font-weight: bold; margin: 0 0 16px;';
-    heading.textContent = formatType(current);
+    heading.textContent = view.heading;
     const table = document.createElement('table');
     table.style.cssText = 'border-collapse: collapse; table-layout: fixed; width: 100%; margin-bottom: 20px;';
     const headers = table.createTHead().insertRow();
-    const values = table.createTBody().insertRow();
-    const keys = visibleStatKeys(current);
-    for (const key of keys) {
+    for (const label of view.headers) {
       const header = document.createElement('th');
       header.scope = 'col';
-      header.style.cssText = `border: 1px solid #dfe5df; padding: 8px; text-align: center; background-color: #f4f7f3; width: ${100 / keys.length}%;`;
-      header.textContent = statLabels[key];
+      header.style.cssText = `border: 1px solid #dfe5df; padding: 8px; text-align: center; background-color: #f4f7f3; width: ${100 / view.headers.length}%;`;
+      header.textContent = label;
       headers.append(header);
-      const value = values.insertCell();
-      value.style.cssText = 'border: 1px solid #dfe5df; padding: 10px 8px; text-align: center;';
-      value.textContent = current.stats[key] === '' ? '\u00a0' : current.stats[key];
+    }
+    const body = table.createTBody();
+    for (const values of view.rows) {
+      const row = body.insertRow();
+      for (const value of values) {
+        const cell = row.insertCell();
+        cell.style.cssText = 'border: 1px solid #dfe5df; padding: 10px 8px; text-align: center; white-space: pre-wrap;';
+        cell.textContent = value === '' ? '\u00a0' : value;
+      }
     }
     content.append(heading, table);
-    for (const field of ['traits', 'resistancesAndVulnerabilities', 'titles', 'skills', 'specialitySkills']) {
-      if (field === 'traits' && !formatSection(current.traits)) continue;
+    for (const section of view.sections) {
       const paragraph = document.createElement('p');
       paragraph.style.cssText = 'margin: 12px 0; white-space: pre-wrap;';
       const label = document.createElement('strong');
-      label.textContent = byId(field).previousElementSibling.textContent;
-      paragraph.append(label, document.createTextNode(` ${formatSection(current[field])}`));
+      label.textContent = section.label;
+      paragraph.append(label, document.createTextNode(` ${section.text}`));
       content.append(paragraph);
     }
     return content.outerHTML;
@@ -58,19 +118,19 @@
   function fillSelect(select, options, placeholder) {
     select.replaceChildren();
     if (placeholder) select.append(new Option(placeholder, ''));
-    for (const value of options) select.append(new Option(value, value));
+    for (const value of options) select.append(new Option(String(value), String(value)));
   }
   function renderSubtypeOptions() {
     const entry = NPCGenerator.listTypes().find(value => value.type === byId('type-select').value);
     const subtypes = entry?.subtypes ?? [];
     fillSelect(byId('subtype-select'), subtypes, subtypes.length ? '' : '—');
+    if (entry?.defaultSubtype) byId('subtype-select').value = entry.defaultSubtype;
     byId('subtype-select').disabled = !subtypes.length;
   }
   function selectionOptions() {
-    const type = byId('type-select').value;
     return {
-      type: type || undefined,
-      subtype: type ? byId('subtype-select').value || undefined : undefined,
+      type: byId('type-select').value,
+      subtype: byId('subtype-select').value || undefined,
       includeMagic: byId('include-magic').checked
     };
   }
@@ -78,15 +138,20 @@
   byId('generate').addEventListener('click', () => {
     current = generate(selectionOptions());
     render();
-    notify('Stat block updated.');
+    notify('Character stat block updated.');
+  });
+  byId('generate-monster').addEventListener('click', () => {
+    current = MonsterGenerator.generate({ level: Number(byId('level-select').value) });
+    render();
+    notify('Monster stat block updated.');
   });
   byId('include-magic').addEventListener('change', () => {
-    if (!current) return;
+    if (!current || current.kind === 'monster') return;
     current.includeMagic = byId('include-magic').checked;
     render();
   });
   byId('copy').addEventListener('click', async () => {
-    const plainText = format(current);
+    const plainText = currentView().plainText;
     if (globalThis.ClipboardItem && typeof navigator.clipboard?.write === 'function') {
       try {
         await navigator.clipboard.write([new ClipboardItem({
@@ -101,21 +166,20 @@
     catch { notify('Clipboard unavailable. You can select and copy the stat block.'); }
   });
   async function initialize() {
-    byId('generate').disabled = true;
-    byId('copy').disabled = true;
-    byId('include-magic').disabled = true;
+    for (const id of ['generate', 'generate-monster', 'copy', 'include-magic', 'type-select', 'subtype-select', 'level-select']) byId(id).disabled = true;
     try {
-      const responses = await Promise.all(['data/rolls.json', 'data/types.json'].map(path => fetch(path)));
+      const paths = ['data/rolls.json', 'data/types.json', 'data/monsters.json'];
+      const responses = await Promise.all(paths.map(path => fetch(path)));
       if (responses.some(response => !response.ok)) throw new Error('Rules could not be loaded.');
-      const [rolls, types] = await Promise.all(responses.map(response => response.json()));
+      const [rolls, types, monsters] = await Promise.all(responses.map(response => response.json()));
       NPCGenerator.configure(rolls, types);
-      fillSelect(byId('type-select'), NPCGenerator.listTypes().map(value => value.type), 'Random');
+      MonsterGenerator.configure(monsters);
+      fillSelect(byId('type-select'), NPCGenerator.listTypes().map(value => value.type));
       renderSubtypeOptions();
-      byId('type-select').disabled = false;
+      fillSelect(byId('level-select'), monsters.levels);
       current = generate(selectionOptions());
       render();
-      byId('generate').disabled = false;
-      byId('copy').disabled = false;
+      for (const id of ['generate', 'generate-monster', 'copy', 'type-select', 'level-select']) byId(id).disabled = false;
     } catch {
       notify('Rules could not be loaded. Use npm run dev to preview the page.');
     }

@@ -304,12 +304,15 @@ test('configured type data can be extended without editing the selection algorit
   } finally { generator.configure(rolls, types); }
 });
 
-test('listTypes exposes every type with its subtype names for the dropdowns', () => {
-  const listed = Object.fromEntries(generator.listTypes().map(value => [value.type, value.subtypes]));
+test('listTypes exposes every type with its subtype names and default for the dropdowns', () => {
+  const listed = Object.fromEntries(generator.listTypes().map(value => [value.type, value]));
   assert.deepEqual(Object.keys(listed), types.types.map(value => value.type));
-  assert.deepEqual(listed.HUMAN, ['Child', 'Adult', 'Lord', 'Magician']);
-  assert.deepEqual(listed.ELEMENTAL, ['Sprite', 'Fairy', 'Elemental', 'Genasi']);
-  assert.deepEqual(listed.DRAGON, []);
+  assert.deepEqual(listed.HUMAN.subtypes, ['Child', 'Adult', 'Lord', 'Magician']);
+  assert.equal(listed.HUMAN.defaultSubtype, 'Adult');
+  assert.deepEqual(listed.ELEMENTAL.subtypes, ['Sprite', 'Fairy', 'Elemental', 'Genasi']);
+  assert.equal(listed.ELEMENTAL.defaultSubtype, 'Sprite');
+  assert.deepEqual(listed.DRAGON.subtypes, []);
+  assert.equal(listed.DRAGON.defaultSubtype, undefined);
 });
 
 test('Elemental subtypes are never selected at random and must be chosen explicitly', () => {

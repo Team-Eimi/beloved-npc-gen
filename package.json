@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "test": "node --test generator.test.js"
+    "test": "node --test generator.test.js monster.test.js"
   },
   "devDependencies": {
     "vite": "^8.3.6"

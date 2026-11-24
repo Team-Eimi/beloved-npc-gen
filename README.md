@@ -27,9 +27,10 @@ Data belongs in JSON; roll algorithms and special-case logic belong in `generato
 
 - `data/rolls.json` defines base stats, weaknesses, strengths, extraordinary strengths, weighted level bands, shared age adjustments, beauty/height/education rules, and the magic-type title table (light, darkness, fire, water, earth, wind, electricity).
 - `data/types.json` defines type weights and subtype settings: trait categories, magic visibility, modifiers, level ranges, level bonuses, age bonuses, and required skill/title counts. The eight supplied weights are Human 60%, Elemental 6%, Omniscient 0.5%, Dragon 5.5%, Vampire 6%, Slime 6%, Mermaid 6%, and Undead 10%. They total 100%; no ninth type is invented. Types with unset weights are excluded from selection.
-- `generator.js` loads these files directly in Node.js. The browser loads them through `app.js` using relative URLs, so use `npm run dev` rather than opening the HTML as a file.
+- `data/monsters.json` defines the monster generator: area levels, level variance, the stat die, substat divisor and derivations, the extras table, and the Boss, Animal, Trait, and Magic skill lists.
+- `generator.js` and `monster.js` load these files directly in Node.js. The browser loads them through `app.js` using relative URLs, so use `npm run dev` rather than opening the HTML as a file.
 
-The page offers Type and Subtype dropdowns. Type defaults to Random (weighted selection); choosing a type lists its subtypes, and the Subtype dropdown has no random option, so a subtype must be chosen whenever the type has any. Types without subtypes disable the Subtype dropdown.
+The page has two generators. **Character**: Type and Subtype dropdowns (no random option for either; Type defaults to the first type and Subtype to the heaviest-weighted subtype, so Human starts on Adult). Types without subtypes disable the Subtype dropdown. **Monster**: a Level dropdown (5, 10, 20, 30, 40, 50, 60, 70, 80) and a Monster button. Both render into the same sheet, and Copy produces HTML and plain text for whichever was generated last.
 
 The generator selects a type, then rolls age, any configured subtype, and stats. The heading shows type, subtype, age, and level where applicable. Human and Elemental have subtypes; the other six types currently use shared stat/age rolls without invented subtype rules. Stat labels use full names. Magic is always rolled internally; the Magic checkbox only controls the current sheet and both clipboard formats, without deleting or rerolling stats. Each new Human starts with its subtype's display default: Child/Adult hide Magic; Lord/Magician show it. All Elemental subtypes show Magic. The checkbox remains available to override either default. Types without a configured default retain the checkbox preference when generating.
 
@@ -46,6 +47,19 @@ NPCGenerator.generate({ type: 'HUMAN', subtype: 'Adult', age: 25 });
 ```
 
 In Node.js, use `const NPCGenerator = require('./generator.js')` first. A second argument to `generate(options, random)` injects a random function for deterministic tests.
+
+## Monster Generator
+
+`monster.js` exposes `MonsterGenerator` and reuses the roll helpers from `generator.js`. `MonsterGenerator.generate({ level: 20 })` picks LEVEL uniformly from the area level ±5 (minimum 1), then rolls each of STR, CON, AGI, INT, CHA, and MAG as 1d4 × LEVEL. Substats are stat ÷ 5 rounded down: Attack (STR), Defense and HP (CON), Dodge (AGI), Resist (INT), Power and Mana (MAG); Accuracy is INT ÷ 5 + AGI ÷ 5. Magic, Power, and Mana display `(Not Applicable)` unless the monster is MAGICAL.
+
+Two extras are rolled from a d7: 1 Boss, 2-4 Animal, 5-6 Trait, 7 Magical. The same category can be rolled twice, in which case two different entries are chosen. Extras apply stat modifiers (`perLevel` multiples of LEVEL, or a `minimum` such as Human intelligence raising INT to 50), add skills, enable MAG, grant magic skills, or roll a choice (Weaponmaster's weapon). Order of operations: stat modifiers, then a floor of 1 on every stat, then substat derivation, then substat modifiers (Immortal's HP and Lair's Mana). The Magical extra and Spellcaster grant one and two distinct magic skills respectively, drawn from all seven schools. Bosses that add MAG (Gamemaster, Sheds magic, Healer, Antimagic, Spellcaster) enable MAG; Sheds magic is treated as magical because it adds LEVEL × 10 to MAG.
+
+```js
+MonsterGenerator.generate({ level: 20 });
+MonsterGenerator.format(monster);
+```
+
+Omitting `level` picks an area level at random. Tests live in `monster.test.js`.
 
 ### Current Interpretations
 
@@ -64,7 +78,7 @@ In Node.js, use `const NPCGenerator = require('./generator.js')` first. A second
 3. Open **Actions > Deploy GitHub Pages** and run the workflow if the initial push did not deploy.
 4. The site will be at https://team-eimi.github.io/beloved-npc-gen/ after deployment succeeds (unless a custom domain is configured).
 
-The workflow tests the generator and uploads the four static site files plus `data/` in a `build` job, then a separate `deploy` job publishes the artifact. Asset paths are relative, so the site works under the repository URL. GitHub Pages availability for private repositories depends on the account plan.
+The workflow tests the generators and uploads the five static site files plus `data/` in a `build` job, then a separate `deploy` job publishes the artifact. Asset paths are relative, so the site works under the repository URL. GitHub Pages availability for private repositories depends on the account plan.
 
 If a deploy fails with "No artifacts named github-pages were found" or "Multiple artifacts named github-pages", GitHub's artifact index lagged behind the upload. Push a new commit or trigger **Run workflow** to start a fresh run; re-running the failed job reuses the stale run and will not recover.
 

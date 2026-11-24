@@ -54,7 +54,11 @@
   }
 
   function listTypes() {
-    return (typeRules?.types ?? []).map(value => ({ type: value.type, subtypes: (value.subtypes ?? []).map(subtype => subtype.subtype) }));
+    return (typeRules?.types ?? []).map(value => {
+      const subtypes = value.subtypes ?? [];
+      const heaviest = subtypes.filter(subtype => Number.isFinite(subtype.weight)).sort((a, b) => b.weight - a.weight)[0];
+      return { type: value.type, subtypes: subtypes.map(subtype => subtype.subtype), defaultSubtype: (heaviest ?? subtypes[0])?.subtype };
+    });
   }
 
   function generateStats(selection, random = Math.random) {
