@@ -21,7 +21,7 @@
       heading: formatType(npc),
       layout: 'row',
       headers: keys.map(key => statLabels[key]),
-      rows: [keys.map(key => String(npc.stats[key]))],
+      rows: [keys.map(key => ({ text: String(npc.stats[key]) }))],
       sections: npcSections
         .filter(([field]) => field !== 'traits' || formatSection(npc.traits))
         .map(([field, label]) => ({ label, text: formatSection(npc[field]) })),
@@ -34,7 +34,11 @@
       heading: MonsterGenerator.formatHeading(monster),
       layout: 'grid',
       headers: ['Stat', 'Value', 'Derived'],
-      rows: rows.map(row => [row.label, row.value, row.derived.map(entry => `${entry.key}: ${entry.value}`).join('\n')]),
+      rows: rows.map(row => [
+        { text: row.label },
+        { text: row.value, muted: row.muted },
+        { text: row.derived.map(entry => `${entry.key}: ${entry.value}`).join('\n'), muted: row.derived.some(entry => entry.muted) }
+      ]),
       sections: MonsterGenerator.sections(monster),
       plainText: MonsterGenerator.format(monster)
     };
@@ -46,8 +50,8 @@
     const view = currentView();
     const isMonster = current.kind === 'monster';
     byId('npc-type').textContent = view.heading;
-    byId('include-magic').checked = isMonster ? current.magical : current.includeMagic;
-    byId('include-magic').disabled = isMonster;
+    byId('include-magic').checked = isMonster ? MonsterGenerator.showsMagic(current) : current.includeMagic;
+    byId('include-magic').disabled = false;
     const table = byId('stats-table');
     table.classList.toggle('stats-row', view.layout === 'row');
     table.classList.toggle('stats-grid', view.layout === 'grid');
@@ -63,7 +67,8 @@
       const row = document.createElement('tr');
       for (const value of values) {
         const cell = document.createElement('td');
-        cell.textContent = value;
+        cell.textContent = value.text;
+        cell.classList.toggle('muted', Boolean(value.muted));
         row.append(cell);
       }
       return row;
@@ -100,8 +105,8 @@
       const row = body.insertRow();
       for (const value of values) {
         const cell = row.insertCell();
-        cell.style.cssText = 'border: 1px solid #dfe5df; padding: 10px 8px; text-align: center; white-space: pre-wrap;';
-        cell.textContent = value === '' ? '\u00a0' : value;
+        cell.style.cssText = `border: 1px solid #dfe5df; padding: 10px 8px; text-align: center; white-space: pre-wrap;${value.muted ? ' color: #9aa49e;' : ''}`;
+        cell.textContent = value.text === '' ? '\u00a0' : value.text;
       }
     }
     content.append(heading, table);
@@ -146,7 +151,7 @@
     notify('Monster stat block updated.');
   });
   byId('include-magic').addEventListener('change', () => {
-    if (!current || current.kind === 'monster') return;
+    if (!current) return;
     current.includeMagic = byId('include-magic').checked;
     render();
   });

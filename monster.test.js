@@ -39,34 +39,48 @@ test('level varies by five around the chosen area with a floor of 1', () => {
   assert.equal(monster.generate({}, () => 0).area, 5);
 });
 
-test('stats are 1d4 x LEVEL and substats are floored fifths with Accuracy from INT and AGI', () => {
+test('stats are LEVEL + 1d4 x LEVEL and substats are floored fifths with Accuracy from INT and AGI', () => {
   const result = monster.generate({ level: 20 }, sequence([LEVEL_23, 0, 0.25, 0.5, 0.75, 0.999, 0, ANIMAL, pick(7, 36), ...cannibalistic]));
   assert.equal(result.level, 23);
-  assert.deepEqual(result.stats, { STR: 23, CON: 46, AGI: 69, INT: 92, CHA: 92, MAG: 23 });
-  assert.deepEqual(result.substats, { Attack: 4, Defense: 9, HP: 9, Dodge: 13, Accuracy: 31, Resist: 18, Power: 4, Mana: 4 });
+  assert.deepEqual(result.stats, { STR: 46, CON: 69, AGI: 92, INT: 115, CHA: 115, MAG: 46 });
+  assert.deepEqual(result.substats, { Attack: 9, Defense: 13, HP: 13, Dodge: 18, Accuracy: 41, Resist: 23, Power: 9, Mana: 9 });
   assert.deepEqual(result.extras, [{ category: 'Animal', name: 'Frog' }, { category: 'Trait', name: 'Cannibalistic' }]);
   assert.deepEqual(result.skills, []);
   assert.equal(result.magical, false);
+  assert.equal(result.includeMagic, false);
   const text = monster.format(result);
-  assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area)\nStrength: 23 | Attack: 4\n'));
-  assert.ok(text.includes('Intelligence: 92 | Accuracy: 31 | Resist: 18'));
-  assert.ok(text.includes('Magic: 23 (Not Applicable) | Power: 4 (Not Applicable) | Mana: 4 (Not Applicable)'));
+  assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area)\nStrength: 46 | Attack: 9\n'));
+  assert.ok(text.includes('Intelligence: 115 | Accuracy: 41 | Resist: 23'));
+  assert.ok(text.includes('Magic: 46 (Not Applicable) | Power: 9 (Not Applicable) | Mana: 9 (Not Applicable)'));
   assert.ok(text.includes('Extras: Animal: Frog, Trait: Cannibalistic'));
   assert.ok(!text.includes('Magic Skills:'));
+  assert.ok(monster.statRows(result).find(row => row.key === 'MAG').muted);
+  assert.ok(!monster.statRows(result).find(row => row.key === 'STR').muted);
+});
+
+test('the Magic checkbox override shows magic numbers without Not Applicable', () => {
+  const result = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), ANIMAL, pick(7, 36), ...cannibalistic]));
+  result.includeMagic = true;
+  const text = monster.format(result);
+  assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area) | MAGICAL'));
+  assert.ok(text.includes('Magic: 46 | Power: 9 | Mana: 9'));
+  assert.ok(!text.includes('Not Applicable'));
+  assert.ok(monster.statRows(result).every(row => !row.muted && row.derived.every(entry => !entry.muted)));
+  assert.equal(result.magical, false);
 });
 
 test('boss substat bonuses apply after derivation and magic bosses enable MAG', () => {
   const immortal = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), BOSS, pick(0, 13), ...cannibalistic]));
-  assert.equal(immortal.substats.Defense, 4);
-  assert.equal(immortal.substats.HP, 4 + 23 * 5);
+  assert.equal(immortal.substats.Defense, 9);
+  assert.equal(immortal.substats.HP, 9 + 23 * 5);
   assert.deepEqual(immortal.skills.map(skill => skill.name), ['Revive']);
   const sheds = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), BOSS, pick(5, 13), ...cannibalistic]));
   assert.equal(sheds.magical, true);
-  assert.deepEqual(sheds.stats, { STR: 1, CON: 1, AGI: 23, INT: 23, CHA: 23, MAG: 253 });
-  assert.equal(sheds.substats.Power, 50);
+  assert.deepEqual(sheds.stats, { STR: 1, CON: 1, AGI: 46, INT: 46, CHA: 46, MAG: 276 });
+  assert.equal(sheds.substats.Power, 55);
   const text = monster.format(sheds);
   assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area) | MAGICAL'));
-  assert.ok(text.includes('Magic: 253 | Power: 50 | Mana: 50'));
+  assert.ok(text.includes('Magic: 276 | Power: 55 | Mana: 55'));
   assert.ok(!text.includes('Not Applicable'));
 });
 
@@ -81,8 +95,8 @@ test('Spellcaster plus the Magical extra grant three distinct magic skills', () 
 
 test('Weaponmaster rolls a weapon and adds LEVEL x 2 to STR', () => {
   const result = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), BOSS, pick(8, 13), ...cannibalistic, 0.5]));
-  assert.equal(result.stats.STR, 23 + 46);
-  assert.equal(result.substats.Attack, 13);
+  assert.equal(result.stats.STR, 46 + 46);
+  assert.equal(result.substats.Attack, 18);
   assert.deepEqual(result.choices, [{ label: 'Weapon', value: 'Sword' }]);
   assert.ok(monster.format(result).includes('Weapon: Sword'));
 });
@@ -91,15 +105,15 @@ test('two animal extras are distinct and apply their modifiers and skills', () =
   const result = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), ANIMAL, 0, ANIMAL, 0]));
   assert.deepEqual(result.extras.map(extra => extra.name), ['Bird', 'Bear']);
   assert.deepEqual(result.skills.map(skill => skill.name), ['Flying']);
-  assert.equal(result.stats.CON, 46);
-  assert.equal(result.stats.STR, 46);
+  assert.equal(result.stats.CON, 69);
+  assert.equal(result.stats.STR, 69);
 });
 
 test('trait minimums raise INT to 50 and reductions never drop a stat below 1', () => {
   const smart = monster.generate({ level: 5 }, sequence([0, ...Array(6).fill(0), TRAIT, pick(0, 71), TRAIT, pick(8, 70)]));
   assert.equal(smart.level, 1);
   assert.deepEqual(smart.extras.map(extra => extra.name), ['Human intelligence', 'Loud']);
-  assert.deepEqual(smart.stats, { STR: 1, CON: 1, AGI: 1, INT: 50, CHA: 1, MAG: 1 });
+  assert.deepEqual(smart.stats, { STR: 2, CON: 2, AGI: 2, INT: 50, CHA: 2, MAG: 2 });
   assert.equal(smart.substats.Accuracy, 10);
   const useless = monster.generate({ level: 5 }, sequence([0, ...Array(6).fill(0), TRAIT, pick(13, 71), TRAIT, pick(4, 70)]));
   assert.deepEqual(useless.extras.map(extra => extra.name), ['Useless', 'Cannibalistic']);

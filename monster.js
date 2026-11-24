@@ -49,7 +49,7 @@
     if (!rules) throw new Error('Load the monster JSON rules before generating.');
     const area = options.level ?? rules.levels[roll([0, rules.levels.length - 1], random)];
     const level = rollLevel(area, random);
-    const stats = Object.fromEntries(statKeys.map(key => [key, roll(rules.statDie, random) * level]));
+    const stats = Object.fromEntries(statKeys.map(key => [key, level + roll(rules.statDie, random) * level]));
     const extras = rollExtras(random);
     let magical = false;
     let magicSkillCount = 0;
@@ -75,6 +75,7 @@
       area,
       level,
       magical,
+      includeMagic: magical,
       stats,
       substats,
       extras: extras.map(extra => ({ category: extra.category, name: extra.name })),
@@ -88,8 +89,16 @@
     return key === 'MAG' || (rules.substats.find(substat => substat.key === key)?.from.includes('MAG') ?? false);
   }
 
+  function showsMagic(monster) {
+    return monster.includeMagic ?? monster.magical;
+  }
+
+  function isMuted(monster, key) {
+    return isMagicKey(key) && !showsMagic(monster);
+  }
+
   function formatValue(monster, key, value) {
-    return isMagicKey(key) && !monster.magical ? `${value} (${notApplicable})` : String(value);
+    return isMuted(monster, key) ? `${value} (${notApplicable})` : String(value);
   }
 
   function statRows(monster) {
@@ -97,14 +106,15 @@
       key,
       label: statLabels[key],
       value: formatValue(monster, key, monster.stats[key]),
+      muted: isMuted(monster, key),
       derived: rules.substats
         .filter(substat => substat.from[0] === key)
-        .map(substat => ({ key: substat.key, value: formatValue(monster, substat.key, monster.substats[substat.key]) }))
+        .map(substat => ({ key: substat.key, value: formatValue(monster, substat.key, monster.substats[substat.key]), muted: isMuted(monster, substat.key) }))
     }));
   }
 
   function formatHeading(monster) {
-    return `MONSTER | Level: ${monster.level} (Level ${monster.area} area)${monster.magical ? ' | MAGICAL' : ''}`;
+    return `MONSTER | Level: ${monster.level} (Level ${monster.area} area)${showsMagic(monster) ? ' | MAGICAL' : ''}`;
   }
 
   function formatExtra(extra) {
@@ -116,7 +126,7 @@
       { label: 'Extras:', text: monster.extras.map(formatExtra).join(', ') },
       ...monster.choices.map(choice => ({ label: `${choice.label}:`, text: choice.value })),
       { label: 'Skills:', text: monster.skills.map(skill => `${skill.name}: ${skill.description}`).join('\n') },
-      ...(monster.magical ? [{ label: 'Magic Skills:', text: monster.magicSkills.map(skill => `${skill.name} (${skill.school}): ${skill.description}`).join('\n') }] : [])
+      ...(monster.magicSkills.length ? [{ label: 'Magic Skills:', text: monster.magicSkills.map(skill => `${skill.name} (${skill.school}): ${skill.description}`).join('\n') }] : [])
     ];
   }
 
@@ -129,7 +139,7 @@
     ].join('\n');
   }
 
-  const api = { statKeys, statLabels, notApplicable, configure, rollLevel, rollExtras, applyModifiers, magicSkillList, generate, isMagicKey, formatValue, statRows, formatHeading, sections, format };
+  const api = { statKeys, statLabels, notApplicable, configure, rollLevel, rollExtras, applyModifiers, magicSkillList, generate, isMagicKey, showsMagic, formatValue, statRows, formatHeading, sections, format };
   if (typeof module !== 'undefined' && module.exports) {
     configure(require('./data/monsters.json'));
     module.exports = api;
