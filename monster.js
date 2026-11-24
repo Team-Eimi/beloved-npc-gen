@@ -101,16 +101,15 @@
     return isMuted(monster, key) ? `${value} (${notApplicable})` : String(value);
   }
 
-  function statRows(monster) {
-    return statKeys.map(key => ({
-      key,
-      label: statLabels[key],
-      value: formatValue(monster, key, monster.stats[key]),
-      muted: isMuted(monster, key),
-      derived: rules.substats
-        .filter(substat => substat.from[0] === key)
-        .map(substat => ({ key: substat.key, value: formatValue(monster, substat.key, monster.substats[substat.key]), muted: isMuted(monster, substat.key) }))
-    }));
+  function sheet(monster) {
+    const cell = (key, label, value) => ({ key, label, value: formatValue(monster, key, value), muted: isMuted(monster, key) });
+    return {
+      stats: rules.sheet.stats.map(key => cell(key, key, monster.stats[key])),
+      combat: rules.sheet.combat.map(key => cell(key, key, monster.substats[key])),
+      side: rules.sheet.side.map(entry => entry.key
+        ? { ...cell(entry.key, entry.label, monster.substats[entry.key]), prefix: entry.prefix ?? '' }
+        : { label: entry.label, value: '', prefix: '', muted: false })
+    };
   }
 
   function formatHeading(monster) {
@@ -131,15 +130,17 @@
   }
 
   function format(monster) {
+    const layout = sheet(monster);
     return [
       formatHeading(monster),
-      ...statRows(monster).map(row => [`${row.label}: ${row.value}`, ...row.derived.map(entry => `${entry.key}: ${entry.value}`)].join(' | ')),
+      ...layout.stats.map((stat, index) => `${stat.label}: ${stat.value} | ${layout.combat[index].label}: ${layout.combat[index].value}`),
+      ...layout.side.filter(entry => entry.value !== '').map(entry => `${entry.label} ${entry.prefix}${entry.value}`),
       '',
       ...sections(monster).map(section => `${section.label} ${section.text}`)
     ].join('\n');
   }
 
-  const api = { statKeys, statLabels, notApplicable, configure, rollLevel, rollExtras, applyModifiers, magicSkillList, generate, isMagicKey, showsMagic, formatValue, statRows, formatHeading, sections, format };
+  const api = { statKeys, statLabels, notApplicable, configure, rollLevel, rollExtras, applyModifiers, magicSkillList, generate, isMagicKey, showsMagic, formatValue, sheet, formatHeading, sections, format };
   if (typeof module !== 'undefined' && module.exports) {
     configure(require('./data/monsters.json'));
     module.exports = api;

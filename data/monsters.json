@@ -3,6 +3,15 @@
   "levelVariance": 5,
   "statDie": [1, 4],
   "substatDivisor": 5,
+  "sheet": {
+    "stats": ["STR", "CON", "CHA", "INT", "AGI", "MAG"],
+    "combat": ["Attack", "Defense", "Resist", "Accuracy", "Dodge", "Power"],
+    "side": [
+      { "label": "Hit Points", "key": "HP", "prefix": "Max: " },
+      { "label": "Special Damage" },
+      { "label": "Mana", "key": "Mana", "prefix": "Max: " }
+    ]
+  },
   "substats": [
     { "key": "Attack", "from": ["STR"] },
     { "key": "Defense", "from": ["CON"] },

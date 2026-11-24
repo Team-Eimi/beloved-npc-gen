@@ -49,13 +49,15 @@ test('stats are LEVEL + 1d4 x LEVEL and substats are floored fifths with Accurac
   assert.equal(result.magical, false);
   assert.equal(result.includeMagic, false);
   const text = monster.format(result);
-  assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area)\nStrength: 46 | Attack: 9\n'));
-  assert.ok(text.includes('Intelligence: 115 | Accuracy: 41 | Resist: 23'));
-  assert.ok(text.includes('Magic: 46 (Not Applicable) | Power: 9 (Not Applicable) | Mana: 9 (Not Applicable)'));
+  assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area)\nSTR: 46 | Attack: 9\nCON: 69 | Defense: 13\nCHA: 115 | Resist: 23\nINT: 115 | Accuracy: 41\nAGI: 92 | Dodge: 18\n'));
+  assert.ok(text.includes('MAG: 46 (Not Applicable) | Power: 9 (Not Applicable)\nHit Points Max: 13\nMana Max: 9 (Not Applicable)\n'));
   assert.ok(text.includes('Extras: Animal: Frog, Trait: Cannibalistic'));
   assert.ok(!text.includes('Magic Skills:'));
-  assert.ok(monster.statRows(result).find(row => row.key === 'MAG').muted);
-  assert.ok(!monster.statRows(result).find(row => row.key === 'STR').muted);
+  const sheet = monster.sheet(result);
+  assert.deepEqual(sheet.stats.map(entry => entry.label), ['STR', 'CON', 'CHA', 'INT', 'AGI', 'MAG']);
+  assert.deepEqual(sheet.combat.map(entry => entry.label), ['Attack', 'Defense', 'Resist', 'Accuracy', 'Dodge', 'Power']);
+  assert.deepEqual(sheet.side.map(entry => [entry.label, entry.prefix, entry.value]), [['Hit Points', 'Max: ', '13'], ['Special Damage', '', ''], ['Mana', 'Max: ', '9 (Not Applicable)']]);
+  assert.deepEqual([...sheet.stats, ...sheet.combat, ...sheet.side].filter(entry => entry.muted).map(entry => entry.label), ['MAG', 'Power', 'Mana']);
 });
 
 test('the Magic checkbox override shows magic numbers without Not Applicable', () => {
@@ -63,9 +65,10 @@ test('the Magic checkbox override shows magic numbers without Not Applicable', (
   result.includeMagic = true;
   const text = monster.format(result);
   assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area) | MAGICAL'));
-  assert.ok(text.includes('Magic: 46 | Power: 9 | Mana: 9'));
+  assert.ok(text.includes('MAG: 46 | Power: 9\nHit Points Max: 9\nMana Max: 9\n'));
   assert.ok(!text.includes('Not Applicable'));
-  assert.ok(monster.statRows(result).every(row => !row.muted && row.derived.every(entry => !entry.muted)));
+  const sheet = monster.sheet(result);
+  assert.ok([...sheet.stats, ...sheet.combat, ...sheet.side].every(entry => !entry.muted));
   assert.equal(result.magical, false);
 });
 
@@ -80,7 +83,7 @@ test('boss substat bonuses apply after derivation and magic bosses enable MAG', 
   assert.equal(sheds.substats.Power, 55);
   const text = monster.format(sheds);
   assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area) | MAGICAL'));
-  assert.ok(text.includes('Magic: 276 | Power: 55 | Mana: 55'));
+  assert.ok(text.includes('MAG: 276 | Power: 55\nHit Points Max: 0\nMana Max: 55\n'));
   assert.ok(!text.includes('Not Applicable'));
 });
 

@@ -29,16 +29,10 @@
     };
   }
   function monsterView(monster) {
-    const rows = MonsterGenerator.statRows(monster);
     return {
       heading: MonsterGenerator.formatHeading(monster),
-      layout: 'grid',
-      headers: ['Stat', 'Value', 'Derived'],
-      rows: rows.map(row => [
-        { text: row.label },
-        { text: row.value, muted: row.muted },
-        { text: row.derived.map(entry => `${entry.key}: ${entry.value}`).join('\n'), muted: row.derived.some(entry => entry.muted) }
-      ]),
+      layout: 'sheet',
+      sheet: MonsterGenerator.sheet(monster),
       sections: MonsterGenerator.sections(monster),
       plainText: MonsterGenerator.format(monster)
     };
@@ -46,15 +40,39 @@
   function currentView() {
     return current.kind === 'monster' ? monsterView(current) : npcView(current);
   }
-  function render() {
-    const view = currentView();
-    const isMonster = current.kind === 'monster';
-    byId('npc-type').textContent = view.heading;
-    byId('include-magic').checked = isMonster ? MonsterGenerator.showsMagic(current) : current.includeMagic;
-    byId('include-magic').disabled = false;
+  function element(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+  function sheetLine(entry, labelClass) {
+    const line = element('div', 'sheet-line');
+    const value = element('span', `sheet-value${entry.muted ? ' muted' : ''}`, entry.value);
+    line.append(element('span', labelClass, entry.label), value);
+    return line;
+  }
+  function renderSheet(sheet) {
+    const stats = element('div', 'sheet-panel');
+    stats.append(...sheet.stats.map(entry => sheetLine(entry, 'sheet-label stat-key')));
+    const combat = element('div', 'sheet-panel');
+    combat.append(...sheet.combat.map(entry => sheetLine(entry, 'sheet-label')));
+    const side = element('div', 'sheet-panel sheet-side');
+    side.append(...sheet.side.map(entry => {
+      const block = element('div', 'side-block');
+      block.append(element('h3', 'side-title', entry.label));
+      if (entry.value !== '') {
+        const line = element('p', 'side-value');
+        line.append(document.createTextNode(entry.prefix), element('span', entry.muted ? 'muted' : '', entry.value));
+        block.append(line);
+      }
+      return block;
+    }));
+    byId('monster-sheet').replaceChildren(stats, combat, side);
+  }
+  function renderTable(view) {
     const table = byId('stats-table');
     table.classList.toggle('stats-row', view.layout === 'row');
-    table.classList.toggle('stats-grid', view.layout === 'grid');
     const headerRow = document.createElement('tr');
     for (const header of view.headers) {
       const cell = document.createElement('th');
@@ -73,6 +91,17 @@
       }
       return row;
     }));
+  }
+  function render() {
+    const view = currentView();
+    const isMonster = current.kind === 'monster';
+    byId('npc-type').textContent = view.heading;
+    byId('include-magic').checked = isMonster ? MonsterGenerator.showsMagic(current) : current.includeMagic;
+    byId('include-magic').disabled = false;
+    byId('stats-table').hidden = view.layout === 'sheet';
+    byId('monster-sheet').hidden = view.layout !== 'sheet';
+    if (view.layout === 'sheet') renderSheet(view.sheet);
+    else renderTable(view);
     byId('details').replaceChildren(...view.sections.map(section => {
       const wrapper = document.createElement('div');
       const term = document.createElement('dt');
@@ -83,15 +112,33 @@
       return wrapper;
     }));
   }
-  function formatHtml() {
-    const view = currentView();
-    const content = document.createElement('div');
-    content.style.cssText = 'font-family: Georgia, serif; font-size: 12pt; color: #243d36;';
-    const heading = document.createElement('p');
-    heading.style.cssText = 'font-size: 18pt; font-weight: bold; margin: 0 0 16px;';
-    heading.textContent = view.heading;
+  const cellStyle = 'border: 1px solid #dfe5df; padding: 10px 8px; text-align: center; white-space: pre-wrap;';
+  function htmlCell(row, text, muted, extra = '') {
+    const cell = row.insertCell();
+    cell.style.cssText = `${cellStyle}${muted ? ' color: #9aa49e;' : ''}${extra}`;
+    cell.textContent = text === '' ? '\u00a0' : text;
+    return cell;
+  }
+  function htmlTable(view) {
     const table = document.createElement('table');
     table.style.cssText = 'border-collapse: collapse; table-layout: fixed; width: 100%; margin-bottom: 20px;';
+    if (view.layout === 'sheet') {
+      const body = table.createTBody();
+      const perBlock = view.sheet.stats.length / view.sheet.side.length;
+      view.sheet.stats.forEach((stat, index) => {
+        const row = body.insertRow();
+        htmlCell(row, stat.label, false, ' font-weight: bold;');
+        htmlCell(row, stat.value, stat.muted);
+        htmlCell(row, view.sheet.combat[index].label, false, ' font-weight: bold;');
+        htmlCell(row, view.sheet.combat[index].value, view.sheet.combat[index].muted);
+        if (index % perBlock === 0) {
+          const entry = view.sheet.side[index / perBlock];
+          const cell = htmlCell(row, `${entry.label}\n${entry.prefix}${entry.value}`.trim(), entry.muted, ' vertical-align: top;');
+          cell.rowSpan = perBlock;
+        }
+      });
+      return table;
+    }
     const headers = table.createTHead().insertRow();
     for (const label of view.headers) {
       const header = document.createElement('th');
@@ -103,13 +150,18 @@
     const body = table.createTBody();
     for (const values of view.rows) {
       const row = body.insertRow();
-      for (const value of values) {
-        const cell = row.insertCell();
-        cell.style.cssText = `border: 1px solid #dfe5df; padding: 10px 8px; text-align: center; white-space: pre-wrap;${value.muted ? ' color: #9aa49e;' : ''}`;
-        cell.textContent = value.text === '' ? '\u00a0' : value.text;
-      }
+      for (const value of values) htmlCell(row, value.text, value.muted);
     }
-    content.append(heading, table);
+    return table;
+  }
+  function formatHtml() {
+    const view = currentView();
+    const content = document.createElement('div');
+    content.style.cssText = 'font-family: Georgia, serif; font-size: 12pt; color: #243d36;';
+    const heading = document.createElement('p');
+    heading.style.cssText = 'font-size: 18pt; font-weight: bold; margin: 0 0 16px;';
+    heading.textContent = view.heading;
+    content.append(heading, htmlTable(view));
     for (const section of view.sections) {
       const paragraph = document.createElement('p');
       paragraph.style.cssText = 'margin: 12px 0; white-space: pre-wrap;';

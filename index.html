@@ -20,22 +20,24 @@
     <header class="page-header">
       <h1>Beloved NPC Gen</h1>
       <div class="page-controls">
-        <div class="control-group" role="group" aria-label="Character generator">
-          <label class="select-field">Type
-            <select id="type-select" disabled></select>
-          </label>
-          <label class="select-field">Subtype
-            <select id="subtype-select" disabled><option value="">—</option></select>
-          </label>
-          <label class="magic-toggle"><input id="include-magic" type="checkbox"> Magic</label>
-          <button id="generate" class="button primary" disabled><i data-lucide="shuffle"></i> Character</button>
+        <div class="generator-rows">
+          <div class="control-group" role="group" aria-label="Character generator">
+            <label class="select-field">Type
+              <select id="type-select" disabled></select>
+            </label>
+            <label class="select-field">Subtype
+              <select id="subtype-select" disabled><option value="">—</option></select>
+            </label>
+            <button id="generate" class="button primary" disabled><i data-lucide="shuffle"></i> Character</button>
+          </div>
+          <div class="control-group" role="group" aria-label="Monster generator">
+            <label class="select-field">Level
+              <select id="level-select" disabled></select>
+            </label>
+            <button id="generate-monster" class="button secondary" disabled><i data-lucide="skull"></i> Monster</button>
+          </div>
         </div>
-        <div class="control-group" role="group" aria-label="Monster generator">
-          <label class="select-field">Level
-            <select id="level-select" disabled></select>
-          </label>
-          <button id="generate-monster" class="button secondary" disabled><i data-lucide="skull"></i> Monster</button>
-        </div>
+        <label class="magic-toggle"><input id="include-magic" type="checkbox"> Magic</label>
       </div>
     </header>
     <article class="stat-sheet" aria-labelledby="npc-type">
@@ -48,6 +50,7 @@
         <thead id="stat-headers"></thead>
         <tbody id="stat-values"></tbody>
       </table>
+      <div class="monster-sheet" id="monster-sheet" hidden></div>
       <dl class="details" id="details"></dl>
     </article>
   </main>
