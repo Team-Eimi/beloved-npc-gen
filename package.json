@@ -1,0 +1,12 @@
+{
+  "name": "beloved-npc-gen",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "test": "node --test generator.test.js"
+  },
+  "devDependencies": {
+    "vite": "^8.3.6"
+  }
+}

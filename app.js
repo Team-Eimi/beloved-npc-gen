@@ -1,133 +1,102 @@
 (() => {
-  const { generate, format, roles } = NPCGenerator;
+  const { generate, format, formatType, formatSection, statKeys, statLabels, visibleStatKeys } = NPCGenerator;
   const byId = id => document.getElementById(id);
-  const storageKey = 'beloved-npc-gen.characters.v1';
-  const worldNames = { fantasy: 'Fantasy', modern: 'Modern day', scifi: 'Science fiction' };
-  let saved = [];
-  let current = generate();
-  let nameLocked = false;
+  let current;
   let statusTimer;
   function notify(message) {
     clearTimeout(statusTimer);
     byId('status').textContent = message;
     statusTimer = setTimeout(() => { byId('status').textContent = ''; }, 4500);
   }
-  function icons() { if (globalThis.lucide) lucide.createIcons(); }
-  function icon(name) {
-    const element = document.createElement('i');
-    element.dataset.lucide = name;
-    return element;
-  }
-  function persist(next) {
-    try { localStorage.setItem(storageKey, JSON.stringify(next)); saved = next; return true; }
-    catch { notify('Storage is unavailable. Download your character to keep it.'); return false; }
-  }
-  try {
-    const data = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    if (Array.isArray(data)) saved = data.filter(npc => npc && ['id', 'name', 'role', 'setting', 'disposition', 'trait', 'want', 'secret', 'hook', 'voice'].every(field => typeof npc[field] === 'string') && Object.hasOwn(worldNames, npc.setting));
-  } catch { notify('Saved characters could not be loaded on this device.'); }
-  function renderSaved() {
-    byId('saved-count').textContent = saved.length;
-    byId('saved-total').textContent = `${saved.length} character${saved.length === 1 ? '' : 's'}`;
-    byId('empty-saved').hidden = saved.length > 0;
-    byId('saved-list').replaceChildren();
-    saved.forEach(npc => {
-      const row = document.createElement('div');
-      row.className = 'saved-item';
-      const open = document.createElement('button');
-      open.className = 'saved-open';
-      const name = document.createElement('strong');
-      name.textContent = npc.name;
-      const details = document.createElement('span');
-      details.textContent = `${npc.role} / ${worldNames[npc.setting]}`;
-      open.append(name, details);
-      open.addEventListener('click', () => {
-        current = npc;
-        byId('setting').value = npc.setting;
-        updateRoles();
-        byId('role').value = npc.role;
-        const disposition = document.querySelector(`input[name="disposition"][value="${['warm', 'guarded', 'eccentric'].includes(npc.disposition) ? npc.disposition : 'warm'}"]`);
-        disposition.checked = true;
-        render();
-        showView('generator');
-      });
-      const remove = document.createElement('button');
-      remove.className = 'icon-button';
-      remove.title = `Delete ${npc.name}`;
-      remove.setAttribute('aria-label', remove.title);
-      remove.append(icon('trash-2'));
-      remove.addEventListener('click', () => {
-        if (persist(saved.filter(item => item.id !== npc.id))) { render(); notify(`${npc.name} removed.`); byId('saved-tab').focus(); }
-      });
-      row.append(open, remove);
-      byId('saved-list').append(row);
-    });
-  }
   function render() {
-    byId('character-name').textContent = current.name;
-    byId('character-role').textContent = current.role;
-    byId('monogram').textContent = current.name.split(/\s+/).map(word => word[0]).slice(0, 2).join('');
-    byId('world-tag').textContent = worldNames[current.setting];
-    byId('disposition-tag').textContent = current.disposition;
-    for (const field of ['trait', 'want', 'secret', 'hook', 'voice']) byId(field).textContent = current[field];
-    const isSaved = saved.some(npc => npc.id === current.id);
-    byId('save').setAttribute('aria-pressed', String(isSaved));
-    byId('save').querySelector('span').textContent = isSaved ? 'Character saved' : 'Save character';
-    renderSaved();
-    icons();
-  }
-  function updateRoles() {
-    byId('role').replaceChildren(new Option('Surprise me', ''));
-    roles[byId('setting').value].forEach(role => byId('role').add(new Option(role, role)));
-  }
-  function showView(view) {
-    byId('generator-view').hidden = view !== 'generator';
-    byId('saved-view').hidden = view !== 'saved';
-    for (const name of ['generator', 'saved']) {
-      byId(`${name}-tab`).classList.toggle('active', name === view);
-      if (name === view) byId(`${name}-tab`).setAttribute('aria-current', 'page');
-      else byId(`${name}-tab`).removeAttribute('aria-current');
+    byId('npc-type').textContent = formatType(current);
+    byId('include-magic').checked = current.includeMagic;
+    byId('include-magic').disabled = false;
+    for (const key of statKeys) {
+      byId(`stat-${key}`).textContent = current.stats[key];
+      byId(`stat-${key}`).hidden = key === 'MAG' && !current.includeMagic;
+      byId(`label-${key}`).hidden = key === 'MAG' && !current.includeMagic;
     }
+    for (const field of ['traits', 'resistancesAndVulnerabilities', 'titles', 'skills', 'specialitySkills']) {
+      byId(field).textContent = formatSection(current[field]);
+    }
+    byId('traits').parentElement.hidden = !formatSection(current.traits);
   }
-  byId('setting').addEventListener('change', updateRoles);
+  function formatHtml() {
+    const content = document.createElement('div');
+    content.style.cssText = 'font-family: Georgia, serif; font-size: 12pt; color: #243d36;';
+    const heading = document.createElement('p');
+    heading.style.cssText = 'font-size: 18pt; font-weight: bold; margin: 0 0 16px;';
+    heading.textContent = formatType(current);
+    const table = document.createElement('table');
+    table.style.cssText = 'border-collapse: collapse; table-layout: fixed; width: 100%; margin-bottom: 20px;';
+    const headers = table.createTHead().insertRow();
+    const values = table.createTBody().insertRow();
+    const keys = visibleStatKeys(current);
+    for (const key of keys) {
+      const header = document.createElement('th');
+      header.scope = 'col';
+      header.style.cssText = `border: 1px solid #dfe5df; padding: 8px; text-align: center; background-color: #f4f7f3; width: ${100 / keys.length}%;`;
+      header.textContent = statLabels[key];
+      headers.append(header);
+      const value = values.insertCell();
+      value.style.cssText = 'border: 1px solid #dfe5df; padding: 10px 8px; text-align: center;';
+      value.textContent = current.stats[key] === '' ? '\u00a0' : current.stats[key];
+    }
+    content.append(heading, table);
+    for (const field of ['traits', 'resistancesAndVulnerabilities', 'titles', 'skills', 'specialitySkills']) {
+      if (field === 'traits' && !formatSection(current.traits)) continue;
+      const paragraph = document.createElement('p');
+      paragraph.style.cssText = 'margin: 12px 0; white-space: pre-wrap;';
+      const label = document.createElement('strong');
+      label.textContent = byId(field).previousElementSibling.textContent;
+      paragraph.append(label, document.createTextNode(` ${formatSection(current[field])}`));
+      content.append(paragraph);
+    }
+    return content.outerHTML;
+  }
   byId('generate').addEventListener('click', () => {
-    current = generate({ setting: byId('setting').value, role: byId('role').value, disposition: document.querySelector('input[name="disposition"]:checked').value, name: nameLocked ? current.name : undefined });
+    current = generate({ includeMagic: byId('include-magic').checked });
     render();
-    const sheet = document.querySelector('.character');
-    sheet.classList.remove('reveal');
-    requestAnimationFrame(() => sheet.classList.add('reveal'));
-    notify(`Meet ${current.name}, ${current.role.toLowerCase()}.`);
+    notify('Stat block updated.');
   });
-  byId('lock-name').addEventListener('click', () => {
-    nameLocked = !nameLocked;
-    byId('lock-name').setAttribute('aria-pressed', String(nameLocked));
-    const label = nameLocked ? 'Unlock character name' : 'Keep this name when generating';
-    byId('lock-name').setAttribute('aria-label', label);
-    byId('lock-name').title = label;
-    byId('lock-name').replaceChildren(icon(nameLocked ? 'lock' : 'lock-open'));
-    icons();
-  });
-  byId('save').addEventListener('click', () => {
-    if (saved.some(npc => npc.id === current.id)) { notify('This character is already saved.'); return; }
-    if (persist([current, ...saved])) { render(); notify(`${current.name} saved.`); }
+  byId('include-magic').addEventListener('change', () => {
+    if (!current) return;
+    current.includeMagic = byId('include-magic').checked;
+    render();
   });
   byId('copy').addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(format(current)); notify('Character copied to clipboard.'); }
-    catch { notify('Clipboard unavailable. Use Download character instead.'); }
+    const plainText = format(current);
+    if (globalThis.ClipboardItem && typeof navigator.clipboard?.write === 'function') {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/html': new Blob([formatHtml()], { type: 'text/html' }),
+          'text/plain': new Blob([plainText], { type: 'text/plain' })
+        })]);
+        notify('Stat block copied with formatting.');
+        return;
+      } catch {}
+    }
+    try { await navigator.clipboard.writeText(plainText); notify('Stat block copied as plain text.'); }
+    catch { notify('Clipboard unavailable. You can select and copy the stat block.'); }
   });
-  byId('download').addEventListener('click', () => {
-    const url = URL.createObjectURL(new Blob([format(current)], { type: 'text/plain;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${current.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.txt`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    notify('Character downloaded.');
-  });
-  byId('generator-tab').addEventListener('click', () => showView('generator'));
-  byId('saved-tab').addEventListener('click', () => showView('saved'));
-  updateRoles();
-  render();
+  async function initialize() {
+    byId('generate').disabled = true;
+    byId('copy').disabled = true;
+    byId('include-magic').disabled = true;
+    try {
+      const responses = await Promise.all(['data/rolls.json', 'data/types.json'].map(path => fetch(path)));
+      if (responses.some(response => !response.ok)) throw new Error('Rules could not be loaded.');
+      const [rolls, types] = await Promise.all(responses.map(response => response.json()));
+      NPCGenerator.configure(rolls, types);
+      current = generate({ includeMagic: byId('include-magic').checked });
+      render();
+      byId('generate').disabled = false;
+      byId('copy').disabled = false;
+    } catch {
+      notify('Rules could not be loaded. Use npm run dev to preview the page.');
+    }
+  }
+  if (globalThis.lucide) lucide.createIcons();
+  initialize();
 })();

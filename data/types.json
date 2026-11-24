@@ -1,0 +1,90 @@
+{
+  "types": [
+    {
+      "type": "HUMAN",
+      "weight": 60,
+      "childMaxAge": 16,
+      "subtypes": [
+        {
+          "subtype": "Child",
+          "weight": null,
+          "magic": false,
+          "traits": ["beauty", "temperament"],
+          "levelRange": [1, 4],
+          "levelBonus": {
+            "randomCount": 4,
+            "randomAmount": 3
+          },
+          "rolls": {
+            "titles": 1
+          }
+        },
+        {
+          "subtype": "Adult",
+          "weight": 90,
+          "magic": false,
+          "traits": ["education", "height"],
+          "levelRange": [1, 10],
+          "levelBonus": { "randomCount": 2, "randomAmount": 2 },
+          "rolls": {
+            "skills": 2,
+            "specialitySkills": 1,
+            "titles": 1
+          }
+        },
+        {
+          "subtype": "Lord",
+          "weight": 5,
+          "magic": true,
+          "traits": [],
+          "levelRange": [1, 30],
+          "levelBonus": {
+            "randomCount": 2,
+            "randomAmount": 1,
+            "fixed": { "CON": 2, "STR": 2 }
+          },
+          "rolls": {
+            "martialMagicSkills": 1,
+            "combatSkills": 1,
+            "skills": 1,
+            "titles": 1
+          }
+        },
+        {
+          "subtype": "Magician",
+          "weight": 5,
+          "magic": true,
+          "traits": [],
+          "modifiers": [
+            { "keys": ["CON", "AGI"], "amount": [-5, -5] },
+            { "keys": ["STR"], "amount": [-10, -10] },
+            { "keys": ["INT"], "amount": [10, 10] }
+          ],
+          "levelRange": [1, 45],
+          "levelBonus": {
+            "randomCount": 1,
+            "randomAmount": 1,
+            "fixed": { "INT": 1, "MAG": 3 }
+          },
+          "ageBonus": {
+            "levelAbove": 30,
+            "amount": [1, 100]
+          },
+          "rolls": {
+            "magicSkills": 2,
+            "skills": 1,
+            "titles": 1
+          }
+        }
+      ]
+    },
+    
+    { "type": "ELEMENTAL", "weight": 6 },
+    { "type": "OMNISCIENT", "weight": 0.5 },
+    { "type": "DRAGON", "weight": 5.5 },
+    { "type": "VAMPIRE", "weight": 6 },
+    { "type": "SLIME", "weight": 6 },
+    { "type": "MERMAID", "weight": 6 },
+    { "type": "UNDEAD", "weight": 10 }
+  ]
+}

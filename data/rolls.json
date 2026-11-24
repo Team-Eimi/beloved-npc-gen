@@ -1,0 +1,46 @@
+{
+  "stats": {
+    "base": [28, 32],
+    "weaknesses": { "count": [0, 4], "amount": [-12, -2] },
+    "strengths": { "count": [0, 4], "amount": [2, 12] },
+    "extraordinary": { "chance": 0.02, "amount": [20, 50], "additionalChance": 0.5 }
+  },
+  "levels": {
+    "1-4": [{ "range": [1, 4], "weight": 100 }],
+    "1-10": [{ "range": [1, 4], "weight": 70 }, { "range": [5, 7], "weight": 20 }, { "range": [8, 10], "weight": 10 }],
+    "1-30": [{ "range": [1, 10], "weight": 70 }, { "range": [11, 20], "weight": 20 }, { "range": [21, 30], "weight": 10 }],
+    "1-45": [{ "range": [1, 18], "weight": 70 }, { "range": [19, 30], "weight": 20 }, { "range": [31, 45], "weight": 10 }]
+  },
+  "age": {
+    "range": [10, 70],
+    "adjustments": [
+      { "min": 10, "max": 16, "modifiers": [{ "keys": ["ALL"], "amount": [-15, -10] }] },
+      { "min": 17, "max": 24, "modifiers": [{ "keys": ["ALL"], "amount": [-8, -1] }] },
+      { "min": 30, "max": 45, "modifiers": [{ "keys": ["INT"], "amount": [0, 15] }] },
+      { "min": 46, "max": 70, "modifiers": [{ "keys": ["INT"], "amount": [10, 25] }, { "keys": ["CON", "STR"], "amount": [-20, -5] }] }
+    ]
+  },
+  "traits": {
+    "beauty": {
+      "label": "Beauty", "range": [1, 10],
+      "outcomes": [
+        { "min": 1, "max": 1, "output": "Ugly", "modifiers": [{ "keys": ["CHA"], "amount": [-15, -1] }] },
+        { "min": 10, "max": 10, "output": "Beautiful", "modifiers": [{ "keys": ["CHA"], "amount": [1, 15] }] }
+      ]
+    },
+    "height": {
+      "label": "Height", "range": [1, 14], "defaultOutput": "Average",
+      "outcomes": [
+        { "min": 1, "max": 2, "output": "Very short", "modifiers": [{ "keys": ["STR"], "amount": [-5, -5] }, { "keys": ["AGI"], "amount": [5, 5] }] },
+        { "min": 12, "max": 14, "output": "Very tall", "modifiers": [{ "keys": ["AGI"], "amount": [-5, -5] }, { "keys": ["STR"], "amount": [5, 5] }] }
+      ]
+    },
+    "education": {
+      "label": "Education", "range": [1, 10], "defaultOutput": null,
+      "outcomes": [
+        { "min": 1, "max": 1, "output": "Uneducated", "modifiers": [{ "keys": ["INT"], "amount": [-5, -5] }], "skills": ["street smarts lvl 5"] },
+        { "min": 10, "max": 10, "output": "Educated", "modifiers": [{ "keys": ["INT"], "amount": [10, 10] }] }
+      ]
+    }
+  }
+}
