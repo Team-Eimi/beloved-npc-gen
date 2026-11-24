@@ -101,14 +101,21 @@
     return isMuted(monster, key) ? `${value} (${notApplicable})` : String(value);
   }
 
+  function statTotal(monster) {
+    const total = statKeys.filter(key => !isMuted(monster, key)).reduce((sum, key) => sum + monster.stats[key], 0);
+    return Math.floor(total / rules.substatDivisor);
+  }
+
   function sheet(monster) {
     const cell = (key, label, value) => ({ key, label, value: formatValue(monster, key, value), muted: isMuted(monster, key) });
     return {
       stats: rules.sheet.stats.map(key => cell(key, key, monster.stats[key])),
       combat: rules.sheet.combat.map(key => cell(key, key, monster.substats[key])),
-      side: rules.sheet.side.map(entry => entry.key
-        ? { ...cell(entry.key, entry.label, monster.substats[entry.key]), prefix: entry.prefix ?? '' }
-        : { label: entry.label, value: '', prefix: '', muted: false })
+      side: rules.sheet.side.map(entry => {
+        if (entry.key) return { ...cell(entry.key, entry.label, monster.substats[entry.key]), prefix: entry.prefix ?? '' };
+        if (entry.computed === 'statTotal') return { key: entry.computed, label: entry.label, value: String(statTotal(monster)), prefix: entry.prefix ?? '', muted: false };
+        return { label: entry.label, value: '', prefix: '', muted: false };
+      })
     };
   }
 
@@ -140,7 +147,7 @@
     ].join('\n');
   }
 
-  const api = { statKeys, statLabels, notApplicable, configure, rollLevel, rollExtras, applyModifiers, magicSkillList, generate, isMagicKey, showsMagic, formatValue, sheet, formatHeading, sections, format };
+  const api = { statKeys, statLabels, notApplicable, configure, rollLevel, rollExtras, applyModifiers, magicSkillList, generate, isMagicKey, showsMagic, formatValue, statTotal, sheet, formatHeading, sections, format };
   if (typeof module !== 'undefined' && module.exports) {
     configure(require('./data/monsters.json'));
     module.exports = api;

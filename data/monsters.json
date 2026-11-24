@@ -8,8 +8,8 @@
     "combat": ["Attack", "Defense", "Resist", "Accuracy", "Dodge", "Power"],
     "side": [
       { "label": "Hit Points", "key": "HP", "prefix": "Max: " },
-      { "label": "Special Damage" },
-      { "label": "Mana", "key": "Mana", "prefix": "Max: " }
+      { "label": "Mana", "key": "Mana", "prefix": "Max: " },
+      { "label": "EXP", "computed": "statTotal" }
     ]
   },
   "substats": [
