@@ -3,6 +3,13 @@
   "levelVariance": 5,
   "statDie": [1, 4],
   "substatDivisor": 5,
+  "attacks": [
+    { "name": "Claws", "damage": 2 },
+    { "name": "Bite", "damage": 2 },
+    { "name": "Impale", "damage": 2 },
+    { "name": "Smash", "damage": 4 },
+    { "name": "Slam", "damage": 4 }
+  ],
   "sheet": {
     "stats": ["STR", "CON", "CHA", "INT", "AGI", "MAG"],
     "combat": ["Attack", "Defense", "Resist", "Accuracy", "Dodge", "Power"],
@@ -50,6 +57,7 @@
     },
     {
       "name": "Pretends to be human",
+      "showCharm": true,
       "skills": [{ "name": "Shapeshifting", "description": "Has a human form." }],
       "modifiers": [{ "key": "CHA", "perLevel": 2 }]
     },
@@ -80,7 +88,7 @@
       "name": "Weaponmaster",
       "skills": [{ "name": "Boss Weapon", "description": "+40% to skill. Drops special loot." }],
       "modifiers": [{ "key": "STR", "perLevel": 2 }],
-      "choice": { "label": "Weapon", "options": ["Fists", "Dagger", "Sword", "Spear", "Ranged"] }
+      "usesWeapon": true
     },
     {
       "name": "Spellcaster",
@@ -89,6 +97,7 @@
     },
     {
       "name": "Emotion manipulator",
+      "showCharm": true,
       "skills": [{ "name": "Manipulator", "description": "This creature will do all it can to manipulate its targets using their emotions." }],
       "modifiers": [{ "key": "CHA", "perLevel": 2 }, { "key": "INT", "perLevel": 2 }, { "key": "STR", "perLevel": -2 }]
     },
@@ -105,7 +114,7 @@
     { "name": "Bird", "skills": [{ "name": "Flying", "description": "This creature can fly." }] },
     { "name": "Bear", "modifiers": [{ "key": "CON", "perLevel": 1 }, { "key": "STR", "perLevel": 1 }] },
     { "name": "Insect", "modifiers": [{ "key": "AGI", "perLevel": 1 }, { "key": "CON", "perLevel": 1 }, { "key": "STR", "perLevel": -1 }] },
-    { "name": "Cat", "modifiers": [{ "key": "CHA", "perLevel": 1 }] },
+    { "name": "Cat", "showCharm": true, "modifiers": [{ "key": "CHA", "perLevel": 1 }] },
     { "name": "Rabbit", "modifiers": [{ "key": "AGI", "perLevel": 1 }] },
     { "name": "Wolf", "modifiers": [{ "key": "INT", "perLevel": 1 }] },
     { "name": "Fish", "skills": [{ "name": "Semiaquatic", "description": "Can breathe underwater and in air." }] },
@@ -119,7 +128,7 @@
     { "name": "Pig" },
     { "name": "Mouse" },
     { "name": "Owl", "modifiers": [{ "key": "INT", "perLevel": 1 }, { "key": "AGI", "perLevel": 1 }] },
-    { "name": "Dog" },
+    { "name": "Dog", "showCharm": true },
     { "name": "Shark" },
     { "name": "Toad" },
     { "name": "Tiger" },
@@ -129,7 +138,7 @@
     { "name": "Beaver" },
     { "name": "Elk" },
     { "name": "Gorilla" },
-    { "name": "Humanlike" },
+    { "name": "Humanlike", "showCharm": true },
     { "name": "Porcupine", "skills": [{ "name": "Sharp", "description": "Whenever this creature is successfully melee attacked, it deals damage = to its Defense." }] },
     { "name": "Raccoon" },
     { "name": "Rhino", "modifiers": [{ "key": "CON", "perLevel": 2 }], "skills": [{ "name": "Defensive dealer", "description": "Deal damage = to Defense stat, not Attack." }] },
@@ -140,7 +149,7 @@
     { "name": "Tentacle creature", "skills": [{ "name": "Multiattack", "description": "This creature acts twice per turn if the action is an attack." }] }
   ],
   "trait": [
-    { "name": "Human intelligence", "modifiers": [{ "key": "INT", "minimum": 50 }] },
+    { "name": "Human intelligence", "showCharm": true, "modifiers": [{ "key": "INT", "minimum": 50 }] },
     { "name": "Decays", "skills": [{ "name": "Decay", "description": "When this creature harms another creature, they take additional damage = to 1/5 of Attack (minimum 1) for a # of turns = to Attack." }] },
     { "name": "Gelatinous", "skills": [{ "name": "Swallow", "description": "Any melee attack against this creature that fails results in the attacker being swallowed up. They take damage = to the creature's attack until they can escape." }] },
     { "name": "Infected", "skills": [{ "name": "Disease", "description": "Any creature successfully injured by this creature becomes sick." }] },

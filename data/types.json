@@ -3,41 +3,43 @@
     {
       "type": "HUMAN",
       "weight": 60,
-      "childMaxAge": 16,
+      "defaultSubtype": "Adult",
+      "baseStats": 20,
+      "baseTraits": ["beauty", "temperament", "temperament"],
+      "titleChance": 0.3,
       "subtypes": [
         {
           "subtype": "Child",
-          "weight": null,
           "magic": false,
-          "traits": ["beauty", "temperament"],
+          "ageRange": [12, 16],
+          "traits": [],
           "levelRange": [1, 4],
           "levelBonus": {
             "randomCount": 4,
-            "randomAmount": 3
-          },
-          "rolls": {
-            "titles": 1
+            "randomAmount": 5
           }
         },
         {
           "subtype": "Adult",
-          "weight": 90,
           "magic": false,
+          "ageRange": [17, 100],
           "traits": ["education", "height"],
+          "randomPoints": 15,
+          "profession": true,
           "levelRange": [1, 10],
           "levelBonus": { "randomCount": 2, "randomAmount": 2 },
           "rolls": {
-            "skills": 2,
-            "specialitySkills": 1,
-            "titles": 1
+            "bonusSkills": 2,
+            "skillBonus": 20
           }
         },
         {
           "subtype": "Lord",
-          "weight": 5,
           "magic": true,
+          "ageRange": [17, 300],
           "traits": [],
-          "levelRange": [1, 30],
+          "randomPoints": 30,
+          "levelRange": [1, 40],
           "levelBonus": {
             "randomCount": 2,
             "randomAmount": 1,
@@ -46,105 +48,124 @@
           "rolls": {
             "martialMagicSkills": 1,
             "combatSkills": 1,
-            "skills": 1,
-            "titles": 1
+            "bonusSkills": 2,
+            "skillBonus": 20,
+            "skillBonusLevels": [{ "above": 20, "bonus": 30 }, { "above": 30, "bonus": 40 }]
           }
         },
         {
           "subtype": "Magician",
-          "weight": 5,
           "magic": true,
+          "ageRange": [17, 500],
           "traits": [],
-          "modifiers": [
-            { "keys": ["CON", "AGI"], "amount": [-5, -5] },
-            { "keys": ["STR"], "amount": [-10, -10] },
-            { "keys": ["INT"], "amount": [10, 10] }
-          ],
-          "levelRange": [1, 45],
+          "randomPoints": 20,
+          "levelRange": [1, 65],
           "levelBonus": {
             "randomCount": 1,
             "randomAmount": 1,
             "fixed": { "INT": 1, "MAG": 3 }
           },
-          "ageBonus": {
-            "levelAbove": 30,
-            "amount": [1, 100]
-          },
           "rolls": {
             "magicSkills": 2,
-            "skills": 1,
-            "titles": 1
+            "bonusSkills": 2,
+            "skillBonus": 20,
+            "skillBonusLevels": [{ "above": 20, "bonus": 30 }, { "above": 35, "bonus": 40 }, { "above": 50, "bonus": 50 }]
           }
         }
       ]
     },
-    
     {
-      "type": "ELEMENTAL",
-      "weight": 6,
+      "type": "UNDEAD",
+      "weight": 10,
+      "defaultSubtype": "Skeleton",
+      "baseStats": 5,
+      "baseTraits": ["temperament", "temperament"],
       "subtypes": [
         {
-          "subtype": "Sprite",
-          "weight": null,
-          "magic": true,
-          "traits": [],
-          "levelRange": [1, 5],
-          "levelBonus": { "randomCount": 3, "randomAmount": 1 },
-          "rolls": {
-            "titles": 1
-          }
+          "subtype": "Skeleton",
+          "description": "A creature brought back to life by darkness magic. Weak.",
+          "magic": false, "ageRange": [1, 100], "levelRange": [1, 10],
+          "levelBonus": { "randomCount": 1, "randomAmount": 1 },
+          "fixedSkills": [
+            { "name": "Slow", "description": "Moves at half speed." },
+            { "name": "Bony", "description": "100% Magic Resistance.", "resistances": { "Magical": 100 } },
+            { "name": "Fragile", "description": "Vulnerable to Damage.", "vulnerabilities": ["Damage"] },
+            { "name": "Undead", "description": "Upon reaching 0 HP, roll luck. On <50, reanimate at 1 HP." }
+          ]
         },
         {
-          "subtype": "Fairy",
-          "weight": null,
-          "magic": true,
-          "traits": [],
-          "levelRange": [1, 80],
-          "levelBonus": {
-            "randomCount": 2,
-            "randomAmount": 1,
-            "fixed": { "MAG": 2 }
-          },
-          "rolls": {
-            "titles": 1,
-            "magicTypeTitles": 1
-          }
+          "subtype": "Walking Corpse", "inherits": "Skeleton",
+          "description": "A re-fleshed skeleton with a semblance of humanity based on intelligence.",
+          "magic": false, "ageRange": [1, 100], "levelRange": [1, 10],
+          "randomPoints": 10, "traits": ["beauty"],
+          "removeSkills": ["Slow", "Bony", "Fragile"],
+          "levelBonus": { "randomCount": 2, "randomAmount": 1 }
         },
         {
-          "subtype": "Elemental",
-          "weight": null,
-          "magic": true,
-          "traits": [],
-          "levelRange": [1, 25],
-          "levelBonus": {
-            "randomCount": 0,
-            "randomAmount": 0,
-            "fixed": { "MAG": 1, "CON": 1, "STR": 1 }
-          },
-          "rolls": {
-            "titles": 1,
-            "magicTypeTitles": 1
-          }
+          "subtype": "Corpse Mage", "inherits": "Walking Corpse",
+          "description": "An undead with magic abilities.",
+          "magic": true, "ageRange": [50, 200], "levelRange": [1, 50],
+          "randomPoints": 15,
+          "levelBonus": { "randomCount": 2, "randomAmount": 1, "fixed": { "MAG": 1 } },
+          "rolls": { "magicSkills": 2, "bonusSkills": 1, "skillBonus": 20,
+            "skillBonusLevels": [{ "above": 20, "bonus": 30 }, { "above": 35, "bonus": 40 }, { "above": 45, "bonus": 50 }] }
         },
         {
-          "subtype": "Genasi",
-          "weight": null,
-          "magic": true,
-          "traits": [],
-          "levelRange": [1, 20],
-          "levelBonus": { "randomCount": 3, "randomAmount": 3 },
-          "rolls": {
-            "titles": 1,
-            "magicTypeTitles": 1
-          }
+          "subtype": "Lich", "inherits": "Corpse Mage",
+          "description": "A powerful spellcaster.",
+          "magic": true, "ageRange": [100, 1000], "levelRange": [1, 80],
+          "randomPoints": 50,
+          "levelBonus": { "randomCount": 4, "randomAmount": 1, "fixed": { "MAG": 2 } },
+          "rolls": { "magicSkills": 3, "magicSkillBonus": 20, "magicBonusPerLevel": 1 }
+        },
+        {
+          "subtype": "Fierce Corpse", "inherits": "Walking Corpse",
+          "description": "An undead with powerful physical abilities.",
+          "magic": false, "ageRange": [50, 300], "levelRange": [1, 80],
+          "randomPoints": 20,
+          "levelBonus": { "randomCount": 2, "randomAmount": 1, "fixed": { "CON": 1, "STR": 1 } },
+          "rolls": { "combatSkills": 2, "martialSkills": 1, "martialBonus": 20, "martialBonusPerTenLevels": 10 }
+        },
+        {
+          "subtype": "Skeleton Warrior", "inherits": "Skeleton",
+          "description": "A skeleton with reinforced bones, specialized for melee combat.",
+          "magic": false, "ageRange": [5, 100], "levelRange": [1, 10],
+          "randomPoints": 10, "removeSkills": ["Fragile"],
+          "levelBonus": { "randomCount": 0, "randomAmount": 0, "fixed": { "STR": 1, "CON": 1 } },
+          "rolls": { "combatSkills": 1, "combatSkillBonus": 20 }
+        },
+        {
+          "subtype": "Archer Skeleton", "inherits": "Skeleton Warrior",
+          "description": "A skeleton adept at ranged combat.",
+          "magic": false, "ageRange": [15, 150], "levelRange": [1, 20],
+          "randomPoints": 15,
+          "levelBonus": { "randomCount": 1, "randomAmount": 1, "fixed": { "AGI": 1 } },
+          "fixedWeaponSkills": [{ "weapon": "Longbow", "bonus": 30 }],
+          "fixedSkills": [
+            { "name": "Fragile", "description": "Vulnerable to Damage.", "vulnerabilities": ["Damage"] },
+            { "name": "Sniper", "description": "All damage done with a ranged weapon is doubled." },
+            { "name": "Frost arrow", "description": "Instead of dealing damage, freeze the target for turns equal to the damage that would have been taken. Each turn they may make a Frost Resistance check." },
+            { "name": "Poison arrow", "description": "Instead of dealing damage, deal 1 damage to the target for turns equal to the damage that would have been taken." },
+            { "name": "Sleep arrow", "description": "Instead of dealing damage, the target falls asleep until woken up." }
+          ]
+        },
+        {
+          "subtype": "Shield Skeleton", "inherits": "Skeleton",
+          "description": "A skeleton adept at taking hits.",
+          "magic": false, "ageRange": [15, 150], "levelRange": [1, 20],
+          "randomPoints": 15,
+          "levelBonus": { "randomCount": 0, "randomAmount": 0, "fixed": { "CON": 2 } },
+          "resistanceBonus": { "names": ["Damage", "Limb Damage", "Poison", "Fire", "Frost", "Electric"], "amount": 30, "aboveLevel": 15, "higherAmount": 40 }
+        },
+        {
+          "subtype": "Healer Skeleton", "inherits": "Skeleton",
+          "description": "A skeleton with low-level healing magic.",
+          "magic": true, "ageRange": [1, 100], "levelRange": [1, 30],
+          "randomPoints": 30, "minimumStats": { "INT": 15 },
+          "monsterSkills": ["Heal (Monster)"],
+          "rolls": { "lightMagicSkills": 1, "skills": 2 }
         }
       ]
-    },
-    { "type": "OMNISCIENT", "weight": 0.5 },
-    { "type": "DRAGON", "weight": 5.5 },
-    { "type": "VAMPIRE", "weight": 6 },
-    { "type": "SLIME", "weight": 6 },
-    { "type": "MERMAID", "weight": 6 },
-    { "type": "UNDEAD", "weight": 10 }
+    }
   ]
 }

@@ -49,25 +49,25 @@ test('stats are LEVEL + 1d4 x LEVEL and substats are floored fifths with Accurac
   assert.equal(result.magical, false);
   assert.equal(result.includeMagic, false);
   const text = monster.format(result);
-  assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area)\nSTR: 46 | Attack: 9\nCON: 69 | Defense: 13\nCHA: 115 | Resist: 23\nINT: 115 | Accuracy: 41\nAGI: 92 | Dodge: 18\n'));
-  assert.ok(text.includes('MAG: 46 (Not Applicable) | Power: 9 (Not Applicable)\nHit Points Max: 13\nMana Max: 9 (Not Applicable)\nEXP 87\n'));
+  assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area)\nSTR: 46 | Attack: 9\nCON: 69 | Defense: 13\nResist: 23\nINT: 115 | Accuracy: 41\nAGI: 92 | Dodge: 18\n'));
+  assert.ok(text.includes('MAG: 46 (Not Applicable) | Power: 9 (Not Applicable)\nHit Points Max: 13\nMana Max: 9 (Not Applicable)\nEXP 64\n'));
   assert.ok(text.includes('Extras: Animal: Frog, Trait: Cannibalistic'));
   assert.ok(!text.includes('Magic Skills:'));
   const sheet = monster.sheet(result);
-  assert.deepEqual(sheet.stats.map(entry => entry.label), ['STR', 'CON', 'CHA', 'INT', 'AGI', 'MAG']);
+  assert.deepEqual(sheet.stats.map(entry => entry.label), ['STR', 'CON', '', 'INT', 'AGI', 'MAG']);
   assert.deepEqual(sheet.combat.map(entry => entry.label), ['Attack', 'Defense', 'Resist', 'Accuracy', 'Dodge', 'Power']);
-  assert.deepEqual(sheet.side.map(entry => [entry.label, entry.prefix, entry.value]), [['Hit Points', 'Max: ', '13'], ['Mana', 'Max: ', '9 (Not Applicable)'], ['EXP', '', '87']]);
+  assert.deepEqual(sheet.side.map(entry => [entry.label, entry.prefix, entry.value]), [['Hit Points', 'Max: ', '13'], ['Mana', 'Max: ', '9 (Not Applicable)'], ['EXP', '', '64']]);
   assert.deepEqual([...sheet.stats, ...sheet.combat, ...sheet.side].filter(entry => entry.muted).map(entry => entry.label), ['MAG', 'Power', 'Mana']);
-  assert.equal(monster.statTotal(result), 87);
+  assert.equal(monster.statTotal(result), 64);
 });
 
 test('the Magic checkbox override shows magic numbers without Not Applicable and adds MAG to EXP', () => {
   const result = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), ANIMAL, pick(7, 36), ...cannibalistic]));
-  assert.equal(monster.statTotal(result), 46);
+  assert.equal(monster.statTotal(result), 36);
   result.includeMagic = true;
   const text = monster.format(result);
   assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area) | MAGICAL'));
-  assert.ok(text.includes('MAG: 46 | Power: 9\nHit Points Max: 9\nMana Max: 9\nEXP 55\n'));
+  assert.ok(text.includes('MAG: 46 | Power: 9\nHit Points Max: 9\nMana Max: 9\nEXP 46\n'));
   assert.ok(!text.includes('Not Applicable'));
   const sheet = monster.sheet(result);
   assert.ok([...sheet.stats, ...sheet.combat, ...sheet.side].every(entry => !entry.muted));
@@ -85,7 +85,7 @@ test('boss substat bonuses apply after derivation and magic bosses enable MAG', 
   assert.equal(sheds.substats.Power, 55);
   const text = monster.format(sheds);
   assert.ok(text.startsWith('MONSTER | Level: 23 (Level 20 area) | MAGICAL'));
-  assert.ok(text.includes('MAG: 276 | Power: 55\nHit Points Max: 0\nMana Max: 55\nEXP 83\n'));
+  assert.ok(text.includes('MAG: 276 | Power: 55\nHit Points Max: 0\nMana Max: 55\nEXP 74\n'));
   assert.ok(!text.includes('Not Applicable'));
 });
 
@@ -98,12 +98,12 @@ test('Spellcaster plus the Magical extra grant three distinct magic skills', () 
   assert.ok(monster.format(result).includes('Magic Skills: Heal (Light): Heal an amount of HP'));
 });
 
-test('Weaponmaster rolls a weapon and adds LEVEL x 2 to STR', () => {
-  const result = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), BOSS, pick(8, 13), ...cannibalistic, 0.5]));
+test('Weaponmaster rolls a character weapon and adds LEVEL x 2 to STR', () => {
+  const result = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), BOSS, pick(8, 13), ...cannibalistic, 0.3, 0]));
   assert.equal(result.stats.STR, 46 + 46);
   assert.equal(result.substats.Attack, 18);
-  assert.deepEqual(result.choices, [{ label: 'Weapon', value: 'Sword' }]);
-  assert.ok(monster.format(result).includes('Weapon: Sword'));
+  assert.deepEqual(result.attack, { name: 'Dagger', damage: 2 });
+  assert.ok(monster.format(result).includes('Attack: Dagger (+2 damage)'));
 });
 
 test('two animal extras are distinct and apply their modifiers and skills', () => {
@@ -123,4 +123,58 @@ test('trait minimums raise INT to 50 and reductions never drop a stat below 1', 
   const useless = monster.generate({ level: 5 }, sequence([0, ...Array(6).fill(0), TRAIT, pick(13, 71), TRAIT, pick(4, 70)]));
   assert.deepEqual(useless.extras.map(extra => extra.name), ['Useless', 'Cannibalistic']);
   assert.deepEqual(useless.stats, { STR: 1, CON: 1, AGI: 1, INT: 1, CHA: 1, MAG: 1 });
+});
+
+test('only the specified extras show CHA and include it in EXP with either magic setting', () => {
+  const eligible = [
+    [BOSS, 3, 13], [BOSS, 10, 13],
+    [ANIMAL, 3, 36], [ANIMAL, 17, 36], [ANIMAL, 27, 36],
+    [TRAIT, 0, 71]
+  ];
+  for (const [category, index, size] of eligible) {
+    const result = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), category, pick(index, size), ...cannibalistic]));
+    assert.equal(result.showCharm, true, result.extras[0].name);
+    assert.ok(monster.format(result).includes(`CHA: ${result.stats.CHA}`));
+    for (const includeMagic of [false, true]) {
+      result.includeMagic = includeMagic;
+      const expected = Object.entries(result.stats).filter(([key]) => key !== 'MAG' || includeMagic).reduce((sum, [, value]) => sum + value, 0);
+      assert.equal(monster.statTotal(result), Math.floor(expected / 5));
+    }
+  }
+  const ordinary = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), ANIMAL, 0, ...cannibalistic]));
+  assert.equal(ordinary.showCharm, false);
+  assert.ok(!monster.format(ordinary).includes('CHA:'));
+});
+
+test('ordinary monsters roll each natural attack and hide zero resistance defaults', () => {
+  const attacks = [
+    { name: 'Claws', damage: 2 }, { name: 'Bite', damage: 2 }, { name: 'Impale', damage: 2 },
+    { name: 'Smash', damage: 4 }, { name: 'Slam', damage: 4 }
+  ];
+  for (const [index, attack] of attacks.entries()) {
+    const result = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), ANIMAL, pick(7, 36), ...cannibalistic, pick(index, attacks.length)]));
+    assert.deepEqual(result.attack, attack);
+    assert.equal(result.resistancesAndVulnerabilities.length, 12);
+    assert.ok(!monster.format(result).includes('Resistances & Vulnerabilities:'));
+    assert.ok(!monster.sections(result).some(section => section.label === 'Resistances & Vulnerabilities:'));
+    assert.ok(monster.format(result).includes(`Attack: ${attack.name} (+${attack.damage} damage)`));
+  }
+});
+
+test('monster output shows nonzero resistances and vulnerabilities only', () => {
+  const result = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), ANIMAL, pick(7, 36), ...cannibalistic]));
+  result.resistancesAndVulnerabilities[0] = 'Damage Resistance: 25%';
+  result.resistancesAndVulnerabilities[1] = 'Limb Damage Resistance: -10%';
+  const section = monster.sections(result).find(value => value.label === 'Resistances & Vulnerabilities:');
+  assert.equal(section.text, 'Damage Resistance: 25%\nLimb Damage Resistance: -10%');
+  assert.ok(monster.format(result).includes(section.text));
+});
+
+test('Weaponmasters can be unarmed and retain weapon properties', () => {
+  const prefix = [LEVEL_23, ...Array(6).fill(0), BOSS, pick(8, 13), ...cannibalistic];
+  const unarmed = monster.generate({ level: 20 }, sequence([...prefix, 0.2999]));
+  assert.equal(unarmed.attack.name, 'Unarmed');
+  const grenade = monster.generate({ level: 20 }, sequence([...prefix, 0.3, 0.9999]));
+  assert.deepEqual(grenade.attack, { name: 'Molotov cocktail', damage: 4, radius: 50 });
+  assert.ok(monster.format(grenade).includes('Attack: Molotov cocktail (+4 damage, 50 ft radius)'));
 });

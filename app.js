@@ -4,9 +4,12 @@
   const npcSections = [
     ['traits', 'Traits:'],
     ['resistancesAndVulnerabilities', 'Resistances & Vulnerabilities:'],
+    ['attack', 'Attack:'],
+    ['relationships', 'Relationships & Organizations:'],
     ['titles', 'Titles:'],
     ['skills', 'Skills:'],
-    ['specialitySkills', 'Speciality Skills:']
+    ['specialitySkills', 'Speciality Skills:'],
+    ['magicSkills', 'Magic Skills:']
   ];
   let current;
   let statusTimer;
@@ -23,8 +26,15 @@
       headers: keys.map(key => statLabels[key]),
       rows: [keys.map(key => ({ text: String(npc.stats[key]) }))],
       sections: npcSections
-        .filter(([field]) => field !== 'traits' || formatSection(npc.traits))
-        .map(([field, label]) => ({ label, text: formatSection(npc[field]) })),
+        .filter(([field]) => (field !== 'traits' || formatSection(npc.traits))
+          && (field !== 'magicSkills' || npc.magicSkills.length)
+          && (field !== 'resistancesAndVulnerabilities' || NPCGenerator.visibleResistances(npc[field]).length))
+        .map(([field, label]) => ({
+          label,
+          text: field === 'resistancesAndVulnerabilities' ? NPCGenerator.visibleResistances(npc[field]).join('\n')
+            : field === 'relationships' || field === 'magicSkills' ? npc[field].join('\n')
+            : field === 'attack' ? NPCGenerator.formatAttacks(npc) : formatSection(npc[field])
+        })),
       plainText: format(npc)
     };
   }
@@ -229,7 +239,7 @@
       const responses = await Promise.all(paths.map(path => fetch(path)));
       if (responses.some(response => !response.ok)) throw new Error('Rules could not be loaded.');
       const [rolls, types, monsters] = await Promise.all(responses.map(response => response.json()));
-      NPCGenerator.configure(rolls, types);
+      NPCGenerator.configure(rolls, types, monsters);
       MonsterGenerator.configure(monsters);
       fillSelect(byId('type-select'), NPCGenerator.listTypes().map(value => value.type));
       renderSubtypeOptions();

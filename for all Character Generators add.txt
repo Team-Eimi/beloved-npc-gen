@@ -1,0 +1,302 @@
+for all Character Generators add
+Relationships/Organizations:
+randomly roll the following with a level between -50 and 50
+1) non-related person
+-50 to -40: mortal enemy
+-20 to -39: an enemy
+-10 to -19: a hated coworker
+-9 to 15: no friends
+16-30: a good friend
+31-40: a best friend
+41-50: a bonded friend
+2) family member
+-50 to -40: abusive family
+-20 to -39: a neglectful family
+-10 to -19: a family they dislike
+1 to -9: a hated sibling
+2 to 15: a normal family
+16-30: a good sibling
+31-40: a loving family
+41-50: a bonded sibling
+3) romantic interest
+-50 to -40: a hated ex who did something horrible
+-20 to -39: an ex who hates them
+-10 to -19: a disliked ex
+1 to -9: an ex not worth mentioning
+2 to 30: no ex or lover
+31-40: a lover
+41-50: a spouse
+4) organization
+-50 to 1: no organization
+2-10: a new member
+11-20: a member
+21 to 30: a key member
+31-40: a mentor that cares for them
+41-50: a core member
+
+New category: Attack
+Weapon:
+dagger, shortsword, hand axe, club, javelin, light hammer, war pick, whip, pointy stick) Deals +2 damage
+broadsword, mace, quarterstaff, trident, lance, sickle, spear, flail, morningstar, scimitar, longbow, crossbow
+revolver, pistol) Deals +4 damage
+battleaxe, battle hammer, greatclub, greatsword, bastard sword,  Deals +8 damage, two handed
+short bow, blowgun, sling) Deals +2 damage
+Rifle, shotgun, sniper) Deals +8 damage
+Grenade, molotov cocktail) Deals +4 damage in a radius of 50 ft
+30% Unarmed : Deals no additional damage 
+randomly generate a weapon and note how much additional damage it does
+
+
+TITLES:
+50% chance to drop output: Make a new title
+I will make a new title and send it to you until I am satisfied with the # of titles
+Risk Taker
+Gain +1% per level when doing something risky.
+Lover Boy
+Gain +1% per level when doing something romantic or sexual.
+Prince/ss
+Gain one (per level)  additional stat point every time you level up.
+Weak
+-1 STR and CON for every level.
+Idiot
+Lose 1 (per level) random stat point every time you level up.
+Bloodthirsty
+Gain 10 EXP every time you kill something sentient.
+Criminal (Guild)
+Gain a marking on your forehead. All stats decreased by 10.
+Protector
+Gain the ability to use light magic. If you do not have the ability to use magic already, your MAGIC stat starts at 15. Gain 1 light magic spell.
+Lucky
+Add the % of the level of this skill to all rolls. Levels up when luck makes the difference.
+Unlucky
+Inverse the title Lucky.
+Coward
+Gain +1% per level to skills when running away
+Prodigy
+Pick a stat. All values added to that stat are doubled (for a maximum of 4).
+Beloved
+A Goddess grants you use of a skill
+Hero
+All EXP gain is multiplied by 5
+Student
+All EXP gain is doubled, level up an additional skill at level up
+(Type) Magician
+Gain a magic spell of this type. For every level in this title, add +1% to all spells of this type.
+Ascendent
+Gain light or dark magic. Gain skill: Miracle or Calamity. For every level in this title, increase a stat of your choice by 2.
+Resilient
+Every time you level up, gain 4 levels in a Resistance of your choice.
+Normal person
+This person is normal. All EXP gain multiplied by 0.5. 
+
+SKILLS
+Leadership
+Survival
+Athletics
+Acrobatics
+
+Knowledge
+History
+Appraise
+Mathematics
+Occultism
+Philosophy
+Physics
+Religion
+Street smarts
+Etiquette 
+Law
+Magic
+Politics
+Art
+Performance
+Dance
+Fine arts
+Fiber arts
+Cooking
+Driving
+Riding
+Piloting
+Perception
+Listen
+Spot
+Senses
+Sixth sense
+
+Combat
+Brawl
+Grapple
+Weapon (specific)
+
+Emotional Intelligence
+Insight
+Deception
+Discern motive
+Seduction
+Intimidation
+Animal intelligence
+Poker face 
+
+SPECIALITY SKILLS
+Subterfuge
+Stealth
+Sleight of Hand
+Tracking
+Initiative
+Lockpicking
+Pickpocket
+Trade
+Carpentry
+Electrical repair
+Equipment Operation
+Plumbing
+Craft
+Disguise
+Gunsmithing
+Metalworking
+Leatherworking
+Alchemy
+Technical
+Forensics
+Engineering
+Medicine
+Researching
+Finance
+Science
+Astronomy
+Biology
+Geography
+Geology
+Criminology
+Psychology
+
+TRAITS
+Beauty:
+10% ugly, 10% beautiful, 0% average
+Ugly: subtract 1-15 points from Charm
+Average: Nothing
+Beautiful: add 1-15 points to Charm 
+Height:
+10% very short, 10% very tall, 80% average
+Very short: -5 STR, +5 AGI
+Average: Nothing
+Very tall: -5 AGI, +5 STR
+Education:
+10% uneducated, 10% well educated, 80% average
+Uneducated: -5 INT, Street Smarts skill added
+Average: Nothing
+Well-educated: +15 INT
+
+TEMPERMENT
+Timid
+-5 CHA, take a knowledge skill
+Outgoing
++2 CHA, take an emotional intelligence skill +20%
+Aloof
++5 INT, -5 CHA, +5 Mana
+Charming
++10 CHA
+Sturdy
+Gain +10% to Damage Resistance, +10% Limb Damage Resistance
+Weak
+Gain Damage Vulnerability
+Arcane
+Gain +20% Magical Resistance
+Magically sensitive
+Gain Magical Vulnerability
+Idiot
+-10 INT, take Fear and Charm resistance +10%
+Clever
++10 INT
+Breakable
+Gain Fall Vulnerability, Limb Damage Vulnerability
+Logical
++15 INT, -5 CHA
+Heartfelt
+Take 2 emotional intelligence skills +2-%, +5 CHA, take Charm Vulnerability
+Studious
+Take 2 specialty skills +10%, one additional skill +10%
+Spontaneous
+Add 2 points to 3 random stats
+Passionate
+Choose a stat of passion. Every time you level up, add an additional point in that stat.
+Sober
+Gain Poker Face starting at level 20.
+Sensitive
+Take all vulnerabilities. Increase 10 skills by +10%
+Brave
+Gain Fear Resistance +20%, and +3 to CON.
+Romantic
+Gain the Lover Boy title.
+Apathetic
+-5 CHA, gain Frenzy resistance at level 20
+Evil
+Gain 5 EXP every time you succeed at a truly diabolical task.
+Good
+Gain 5 EXP every time you do something truly good.
+Meathead
+Gain 1 CON every time you level up.
+Whimsical
+Gain 1 MAG every time you level up.
+Hard-working
+When you would gain 5 EXP, gain 8.
+Talented
+When you would gain a single stat point in a stat, gain 2. This only works once per level up.
+Lazy
+When you would gain 5 EXP, only gain 4.
+Talentless
+When you would gain a single stat point in a stat, gain 0. This only happens once per level up.
+Genius
+When you see someone else gain EXP, gain 2 EXP.
+Athletic
+Gain 1 STR every time you level up.
+Anxious
+-5 levels to all Emotional Intelligence skills. Gain a specialty skill at level 15.
+Cruel
+Gain an additional combat skill, +3 STR
+Kind
+Gain +5 levels to all emotional intelligence skills.
+Playboy
+Gain a skill in Seduction at level 20, and +5 CHA, -2 INT.
+Lonely
+Add +3 levels to all subterfuge skills and take the title Unlucky.
+Selfish
+When only you gain EXP in an entire session, add an additional 5.
+Selfless
+When you gain EXP, you may choose to instead give it to someone else. +10 CHA.
+Sleepless
+Gain Insomnia Resistance at level 40. Roll a Constitution check to sleep well enough to actually rest at night.
+Sleepy
+Take Insomnia Vulnerability. Roll a Constitution check to wake up. If you sleep in as much as you desire, gain a temporary +10 to any stat of your choice.
+Well-read
+Gain two additional skills with +10%
+
+Profession (This goes under the Titles) category, but will be rolled for only when prompted
+roll a random level for the title. skills will be = to title level. aka a level 30 politician will have  60% politics (30% base + 30% for title level)
+Politician, lawyer, judge) 1 emotional ingelligence skill, Law, politics 
+Noble) Etiquette, 1 knowledge skill, 1 emotional intelligence skill
+Commander, strategist) 1 knowledge skill, 1 perception skill, leadership, combat skill
+soldier) Survival, combat skill, perception skill
+Mafia) combat skill, emotional intelligence skill, subterfuge skill
+Advisor, secretary) 2 knowledge skills
+Fed, cop, detective, spy) subterfuge skill, knowledge skill, athletics
+Oracle, psychic, occultist) emotional intelligence skill, astronomy, occultism
+Mercenary, bodyguard, assassin) 2 combat skills, perception skill
+Hunter, bounty hunter) tracking, combat skill, perception skill
+Athlete, martial artist, acrobat) athletics OR acrobatics
+Firefighter) athletics, survival
+Tradesman) trade skill
+Craftsman) craft skill 
+Scientist) science skill
+Psychiatrist, therapist, priest) 2 emotional intelligence skills
+Homemaker) cooking, emotional intelligence skill
+Technical specialist) technical skill at 50%
+Professor, teacher, librarian) 1 knowledge skill, one science skill
+Journalist) subterfuge skill
+Unemployed) none
+Cashier, retail worker, waiter, small business owner) none
+Cook) cooking
+Artist) art skill
+Criminal) athletics OR acrobatics, 2 subterfuge skills
+Transportation expert) Driving OR riding OR piloting
+Businessman) emotional intelligence skill, appraise, leadership

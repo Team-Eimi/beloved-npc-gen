@@ -3,50 +3,673 @@
     "base": [28, 32],
     "weaknesses": { "count": [0, 4], "amount": [-12, -2] },
     "strengths": { "count": [0, 4], "amount": [2, 12] },
-    "extraordinary": { "chance": 0.02, "amount": [20, 50], "additionalChance": 0.5 }
+    "extraordinary": {
+      "chance": 0.02,
+      "amount": [20, 50],
+      "additionalChance": 0.5
+    }
   },
+  "resistances": [
+    "Damage",
+    "Limb Damage",
+    "Magical",
+    "Poison",
+    "Fall",
+    "Fear",
+    "Charm",
+    "Fire",
+    "Frost",
+    "Insomnia",
+    "Electric",
+    "Frenzy"
+  ],
+  "weapons": {
+    "unarmedChance": 0.3,
+    "groups": [
+      {
+        "names": [
+          "Dagger",
+          "Shortsword",
+          "Hand axe",
+          "Club",
+          "Javelin",
+          "Light hammer",
+          "War pick",
+          "Whip",
+          "Pointy stick",
+          "Short bow",
+          "Blowgun",
+          "Sling"
+        ],
+        "damage": 2
+      },
+      {
+        "names": [
+          "Broadsword",
+          "Mace",
+          "Quarterstaff",
+          "Trident",
+          "Lance",
+          "Sickle",
+          "Spear",
+          "Flail",
+          "Morningstar",
+          "Scimitar",
+          "Longbow",
+          "Crossbow",
+          "Revolver",
+          "Pistol"
+        ],
+        "damage": 4
+      },
+      {
+        "names": [
+          "Battleaxe",
+          "Battle hammer",
+          "Greatclub",
+          "Greatsword",
+          "Bastard sword"
+        ],
+        "damage": 8,
+        "twoHanded": true
+      },
+      { "names": ["Rifle", "Shotgun", "Sniper"], "damage": 8 },
+      { "names": ["Grenade", "Molotov cocktail"], "damage": 4, "radius": 50 }
+    ]
+  },
+  "relationships": [
+    {
+      "category": "Non-related person",
+      "outcomes": [
+        { "range": [-50, -40], "text": "mortal enemy" },
+        { "range": [-39, -20], "text": "an enemy" },
+        { "range": [-19, -10], "text": "a hated coworker" },
+        { "range": [-9, 15], "text": "no friends" },
+        { "range": [16, 30], "text": "a good friend" },
+        { "range": [31, 40], "text": "a best friend" },
+        { "range": [41, 50], "text": "a bonded friend" }
+      ]
+    },
+    {
+      "category": "Family member",
+      "outcomes": [
+        { "range": [-50, -40], "text": "abusive family" },
+        { "range": [-39, -20], "text": "a neglectful family" },
+        { "range": [-19, -10], "text": "a family they dislike" },
+        { "range": [-9, 1], "text": "a hated sibling" },
+        { "range": [2, 15], "text": "a normal family" },
+        { "range": [16, 30], "text": "a good sibling" },
+        { "range": [31, 40], "text": "a loving family" },
+        { "range": [41, 50], "text": "a bonded sibling" }
+      ]
+    },
+    {
+      "category": "Romantic interest",
+      "outcomes": [
+        {
+          "range": [-50, -40],
+          "text": "a hated ex who did something horrible"
+        },
+        { "range": [-39, -20], "text": "an ex who hates them" },
+        { "range": [-19, -10], "text": "a disliked ex" },
+        { "range": [-9, 1], "text": "an ex not worth mentioning" },
+        { "range": [2, 30], "text": "no ex or lover" },
+        { "range": [31, 40], "text": "a lover" },
+        { "range": [41, 50], "text": "a spouse" }
+      ]
+    },
+    {
+      "category": "Organization",
+      "outcomes": [
+        { "range": [-50, 1], "text": "no organization" },
+        { "range": [2, 10], "text": "a new member" },
+        { "range": [11, 20], "text": "a member" },
+        { "range": [21, 30], "text": "a key member" },
+        { "range": [31, 40], "text": "a mentor that cares for them" },
+        { "range": [41, 50], "text": "a core member" }
+      ]
+    }
+  ],
+  "skills": {
+    "standalone": [
+      "Leadership",
+      "Survival",
+      "Athletics",
+      "Acrobatics",
+      "Driving",
+      "Riding",
+      "Piloting"
+    ],
+    "categories": {
+      "Knowledge": [
+        "History",
+        "Appraise",
+        "Mathematics",
+        "Occultism",
+        "Philosophy",
+        "Physics",
+        "Religion",
+        "Street smarts",
+        "Etiquette",
+        "Law",
+        "Magic",
+        "Politics"
+      ],
+      "Art": [
+        "Performance", 
+        "Dance", 
+        "Fine arts", 
+        "Fiber arts", 
+        "Cooking"
+      ],
+      "Perception": ["Listen", "Spot", "Senses", "Sixth sense"],
+      "Combat": ["Brawl", "Grapple", "Weapon (specific)"],
+      "Emotional Intelligence": [
+        "Insight",
+        "Deception",
+        "Discern motive",
+        "Seduction",
+        "Intimidation",
+        "Animal intelligence",
+        "Poker face"
+      ]
+    }
+  },
+  "specialitySkills": {
+    "Subterfuge": [
+      "Stealth",
+      "Sleight of Hand",
+      "Tracking",
+      "Initiative",
+      "Lockpicking",
+      "Pickpocket"
+    ],
+    "Trade": [
+      "Carpentry",
+      "Electrical repair",
+      "Equipment Operation",
+      "Plumbing"
+    ],
+    "Craft": [
+      "Disguise",
+      "Gunsmithing",
+      "Metalworking",
+      "Leatherworking",
+      "Alchemy"
+    ],
+    "Technical": [
+      "Forensics",
+      "Engineering",
+      "Medicine",
+      "Researching",
+      "Finance"
+    ],
+    "Science": [
+      "Astronomy",
+      "Biology",
+      "Geography",
+      "Geology",
+      "Criminology",
+      "Psychology"
+    ]
+  },
+  "professions": [
+    { "names": ["Politician", "Lawyer", "Judge"], "skills": [{ "category": "Emotional Intelligence", "count": 1 }, { "name": "Law" }, { "name": "Politics" }] },
+    { "names": ["Noble"], "skills": [{ "name": "Etiquette" }, { "category": "Knowledge", "count": 1 }, { "category": "Emotional Intelligence", "count": 1 }] },
+    { "names": ["Commander", "Strategist"], "skills": [{ "category": "Knowledge", "count": 1 }, { "category": "Perception", "count": 1 }, { "name": "Leadership" }, { "category": "Combat", "count": 1 }] },
+    { "names": ["Soldier"], "skills": [{ "name": "Survival" }, { "category": "Combat", "count": 1 }, { "category": "Perception", "count": 1 }] },
+    { "names": ["Mafia"], "skills": [{ "category": "Combat", "count": 1 }, { "category": "Emotional Intelligence", "count": 1 }, { "category": "Subterfuge", "count": 1 }] },
+    { "names": ["Advisor", "Secretary"], "skills": [{ "category": "Knowledge", "count": 2 }] },
+    { "names": ["Fed", "Cop", "Detective", "Spy"], "skills": [{ "category": "Subterfuge", "count": 1 }, { "category": "Knowledge", "count": 1 }, { "name": "Athletics" }] },
+    { "names": ["Oracle", "Psychic", "Occultist"], "skills": [{ "category": "Emotional Intelligence", "count": 1 }, { "name": "Astronomy" }, { "name": "Occultism" }] },
+    { "names": ["Mercenary", "Bodyguard", "Assassin"], "skills": [{ "category": "Combat", "count": 2 }, { "category": "Perception", "count": 1 }] },
+    { "names": ["Hunter", "Bounty hunter"], "skills": [{ "name": "Tracking" }, { "category": "Combat", "count": 1 }, { "category": "Perception", "count": 1 }] },
+    { "names": ["Athlete", "Martial artist", "Acrobat"], "skills": [{ "choices": ["Athletics", "Acrobatics"] }] },
+    { "names": ["Firefighter"], "skills": [{ "name": "Athletics" }, { "name": "Survival" }] },
+    { "names": ["Tradesman"], "skills": [{ "category": "Trade", "count": 1 }] },
+    { "names": ["Craftsman"], "skills": [{ "category": "Craft", "count": 1 }] },
+    { "names": ["Scientist"], "skills": [{ "category": "Science", "count": 1 }] },
+    { "names": ["Psychiatrist", "Therapist", "Priest"], "skills": [{ "category": "Emotional Intelligence", "count": 2 }] },
+    { "names": ["Homemaker"], "skills": [{ "name": "Cooking" }, { "category": "Emotional Intelligence", "count": 1 }] },
+    { "names": ["Technical specialist"], "skills": [{ "category": "Technical", "count": 1, "value": 50 }] },
+    { "names": ["Professor", "Teacher", "Librarian"], "skills": [{ "category": "Knowledge", "count": 1 }, { "category": "Science", "count": 1 }] },
+    { "names": ["Journalist"], "skills": [{ "category": "Subterfuge", "count": 1 }] },
+    { "names": ["Unemployed", "Cashier", "Retail worker", "Waiter", "Small business owner"], "skills": [] },
+    { "names": ["Cook"], "skills": [{ "name": "Cooking" }] },
+    { "names": ["Artist"], "skills": [{ "category": "Art", "count": 1 }] },
+    { "names": ["Criminal"], "skills": [{ "choices": ["Athletics", "Acrobatics"] }, { "category": "Subterfuge", "count": 2 }] },
+    { "names": ["Transportation expert"], "skills": [{ "choices": ["Driving", "Riding", "Piloting"] }] },
+    { "names": ["Businessman"], "skills": [{ "category": "Emotional Intelligence", "count": 1 }, { "name": "Appraise" }, { "name": "Leadership" }] }
+  ],
+  "temperaments": [
+    {
+      "name": "Timid",
+      "description": "-5 CHA; take a knowledge skill.",
+      "stats": { "CHA": -5 },
+      "skillRolls": [{ "category": "Knowledge", "count": 1 }]
+    },
+    {
+      "name": "Outgoing",
+      "description": "+2 CHA; take an emotional intelligence skill +20%.",
+      "stats": { "CHA": 2 },
+      "skillRolls": [
+        { "category": "Emotional Intelligence", "count": 1, "bonus": 20 }
+      ]
+    },
+    {
+      "name": "Aloof",
+      "description": "+5 INT, -5 CHA, +5 Mana.",
+      "stats": { "INT": 5, "CHA": -5 }
+    },
+    { "name": "Charming", "description": "+10 CHA.", "stats": { "CHA": 10 } },
+    {
+      "name": "Sturdy",
+      "description": "+10% Damage Resistance and +10% Limb Damage Resistance.",
+      "resistances": { "Damage": 10, "Limb Damage": 10 }
+    },
+    {
+      "name": "Weak",
+      "description": "Gain Damage Vulnerability.",
+      "vulnerabilities": ["Damage"]
+    },
+    {
+      "name": "Arcane",
+      "description": "+20% Magical Resistance.",
+      "resistances": { "Magical": 20 }
+    },
+    {
+      "name": "Magically sensitive",
+      "description": "Gain Magical Vulnerability.",
+      "vulnerabilities": ["Magical"]
+    },
+    {
+      "name": "Idiot",
+      "description": "-10 INT; gain Fear and Charm Resistance +10%.",
+      "stats": { "INT": -10 },
+      "resistances": { "Fear": 10, "Charm": 10 }
+    },
+    { "name": "Clever", "description": "+10 INT.", "stats": { "INT": 10 } },
+    {
+      "name": "Breakable",
+      "description": "Gain Fall Vulnerability and Limb Damage Vulnerability.",
+      "vulnerabilities": ["Fall", "Limb Damage"]
+    },
+    {
+      "name": "Logical",
+      "description": "+15 INT, -5 CHA.",
+      "stats": { "INT": 15, "CHA": -5 }
+    },
+    {
+      "name": "Heartfelt",
+      "description": "Take 2 emotional intelligence skills +2%, +5 CHA, and Charm Vulnerability.",
+      "stats": { "CHA": 5 },
+      "skillRolls": [
+        { "category": "Emotional Intelligence", "count": 2, "bonus": 2 }
+      ],
+      "vulnerabilities": ["Charm"]
+    },
+    {
+      "name": "Studious",
+      "description": "Take 2 speciality skills +10% and one additional skill +10%.",
+      "skillRolls": [
+        { "speciality": true, "count": 2, "bonus": 10 },
+        { "count": 1, "bonus": 10 }
+      ]
+    },
+    {
+      "name": "Spontaneous",
+      "description": "Add 2 points to 3 random stats.",
+      "randomStats": { "count": 3, "amount": 2 }
+    },
+    {
+      "name": "Passionate",
+      "description": "Choose a stat of passion. Every time you level up, add an additional point in that stat."
+    },
+    {
+      "name": "Sober",
+      "description": "Gain Poker Face starting at level 20.",
+      "fixedSkills": [
+        {
+          "category": "Emotional Intelligence",
+          "name": "Poker face",
+          "value": 20
+        }
+      ]
+    },
+    {
+      "name": "Sensitive",
+      "description": "Take all vulnerabilities. Increase 10 skills by +10%.",
+      "allVulnerabilities": true,
+      "skillRolls": [{ "count": 10, "bonus": 10 }]
+    },
+    {
+      "name": "Brave",
+      "description": "Gain Fear Resistance +20% and +3 CON.",
+      "stats": { "CON": 3 },
+      "resistances": { "Fear": 20 }
+    },
+    {
+      "name": "Romantic",
+      "description": "Gain the Lover Boy title.",
+      "title": "Lover Boy"
+    },
+    {
+      "name": "Apathetic",
+      "description": "-5 CHA, gain Frenzy resistance at level 20.",
+      "stats": { "CHA": -5 },
+      "resistances": { "Frenzy": 20 }
+    },
+    {
+      "name": "Evil",
+      "description": "Gain 5 EXP every time you succeed at a truly diabolical task."
+    },
+    {
+      "name": "Good",
+      "description": "Gain 5 EXP every time you do something truly good."
+    },
+    {
+      "name": "Meathead",
+      "description": "Gain 1 CON every time you level up."
+    },
+    {
+      "name": "Whimsical",
+      "description": "Gain 1 MAG every time you level up."
+    },
+    {
+      "name": "Hard-working",
+      "description": "When you would gain 5 EXP, gain 8."
+    },
+    {
+      "name": "Talented",
+      "description": "When you would gain a single stat point in a stat, gain 2. This only works once per level up."
+    },
+    {
+      "name": "Lazy",
+      "description": "When you would gain 5 EXP, only gain 4."
+    },
+    {
+      "name": "Talentless",
+      "description": "When you would gain a single stat point in a stat, gain 0. This only happens once per level up."
+    },
+    {
+      "name": "Genius",
+      "description": "When you see someone else gain EXP, gain 2 EXP."
+    },
+    {
+      "name": "Athletic",
+      "description": "Gain 1 STR every time you level up."
+    },
+    {
+      "name": "Anxious",
+      "description": "-5 levels to all emotional intelligence skills. Gain a speciality skill at level 15.",
+      "categoryBonuses": { "Emotional Intelligence": -5 },
+      "skillRolls": [{ "speciality": true, "count": 1, "value": 15 }]
+    },
+    {
+      "name": "Cruel",
+      "description": "Gain an additional combat skill, +3 STR.",
+      "stats": { "STR": 3 },
+      "skillRolls": [{ "category": "Combat", "count": 1 }]
+    },
+    {
+      "name": "Kind",
+      "description": "+5 levels to all emotional intelligence skills.",
+      "categoryBonuses": { "Emotional Intelligence": 5 }
+    },
+    {
+      "name": "Playboy",
+      "description": "Gain Seduction at level 20, +5 CHA, -2 INT.",
+      "stats": { "CHA": 5, "INT": -2 },
+      "fixedSkills": [
+        {
+          "category": "Emotional Intelligence",
+          "name": "Seduction",
+          "value": 20
+        }
+      ]
+    },
+    {
+      "name": "Lonely",
+      "description": "+3 levels to all subterfuge skills and take the title Unlucky.",
+      "categoryBonuses": { "Subterfuge": 3 },
+      "title": "Unlucky"
+    },
+    {
+      "name": "Selfish",
+      "description": "When only you gain EXP in an entire session, add an additional 5."
+    },
+    {
+      "name": "Selfless",
+      "description": "When you gain EXP, you may choose to instead give it to someone else. +10 CHA.",
+      "stats": { "CHA": 10 }
+    },
+    {
+      "name": "Sleepless",
+      "description": "Gain Insomnia Resistance at level 40. Roll a Constitution check to sleep well enough to rest.",
+      "resistances": { "Insomnia": 40 }
+    },
+    {
+      "name": "Sleepy",
+      "description": "Take Insomnia Vulnerability. Roll a Constitution check to wake up. If you sleep as much as desired, gain a temporary +10 to a stat of your choice.",
+      "vulnerabilities": ["Insomnia"]
+    },
+    {
+      "name": "Well-read",
+      "description": "Gain two additional skills with +10%.",
+      "skillRolls": [{ "count": 2, "bonus": 10 }]
+    }
+  ],
   "levels": {
     "1-4": [{ "range": [1, 4], "weight": 100 }],
-    "1-5": [{ "range": [1, 2], "weight": 70 }, { "range": [3, 4], "weight": 20 }, { "range": [5, 5], "weight": 10 }],
-    "1-10": [{ "range": [1, 4], "weight": 70 }, { "range": [5, 7], "weight": 20 }, { "range": [8, 10], "weight": 10 }],
-    "1-20": [{ "range": [1, 8], "weight": 70 }, { "range": [9, 14], "weight": 20 }, { "range": [15, 20], "weight": 10 }],
-    "1-25": [{ "range": [1, 10], "weight": 70 }, { "range": [11, 18], "weight": 20 }, { "range": [19, 25], "weight": 10 }],
-    "1-30": [{ "range": [1, 10], "weight": 70 }, { "range": [11, 20], "weight": 20 }, { "range": [21, 30], "weight": 10 }],
-    "1-45": [{ "range": [1, 18], "weight": 70 }, { "range": [19, 30], "weight": 20 }, { "range": [31, 45], "weight": 10 }],
-    "1-80": [{ "range": [1, 32], "weight": 70 }, { "range": [33, 56], "weight": 20 }, { "range": [57, 80], "weight": 10 }]
+    "1-5": [
+      { "range": [1, 2], "weight": 70 },
+      { "range": [3, 4], "weight": 20 },
+      { "range": [5, 5], "weight": 10 }
+    ],
+    "1-10": [
+      { "range": [1, 4], "weight": 70 },
+      { "range": [5, 7], "weight": 20 },
+      { "range": [8, 10], "weight": 10 }
+    ],
+    "1-20": [
+      { "range": [1, 8], "weight": 70 },
+      { "range": [9, 14], "weight": 20 },
+      { "range": [15, 20], "weight": 10 }
+    ],
+    "1-25": [
+      { "range": [1, 10], "weight": 70 },
+      { "range": [11, 18], "weight": 20 },
+      { "range": [19, 25], "weight": 10 }
+    ],
+    "1-30": [
+      { "range": [1, 10], "weight": 70 },
+      { "range": [11, 20], "weight": 20 },
+      { "range": [21, 30], "weight": 10 }
+    ],
+    "1-45": [
+      { "range": [1, 18], "weight": 70 },
+      { "range": [19, 30], "weight": 20 },
+      { "range": [31, 45], "weight": 10 }
+    ],
+    "1-80": [
+      { "range": [1, 32], "weight": 70 },
+      { "range": [33, 56], "weight": 20 },
+      { "range": [57, 80], "weight": 10 }
+    ]
   },
   "titles": {
-    "magicTypes": ["light", "darkness", "fire", "water", "earth", "wind", "electricity"]
+    "magicTypes": [
+      "light",
+      "darkness",
+      "fire",
+      "water",
+      "earth",
+      "wind",
+      "electricity"
+    ],
+    "newTitleChance": 0.5,
+    "entries": [
+      {
+        "name": "Risk Taker",
+        "description": "Gain +1% per level when doing something risky."
+      },
+      {
+        "name": "Lover Boy",
+        "description": "Gain +1% per level when doing something romantic or sexual."
+      },
+      {
+        "name": "Prince/ss",
+        "description": "Gain one additional stat point per title level every time you level up."
+      },
+      { "name": "Weak", "description": "-1 STR and CON for every level." },
+      {
+        "name": "Idiot",
+        "description": "Lose 1 random stat point per title level every time you level up."
+      },
+      {
+        "name": "Bloodthirsty",
+        "description": "Gain 10 EXP every time you kill something sentient."
+      },
+      {
+        "name": "Criminal (Guild)",
+        "description": "Gain a marking on your forehead. All stats decreased by 10.",
+        "allStats": -10
+      },
+      {
+        "name": "Protector",
+        "description": "Gain light magic and one light magic spell. If magic was unavailable, MAGIC starts at 15.",
+        "enableMagic": true
+      },
+      {
+        "name": "Lucky",
+        "description": "Add the percentage of this title's level to all rolls. Levels up when luck makes the difference."
+      },
+      { "name": "Unlucky", "description": "Inverse the title Lucky." },
+      {
+        "name": "Coward",
+        "description": "Gain +1% per level to skills when running away."
+      },
+      {
+        "name": "Prodigy",
+        "description": "Pick a stat. All values added to that stat are doubled, for a maximum of 4."
+      },
+      {
+        "name": "Beloved",
+        "description": "A Goddess grants you use of a skill."
+      },
+      { "name": "Hero", "description": "All EXP gain is multiplied by 5." },
+      {
+        "name": "Student",
+        "description": "All EXP gain is doubled; level up an additional skill at level up."
+      },
+      {
+        "name": "(Type) Magician",
+        "description": "Gain a magic spell of this type. Add +1% per title level to all spells of this type."
+      },
+      {
+        "name": "Ascendent",
+        "description": "Gain light or dark magic and Miracle or Calamity. For every title level, increase a stat of your choice by 2."
+      },
+      {
+        "name": "Resilient",
+        "description": "Every time you level up, gain 4 levels in a resistance of your choice."
+      },
+      {
+        "name": "Normal person",
+        "description": "All EXP gain is multiplied by 0.5."
+      }
+    ]
   },
   "age": {
     "range": [10, 70],
     "adjustments": [
-      { "min": 10, "max": 16, "modifiers": [{ "keys": ["ALL"], "amount": [-15, -10] }] },
-      { "min": 17, "max": 24, "modifiers": [{ "keys": ["ALL"], "amount": [-8, -1] }] },
-      { "min": 30, "max": 45, "modifiers": [{ "keys": ["INT"], "amount": [0, 15] }] },
-      { "min": 46, "max": 70, "modifiers": [{ "keys": ["INT"], "amount": [10, 25] }, { "keys": ["CON", "STR"], "amount": [-20, -5] }] }
+      {
+        "min": 10,
+        "max": 16,
+        "modifiers": [{ "keys": ["ALL"], "amount": [-15, -10] }]
+      },
+      {
+        "min": 17,
+        "max": 24,
+        "modifiers": [{ "keys": ["ALL"], "amount": [-8, -1] }]
+      },
+      {
+        "min": 30,
+        "max": 45,
+        "modifiers": [{ "keys": ["INT"], "amount": [0, 15] }]
+      },
+      {
+        "min": 46,
+        "max": 70,
+        "modifiers": [
+          { "keys": ["INT"], "amount": [10, 25] },
+          { "keys": ["CON", "STR"], "amount": [-20, -5] }
+        ]
+      }
     ]
   },
   "traits": {
     "beauty": {
-      "label": "Beauty", "range": [1, 10],
+      "label": "Beauty",
+      "range": [1, 10],
       "outcomes": [
-        { "min": 1, "max": 1, "output": "Ugly", "modifiers": [{ "keys": ["CHA"], "amount": [-15, -1] }] },
-        { "min": 10, "max": 10, "output": "Beautiful", "modifiers": [{ "keys": ["CHA"], "amount": [1, 15] }] }
+        {
+          "min": 1,
+          "max": 1,
+          "output": "Ugly",
+          "modifiers": [{ "keys": ["CHA"], "amount": [-15, -1] }]
+        },
+        {
+          "min": 10,
+          "max": 10,
+          "output": "Beautiful",
+          "modifiers": [{ "keys": ["CHA"], "amount": [1, 15] }]
+        }
       ]
     },
     "height": {
-      "label": "Height", "range": [1, 14], "defaultOutput": "Average",
+      "label": "Height",
+      "range": [1, 10],
+      "defaultOutput": "Average",
       "outcomes": [
-        { "min": 1, "max": 2, "output": "Very short", "modifiers": [{ "keys": ["STR"], "amount": [-5, -5] }, { "keys": ["AGI"], "amount": [5, 5] }] },
-        { "min": 12, "max": 14, "output": "Very tall", "modifiers": [{ "keys": ["AGI"], "amount": [-5, -5] }, { "keys": ["STR"], "amount": [5, 5] }] }
+        {
+          "min": 1,
+          "max": 1,
+          "output": "Very short",
+          "modifiers": [
+            { "keys": ["STR"], "amount": [-5, -5] },
+            { "keys": ["AGI"], "amount": [5, 5] }
+          ]
+        },
+        {
+          "min": 10,
+          "max": 10,
+          "output": "Very tall",
+          "modifiers": [
+            { "keys": ["AGI"], "amount": [-5, -5] },
+            { "keys": ["STR"], "amount": [5, 5] }
+          ]
+        }
       ]
     },
     "education": {
-      "label": "Education", "range": [1, 10], "defaultOutput": null,
+      "label": "Education",
+      "range": [1, 10],
+      "defaultOutput": null,
       "outcomes": [
-        { "min": 1, "max": 1, "output": "Uneducated", "modifiers": [{ "keys": ["INT"], "amount": [-5, -5] }], "skills": ["street smarts lvl 5"] },
-        { "min": 10, "max": 10, "output": "Educated", "modifiers": [{ "keys": ["INT"], "amount": [10, 10] }] }
+        {
+          "min": 1,
+          "max": 1,
+          "output": "Uneducated",
+          "modifiers": [{ "keys": ["INT"], "amount": [-5, -5] }],
+          "skills": ["Street smarts"]
+        },
+        {
+          "min": 10,
+          "max": 10,
+          "output": "Well educated",
+          "modifiers": [{ "keys": ["INT"], "amount": [15, 15] }]
+        }
       ]
     }
   }

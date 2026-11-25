@@ -1,6 +1,6 @@
 (function (root) {
   const core = typeof module !== 'undefined' && module.exports ? require('./generator.js') : root.NPCGenerator;
-  const { roll, sample, weighted } = core;
+  const { roll, sample, weighted, generateWeapon, formatAttack, generateResistancesAndVulnerabilities, visibleResistances } = core;
   const statKeys = ['STR', 'CON', 'AGI', 'INT', 'CHA', 'MAG'];
   const statLabels = { STR: 'Strength', CON: 'Constitution', AGI: 'Agility', INT: 'Intelligence', CHA: 'Charm', MAG: 'Magic' };
   const notApplicable = 'Not Applicable';
@@ -54,15 +54,11 @@
     let magical = false;
     let magicSkillCount = 0;
     const skills = [];
-    const choices = [];
     for (const extra of extras) {
       applyModifiers(stats, extra.modifiers, level);
       magical ||= Boolean(extra.enableMagic);
       magicSkillCount += extra.magicSkills ?? 0;
       skills.push(...(extra.skills ?? []));
-      if (extra.choice) {
-        choices.push({ label: extra.choice.label, value: extra.choice.options[roll([0, extra.choice.options.length - 1], random)] });
-      }
     }
     for (const key of statKeys) stats[key] = Math.max(1, stats[key]);
     const substats = Object.fromEntries(rules.substats.map(substat => [
@@ -76,12 +72,16 @@
       level,
       magical,
       includeMagic: magical,
+      showCharm: extras.some(extra => extra.showCharm),
       stats,
       substats,
       extras: extras.map(extra => ({ category: extra.category, name: extra.name })),
       skills,
       magicSkills: sample(magicSkillList(), magicSkillCount, random),
-      choices
+      resistancesAndVulnerabilities: generateResistancesAndVulnerabilities(),
+      attack: extras.some(extra => extra.usesWeapon)
+        ? generateWeapon(random)
+        : rules.attacks[roll([0, rules.attacks.length - 1], random)]
     };
   }
 
@@ -102,14 +102,16 @@
   }
 
   function statTotal(monster) {
-    const total = statKeys.filter(key => !isMuted(monster, key)).reduce((sum, key) => sum + monster.stats[key], 0);
+    const total = statKeys.filter(key => (key !== 'CHA' || monster.showCharm) && !isMuted(monster, key)).reduce((sum, key) => sum + monster.stats[key], 0);
     return Math.floor(total / rules.substatDivisor);
   }
 
   function sheet(monster) {
     const cell = (key, label, value) => ({ key, label, value: formatValue(monster, key, value), muted: isMuted(monster, key) });
     return {
-      stats: rules.sheet.stats.map(key => cell(key, key, monster.stats[key])),
+      stats: rules.sheet.stats.map(key => key === 'CHA' && !monster.showCharm
+        ? { key, label: '', value: '', muted: false }
+        : cell(key, key, monster.stats[key])),
       combat: rules.sheet.combat.map(key => cell(key, key, monster.substats[key])),
       side: rules.sheet.side.map(entry => {
         if (entry.key) return { ...cell(entry.key, entry.label, monster.substats[entry.key]), prefix: entry.prefix ?? '' };
@@ -128,9 +130,11 @@
   }
 
   function sections(monster) {
+    const resistances = visibleResistances(monster.resistancesAndVulnerabilities);
     return [
       { label: 'Extras:', text: monster.extras.map(formatExtra).join(', ') },
-      ...monster.choices.map(choice => ({ label: `${choice.label}:`, text: choice.value })),
+      ...(resistances.length ? [{ label: 'Resistances & Vulnerabilities:', text: resistances.join('\n') }] : []),
+      { label: 'Attack:', text: formatAttack(monster.attack) },
       { label: 'Skills:', text: monster.skills.map(skill => `${skill.name}: ${skill.description}`).join('\n') },
       ...(monster.magicSkills.length ? [{ label: 'Magic Skills:', text: monster.magicSkills.map(skill => `${skill.name} (${skill.school}): ${skill.description}`).join('\n') }] : [])
     ];
@@ -140,7 +144,7 @@
     const layout = sheet(monster);
     return [
       formatHeading(monster),
-      ...layout.stats.map((stat, index) => `${stat.label}: ${stat.value} | ${layout.combat[index].label}: ${layout.combat[index].value}`),
+      ...layout.stats.map((stat, index) => `${stat.label ? `${stat.label}: ${stat.value} | ` : ''}${layout.combat[index].label}: ${layout.combat[index].value}`),
       ...layout.side.filter(entry => entry.value !== '').map(entry => `${entry.label} ${entry.prefix}${entry.value}`),
       '',
       ...sections(monster).map(section => `${section.label} ${section.text}`)
