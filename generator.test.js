@@ -67,25 +67,25 @@ test('unconfigured type weights do not silently select Human', () => {
   } finally { generator.configure(rolls, types); }
 });
 
-test('the eight supplied type weights total 100 and preserve fractional probabilities', () => {
-  const expected = { HUMAN: 60, ELEMENTAL: 6, OMNISCIENT: 0.5, DRAGON: 5.5, VAMPIRE: 6, SLIME: 6, MERMAID: 6, UNDEAD: 10 };
+test('available type weights are applied proportionally', () => {
+  const expected = { HUMAN: 60, UNDEAD: 10 };
   assert.deepEqual(Object.fromEntries(types.types.map(value => [value.type, value.weight])), expected);
-  assert.equal(types.types.reduce((total, value) => total + value.weight, 0), 100);
   const counts = Object.fromEntries(types.types.map(value => [value.type, 0]));
-  for (let index = 0; index < 1000; index++) counts[generator.selectType(() => (index + 0.5) / 1000)]++;
+  for (let index = 0; index < 700; index++) counts[generator.selectType(() => (index + 0.5) / 700)]++;
   for (const [type, weight] of Object.entries(expected)) assert.equal(counts[type], weight * 10);
 });
 
 test('non-Human types without subtypes output only a type and use shared rules', () => {
-  for (const type of types.types.filter(value => !value.subtypes)) {
-    const npc = generator.generate({ type: type.type, age: 25 }, () => 0.5);
-    assert.equal(npc.type, type.type);
+  try {
+    generator.configure(rolls, { types: [{ type: 'Example', weight: 1 }] });
+    const npc = generator.generate({ type: 'Example', age: 25 }, () => 0.5);
+    assert.equal(npc.type, 'Example');
     assert.equal(npc.subtype, '');
     assert.equal(npc.level, undefined);
     assert.deepEqual(npc.traits, []);
-    assert.ok(generator.formatType(npc).startsWith(`${type.type} | Age: 25`));
+    assert.ok(generator.formatType(npc).startsWith('Example | Age: 25'));
     assert.ok(Object.values(npc.stats).every(Number.isFinite));
-  }
+  } finally { generator.configure(rolls, types); }
 });
 
 test('weighted selection uses supplied weights', () => {
@@ -586,58 +586,8 @@ test('listTypes exposes every type with its subtype names and default for the dr
   assert.deepEqual(Object.keys(listed), types.types.map(value => value.type));
   assert.deepEqual(listed.HUMAN.subtypes, ['Child', 'Adult', 'Lord', 'Magician']);
   assert.equal(listed.HUMAN.defaultSubtype, 'Adult');
-  assert.deepEqual(listed.ELEMENTAL.subtypes, ['Sprite', 'Fairy', 'Elemental', 'Genasi']);
-  assert.equal(listed.ELEMENTAL.defaultSubtype, 'Sprite');
-  assert.deepEqual(listed.DRAGON.subtypes, []);
-  assert.equal(listed.DRAGON.defaultSubtype, undefined);
-});
-
-test('Elemental subtypes are never selected at random and must be chosen explicitly', () => {
-  const random = generator.generate({ type: 'ELEMENTAL', age: 25 }, () => 0.5);
-  assert.equal(random.subtype, '');
-  assert.equal(random.level, undefined);
-  for (const subtype of ['Sprite', 'Fairy', 'Elemental', 'Genasi']) {
-    const npc = generator.generate({ type: 'ELEMENTAL', subtype, age: 25, includeMagic: false }, () => 0.5);
-    assert.equal(npc.subtype, subtype);
-    assert.equal(npc.includeMagic, true);
-    assert.deepEqual(npc.traits, []);
-    assert.deepEqual(npc.skills, []);
-    assert.ok(generator.formatType(npc).startsWith(`ELEMENTAL (${subtype}) | Age: 25 | Level: `));
-  }
-});
-
-test('Elemental subtype level ranges, bonuses, and title rolls match the configured rules', () => {
-  const original = generator.generateStats;
-  try {
-    generator.generateStats = () => Object.fromEntries(generator.statKeys.map(key => [key, 30]));
-    const options = subtype => ({ type: 'ELEMENTAL', subtype, age: 25 });
-    const maxLevel = () => sequence([0.9999, 0.9999], 0);
-    const sprite = generator.generate(options('Sprite'), () => 0);
-    assert.equal(sprite.level, 1);
-    assert.deepEqual(sprite.stats, { STR: 31, CON: 31, CHA: 31, INT: 30, AGI: 30, MAG: 30 });
-    assert.deepEqual(sprite.titles, ['Make a new title']);
-    assert.equal(generator.generate(options('Sprite'), maxLevel()).level, 5);
-    const fairy = generator.generate(options('Fairy'), () => 0);
-    assert.equal(fairy.level, 1);
-    assert.deepEqual(fairy.stats, { STR: 31, CON: 31, CHA: 30, INT: 30, AGI: 30, MAG: 32 });
-    assert.deepEqual(fairy.titles, ['Light', 'Make a new title']);
-    assert.equal(generator.generate(options('Fairy'), maxLevel()).level, 80);
-    const elemental = generator.generate(options('Elemental'), () => 0);
-    assert.equal(elemental.level, 1);
-    assert.deepEqual(elemental.stats, { STR: 31, CON: 31, CHA: 30, INT: 30, AGI: 30, MAG: 31 });
-    assert.deepEqual(elemental.titles, ['Light', 'Make a new title']);
-    assert.equal(generator.generate(options('Elemental'), maxLevel()).level, 25);
-    const genasi = generator.generate(options('Genasi'), () => 0);
-    assert.equal(genasi.level, 1);
-    assert.deepEqual(genasi.stats, { STR: 33, CON: 33, CHA: 33, INT: 30, AGI: 30, MAG: 30 });
-    assert.deepEqual(genasi.titles, ['Light', 'Make a new title']);
-    assert.equal(generator.generate(options('Genasi'), maxLevel()).level, 20);
-    const levelled = generator.generate(options('Elemental'), sequence([0.9999, 0.9999], 0.9999));
-    assert.equal(levelled.level, 25);
-    assert.deepEqual(levelled.stats, { STR: 55, CON: 55, CHA: 30, INT: 30, AGI: 30, MAG: 55 });
-    assert.equal(levelled.titles[0], 'Electricity');
-    assert.ok(levelled.titles[1].startsWith('Normal person:'));
-  } finally { generator.generateStats = original; }
+  assert.deepEqual(listed.UNDEAD.subtypes, ['Skeleton', 'Walking Corpse', 'Corpse Mage', 'Lich', 'Fierce Corpse', 'Skeleton Warrior', 'Archer Skeleton', 'Shield Skeleton', 'Healer Skeleton']);
+  assert.equal(listed.UNDEAD.defaultSubtype, 'Skeleton');
 });
 
 test('magic type titles come from the supplied table and are distinct', () => {
