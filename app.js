@@ -2,8 +2,8 @@
   const { generate, format, formatType, formatSection, statLabels, visibleStatKeys } = NPCGenerator;
   const byId = id => document.getElementById(id);
   const npcSections = [
+    ['temperaments', 'Temperaments:'],
     ['traits', 'Traits:'],
-    ['resistancesAndVulnerabilities', 'Resistances & Vulnerabilities:'],
     ['attack', 'Attack:'],
     ['relationships', 'Relationships & Organizations:'],
     ['titles', 'Titles:'],
@@ -20,21 +20,37 @@
   }
   function npcView(npc) {
     const keys = visibleStatKeys(npc);
+    const temperaments = npc.temperaments
+      ?? (npc.traitRolls ?? []).filter(result => result.category === 'temperament').map(result => result.output);
+    const traits = npc.traits.filter(trait => !trait.startsWith('Temperament: '));
+    const resistances = NPCGenerator.visibleResistances(npc.resistancesAndVulnerabilities);
+    const attacks = NPCGenerator.formatAttacks(npc);
+    const values = {
+      temperaments,
+      traits,
+      attack: attacks,
+      relationships: npc.relationships,
+      titles: npc.titles,
+      skills: npc.skills,
+      specialitySkills: npc.specialitySkills,
+      magicSkills: npc.magicSkills
+    };
     return {
       heading: formatType(npc),
-      layout: 'row',
-      headers: keys.map(key => statLabels[key]),
-      rows: [keys.map(key => ({ text: String(npc.stats[key]) }))],
+      layout: 'sheet',
+      sheet: {
+        stats: keys.map(key => ({ label: statLabels[key], value: String(npc.stats[key]), muted: false })),
+        combat: Object.entries(NPCGenerator.substats(npc))
+          .map(([label, value]) => ({ label, value: String(value), muted: false })),
+        side: [
+          { label: 'Hit Points', prefix: 'Max: ', value: String(NPCGenerator.hitPoints(npc)), muted: false },
+          { label: 'Mana', prefix: 'Max: ', value: String(npc.mana), muted: false },
+          { label: 'Resistances & Vulnerabilities', prefix: '', value: resistances.join('\n') || 'None', muted: false }
+        ]
+      },
       sections: npcSections
-        .filter(([field]) => (field !== 'traits' || formatSection(npc.traits))
-          && (field !== 'magicSkills' || npc.magicSkills.length)
-          && (field !== 'resistancesAndVulnerabilities' || NPCGenerator.visibleResistances(npc[field]).length))
-        .map(([field, label]) => ({
-          label,
-          text: field === 'resistancesAndVulnerabilities' ? NPCGenerator.visibleResistances(npc[field]).join('\n')
-            : field === 'relationships' || field === 'magicSkills' ? npc[field].join('\n')
-            : field === 'attack' ? NPCGenerator.formatAttacks(npc) : formatSection(npc[field])
-        })),
+        .filter(([field]) => formatSection(values[field]))
+        .map(([field, label]) => ({ label, text: formatSection(values[field]) })),
       plainText: format(npc)
     };
   }
@@ -104,10 +120,7 @@
   }
   function render() {
     const view = currentView();
-    const isMonster = current.kind === 'monster';
     byId('npc-type').textContent = view.heading;
-    byId('include-magic').checked = isMonster ? MonsterGenerator.showsMagic(current) : current.includeMagic;
-    byId('include-magic').disabled = false;
     byId('stats-table').hidden = view.layout === 'sheet';
     byId('monster-sheet').hidden = view.layout !== 'sheet';
     if (view.layout === 'sheet') renderSheet(view.sheet);
@@ -134,19 +147,22 @@
     table.style.cssText = 'border-collapse: collapse; table-layout: fixed; width: 100%; margin-bottom: 20px;';
     if (view.layout === 'sheet') {
       const body = table.createTBody();
-      const perBlock = view.sheet.stats.length / view.sheet.side.length;
-      view.sheet.stats.forEach((stat, index) => {
+      const rowCount = Math.max(view.sheet.stats.length, view.sheet.combat.length, view.sheet.side.length);
+      const rowsPerSide = Math.ceil(rowCount / view.sheet.side.length);
+      for (let index = 0; index < rowCount; index++) {
         const row = body.insertRow();
-        htmlCell(row, stat.label, false, ' font-weight: bold;');
-        htmlCell(row, stat.value, stat.muted);
-        htmlCell(row, view.sheet.combat[index].label, false, ' font-weight: bold;');
-        htmlCell(row, view.sheet.combat[index].value, view.sheet.combat[index].muted);
-        if (index % perBlock === 0) {
-          const entry = view.sheet.side[index / perBlock];
+        const stat = view.sheet.stats[index];
+        const combat = view.sheet.combat[index];
+        htmlCell(row, stat?.label ?? '', false, ' font-weight: bold;');
+        htmlCell(row, stat?.value ?? '', stat?.muted ?? false);
+        htmlCell(row, combat?.label ?? '', false, ' font-weight: bold;');
+        htmlCell(row, combat?.value ?? '', combat?.muted ?? false);
+        if (index % rowsPerSide === 0) {
+          const entry = view.sheet.side[Math.floor(index / rowsPerSide)];
           const cell = htmlCell(row, `${entry.label}\n${entry.prefix}${entry.value}`.trim(), entry.muted, ' vertical-align: top;');
-          cell.rowSpan = perBlock;
+          cell.rowSpan = Math.min(rowsPerSide, rowCount - index);
         }
-      });
+      }
       return table;
     }
     const headers = table.createTHead().insertRow();
@@ -197,8 +213,7 @@
   function selectionOptions() {
     return {
       type: byId('type-select').value,
-      subtype: byId('subtype-select').value || undefined,
-      includeMagic: byId('include-magic').checked
+      subtype: byId('subtype-select').value || undefined
     };
   }
   byId('type-select').addEventListener('change', renderSubtypeOptions);
@@ -211,11 +226,6 @@
     current = MonsterGenerator.generate({ level: Number(byId('level-select').value) });
     render();
     notify('Monster stat block updated.');
-  });
-  byId('include-magic').addEventListener('change', () => {
-    if (!current) return;
-    current.includeMagic = byId('include-magic').checked;
-    render();
   });
   byId('copy').addEventListener('click', async () => {
     const plainText = currentView().plainText;
@@ -233,7 +243,7 @@
     catch { notify('Clipboard unavailable. You can select and copy the stat block.'); }
   });
   async function initialize() {
-    for (const id of ['generate', 'generate-monster', 'copy', 'include-magic', 'type-select', 'subtype-select', 'level-select']) byId(id).disabled = true;
+    for (const id of ['generate', 'generate-monster', 'copy', 'type-select', 'subtype-select', 'level-select']) byId(id).disabled = true;
     try {
       const paths = ['data/rolls.json', 'data/types.json', 'data/monsters.json'];
       const responses = await Promise.all(paths.map(path => fetch(path)));

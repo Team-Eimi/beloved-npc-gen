@@ -12,9 +12,6 @@ h1, h2 { margin: 0; font-family: var(--serif); font-weight: 500; }
 .generator-rows { display: flex; flex-direction: column; padding-right: 22px; border-right: 1px solid var(--line); }
 .control-group { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
 .control-group + .control-group { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.magic-toggle { display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; }
-.magic-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--green); }
-.magic-toggle input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .select-field { display: flex; align-items: center; gap: 7px; font-size: 13px; }
 .select-field select { font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 5px; min-height: 36px; padding: 4px 8px; }
 .select-field select:disabled { opacity: 0.5; }

@@ -35,7 +35,7 @@
       { "category": "Boss", "weight": 1, "list": "boss" },
       { "category": "Animal", "weight": 3, "list": "animal" },
       { "category": "Trait", "weight": 2, "list": "trait" },
-      { "category": "Magical", "weight": 1, "entry": { "name": "Magical", "enableMagic": true, "magicSkills": 1 } }
+      { "category": "Magical", "weight": 1, "entry": { "name": "Magical", "magicSkills": 1 } }
     ]
   },
   "boss": [
@@ -52,7 +52,6 @@
     {
       "name": "Gamemaster",
       "skills": [{ "name": "Gamemaster", "description": "This creature puppets others to its will." }],
-      "enableMagic": true,
       "modifiers": [{ "key": "INT", "perLevel": 2 }, { "key": "MAG", "perLevel": 2 }]
     },
     {
@@ -69,19 +68,16 @@
     {
       "name": "Sheds magic",
       "skills": [{ "name": "Magical tap", "description": "All creatures associated with this creature have MAG enabled." }],
-      "enableMagic": true,
       "modifiers": [{ "key": "MAG", "perLevel": 10 }, { "key": "CON", "perLevel": -2 }, { "key": "STR", "perLevel": -2 }]
     },
     {
       "name": "Healer",
       "skills": [{ "name": "Heal (Monster)", "description": "Heal an amount of HP = to 1/5 of your MAG stat within a radius of ft = to your MAG. Costs 5 Mana." }],
-      "enableMagic": true,
       "modifiers": [{ "key": "MAG", "perLevel": 5 }]
     },
     {
       "name": "Antimagic",
       "skills": [{ "name": "Antimagic", "description": "All Magic cast within a radius = to this creature's MAG is invalidated, unless the Power of the caster is twice this creature's Power." }],
-      "enableMagic": true,
       "modifiers": [{ "key": "MAG", "perLevel": 2 }]
     },
     {
@@ -92,7 +88,6 @@
     },
     {
       "name": "Spellcaster",
-      "enableMagic": true,
       "magicSkills": 2
     },
     {
@@ -221,13 +216,71 @@
     { "name": "Corrosive to objects" },
     { "name": "Wants something" }
   ],
+  "monsterMagic": [
+    { "name": "Mana lust", "description": "Attacks done by this creature steal Mana equal to the amount of damage dealt." },
+    { "name": "Hypnosis", "description": "On a successful Power vs Resist check, the opponent is charmed. This charm lasts until they are injured." },
+    { "name": "Poison", "description": "When this creature successfully attacks, they poison the target. Poisoned targets take 1 damage every turn for a number of turns equal to the poisoner's Defense." },
+    { "name": "Parasitic", "description": "This creature roots into its host, slowly killing it." },
+    { "name": "Regrow", "description": "If a limb is severed, sacrifice 2 HP to regrow it." },
+    { "name": "Semiaquatic", "description": "Can breathe underwater and in air." },
+    { "name": "Vampirism", "description": "When this creature bites, it can regain HP equal to half the damage dealt." },
+    { "name": "Disease", "description": "Any creature successfully injured by this creature becomes sick." },
+    { "name": "Revive", "description": "When this creature hits 0 HP, if <DM created condition>, it is revived at 50% HP. Add Level x 5 to HP." },
+    { "name": "Tunneler", "description": "This creature lives deep, deep beneath, and attacks from the earth." },
+    { "name": "Gamemaster", "description": "This creature puppets others to its will." },
+    { "name": "Shapeshifting", "description": "Has a human form." },
+    { "name": "Terraforming", "description": "Create traps in the creature's territory. Each one costs 1 Mana." },
+    { "name": "Magical tap", "description": "All creatures associated with this creature have MAG enabled." },
+    { "name": "Heal (Monster)", "description": "Heal an amount of HP equal to 1/5 of your MAG stat within a radius in feet equal to your MAG. Costs 5 Mana." },
+    { "name": "Antimagic", "description": "All Magic cast within a radius equal to this creature's MAG is invalidated, unless the Power of the caster is twice this creature's Power." },
+    { "name": "Manipulator", "description": "This creature will do all it can to manipulate its targets using their emotions." },
+    { "name": "Multiattack", "description": "This creature acts twice per turn if the action is an attack." },
+    { "name": "Petrification", "description": "When this creature's attack hits, make a Resist roll or become petrified." },
+    { "name": "Slow", "description": "Moves at half speed." },
+    { "name": "Bony", "description": "100% Magic Resistance." },
+    { "name": "Fragile", "description": "Vulnerable to Damage." },
+    { "name": "Undead", "description": "Upon reaching 0 HP, roll luck. On <50, reanimate at 1 HP." },
+    { "name": "Sniper", "description": "All damage done with a ranged weapon is doubled." },
+    { "name": "Frost arrow", "description": "Instead of dealing damage, freeze the target for a number of turns equal to the damage that would have been taken. Each turn they may make a Frost Resistance check." },
+    { "name": "Poison arrow", "description": "Instead of dealing damage, deal 1 damage to the target for a number of turns equal to the damage that would have been taken." },
+    { "name": "Sleep arrow", "description": "Instead of dealing damage, the target falls asleep until woken up." },
+    { "name": "Gravity", "description": "Costs 10 Mana. Manipulate gravity, causing any of the following effects on a success." },
+    { "name": "Terraform (World Elf)", "description": "Manipulate a square mileage of earth equal to your Power stat. Costs 2 Mana." },
+    { "name": "Climate control", "description": "Manipulate the climate of an area in miles equal to your Power. Costs 30 Mana." },
+    { "name": "Annihilation", "description": "Summon a massive, superhot ball of flames that deals damage equal to your MAG in a diameter in feet equal to your Power." },
+    { "name": "River God", "description": "When near your body of water, manipulate it at will. Anything pulled into it will drown in 10 turns. To fight against this spell, they must succeed a Defense vs your Power." },
+    { "name": "Trick", "description": "Create a small sensory trick such as an illusion or temporarily changing an appearance." },
+    { "name": "Treat", "description": "Create a small reward, like a boost of 10% on your next task or a yummy snack." },
+    { "name": "Natural form", "description": "Become one with a mass of land, such as a mountain range or forest. Speaking is through the wind, trees, earth, or dirt. Moving is a slow process." },
+    { "name": "Pack call", "description": "Call for any wolves nearby, within a range of miles equal to your CON." },
+    { "name": "True mate", "description": "On birth, all wolves are given a mate by the Lunar World Elves. Upon finding them, they cannot part. Their pheromones act as an aphrodisiac. Gain the Obsessed title." },
+    { "name": "Pheromone", "description": "Secrete pheromones in a circle centered on you with a diameter in feet equal to your Defense. On a roll of your Attack vs their Resist, wolves must submit to you." },
+    { "name": "Pheromone control", "description": "Secrete pheromones in a circle centered on you with a diameter in feet equal to your Defense. On a contested Resist roll, wolves must obey your orders, even if it is to die." },
+    { "name": "Heat cycle", "description": "Choose a day in the month. For the two days leading up to it and after it, double your Attack. On the chosen day, you are incapacitated with the need to mate." },
+    { "name": "Heat cycle (alpha)", "description": "Choose three days in a row in a month. For three days leading up to it and after it, double your Attack. On those days, you are incapacitated with the need to mate. If you mate with anyone other than your true mate, they take damage equal to your Attack every time you engage in intercourse." },
+    { "name": "Bond", "description": "Choose a humanoid to bond with and serve as your master. When that master is within ten feet of you, you may take all damage on their behalf. When they are injured, you may use a free reaction to attack the offender." },
+    { "name": "Painful bite", "description": "Any drain action may be taken simultaneously. The vampire may not regain HP through rest, and must bite to heal. The bite is painful and requires an Attack vs Defense or Resist check to succeed." },
+    { "name": "Lustful bite", "description": "Any drain action may be taken simultaneously. The vampire may not regain HP through rest, and must bite to heal. The bite is pleasurable and targets must succeed a Charm Resistance roll to fight back." },
+    { "name": "Life steal", "description": "When ingesting sexual fluids, steal the mana of the target to replenish your own. Additionally, steal a maximum number of stat points equal to your Power. The target temporarily loses those stat points, and you gain them for a day." },
+    { "name": "Mute", "description": "This creature cannot talk." },
+    { "name": "Parasite", "description": "Plant a parasite within another on a successful attack. Anyone with a parasite within them must obey commands, from any distance, with a Power vs Resist roll. The parasite dies when the vampire or host dies. Costs 5 Mana." },
+    { "name": "Shadow Jump", "description": "When in a shadow (already used Obscure), jump to another one, unseen. Costs 1 Mana." },
+    { "name": "Sweet smell", "description": "Lure a target with a sweet scent with a Power vs Resist check. Costs 1 Mana." },
+    { "name": "Kindness", "description": "Encourage another by presence to be kinder with a Power vs Resist or Charm Resistance check. Costs 3 Mana." },
+    { "name": "Aphordisiac", "description": "Emit a scent that elicits desire with a Power vs Resist or Charm Resistance check. Costs 2 Mana." },
+    { "name": "Emotion", "description": "Implant a false emotion with a Power vs Resist or Charm Resistance check. Costs 3 Mana." },
+    { "name": "Coveted body", "description": "Eating the body of this creature will enhance the consumer, adding all stat points to their pools." }
+  ],
   "magic": {
     "Light": [
       { "name": "Heal", "description": "Heal an amount of HP = to 1/5 of your MAGIC stat on touch. Costs 5 Mana." },
       { "name": "Light mote", "description": "Create light in a radius of 30 ft. Costs 1 Mana." },
       { "name": "Seal", "description": "Seal a creature in glowing chains of light. Costs 10 Mana. Contested Power vs target Resist per turn to maintain." },
       { "name": "Purify", "description": "Deal light damage = to your Power. Maximum distance = Magic. Costs 2 Mana." },
-      { "name": "Halo", "description": "Shroud yourself in light magic, healing 4 HP in a radius of 5 ft every turn for 10 turns. Costs 5 Mana." }
+      { "name": "Halo", "description": "Shroud yourself in light magic, healing 4 HP in a radius of 5 ft every turn for 10 turns. Costs 5 Mana." },
+      { "name": "Cure", "description": "Cure a sickness or disease. Costs 5 Mana." },
+      { "name": "Shroud of light", "description": "Create a shroud of light in a style of your preference for 10 minutes. It may take one of the following qualities. Costs 10 Mana." },
+      { "name": "Blessing", "description": "Give someone +10% on their next task. Costs 1 Mana." }
     ],
     "Darkness": [
       { "name": "Destroy", "description": "Deal damage = to your Power. Maximum distance = Magic. Costs 1 Mana." },
@@ -235,13 +288,21 @@
       { "name": "Curse", "description": "Curse a creature. For every turn your Power wins against their Resist, they will be confused, unable to act except to take random actions. Random action d4: 1- attack self, 2- wander aimlessly, 3- do nothing, 4- attack random nearby target." },
       { "name": "Shadow stalker", "description": "Enter someone's shadow. You are hidden until you leave. Costs 10 Mana." },
       { "name": "Vacuum", "description": "Obliterate the air in a radius = to your Power. Costs 2 Mana." },
-      { "name": "Hide", "description": "Obfuscate your presence. Lasts until you move. Costs 2 Mana." }
+      { "name": "Hide", "description": "Obfuscate your presence. Lasts until you move. Costs 2 Mana." },
+      { "name": "Shroud of darkness", "description": "Create a shroud of darkness in a style of your preference for 10 minutes. It may take one of the following qualities. Costs 10 Mana." },
+      { "name": "Corrupt", "description": "Cause a weapon on touch to corrupt, doubling its damage modifier. On a miss, it damages the user by 1. Costs 2 Mana." }
     ],
     "Fire": [
       { "name": "Create flame", "description": "Light a small flame, like a lighter would. No Mana cost." },
       { "name": "Fireball", "description": "Cast a fireball that goes 30 ft forward and hits all targets within its path for damage = to your Power. Costs 5 Mana." },
       { "name": "Manipulate flames", "description": "Manipulate flames in a radius of ft = to your Magic stat." },
-      { "name": "Flame arc", "description": "Create flames in a burst originating from your body and going out in all directions for 30 ft, dealing damage = to your Power to all targets." }
+      { "name": "Flame arc", "description": "Create flames in a burst originating from your body and going out in all directions for 30 ft, dealing damage = to your Power to all targets." },
+      { "name": "Blue flame", "description": "For its next attack, a weapon of your choice becomes hot, dealing additional damage = to your Power. Costs 3 Mana." },
+      { "name": "Summon sprite", "description": "Summon a sprite with a 5 in all stats that acts on your command. It disappears on death. Costs 10 Mana." },
+      { "name": "Meteor", "description": "Summon a massive ball of fire to the earth, dealing damage = to your Power in a circle with a diameter = to your Power. Costs 15 Mana." },
+      { "name": "Wall of fire", "description": "Encircle a target in flames, dealing damage = to your Power whenever a target tries to pass." },
+      { "name": "Smith", "description": "Modify a weapon to increase its damage by 1. Can only be done to a single weapon once. On failure, the weapon disintegrates. On a critical, its damage increases by 2. Costs 20 Mana." },
+      { "name": "Flame shroud", "description": "Engulf yourself in flames for one minute, dealing damage = to your Power to all you touch. Costs 10 Mana." }
     ],
     "Water": [
       { "name": "Create water", "description": "Create a small amount of water, enough to fit into a cup. No Mana cost." },
@@ -249,7 +310,13 @@
       { "name": "Fog", "description": "Create a thick fog in a 100 ft radius. All creatures within have to succeed on a Perception task to take their actions. Costs 2 Mana." },
       { "name": "Manipulate water", "description": "Manipulate water in a radius of ft = to your Magic stat." },
       { "name": "Water bindings", "description": "Grapple a target. They may initiate a Power vs Strength check every turn to get out. Costs 2 Mana." },
-      { "name": "Sublimate", "description": "Boil the blood within a living target on touch, dealing damage = to Power, ignoring Resistances. Costs 10 Mana." }
+      { "name": "Sublimate", "description": "Boil the blood within a living target on touch, dealing damage = to Power, ignoring Resistances. Costs 10 Mana." },
+      { "name": "Summon sprite", "description": "Summon a sprite with a 5 in all stats that acts on your command. It disappears on death. Costs 10 Mana." },
+      { "name": "Water bullet", "description": "Shoot a number of armor-penetrating bullets = to your Power. Each deals 1 damage, but can be resisted by Damage and Frost resistance. Costs 8 Mana." },
+      { "name": "Snowstorm", "description": "Create a snowstorm." },
+      { "name": "Walk on water", "description": "Walk on water for an hour. Costs 2 Mana." },
+      { "name": "Breathe underwater", "description": "Breathe underwater for 1 hour. Costs 1 Mana." },
+      { "name": "Quick Swimming", "description": "Double movement speed underwater for an hour. Costs 2 Mana." }
     ],
     "Earth": [
       { "name": "Terraform", "description": "Manipulate a square footage of earth = to your Power stat. Costs 2 Mana. Rocks have HP = to how much square footage they are before crumbling." },
@@ -257,7 +324,12 @@
       { "name": "Sharpen edge", "description": "Sharpen metal to a razor edge, granting it additional damage = to your Power for a # of uses = to 1/2 your Power rounded down. Costs 4 Mana." },
       { "name": "Catapult", "description": "Fling rock in the air, dealing damage = to your Power. Maximum distance = Magic. Costs 2 Mana." },
       { "name": "Influence creature", "description": "Influence a creature whose Intelligence is lower than your Magic. They can obey minor commands, such as attack, sit, and carry, but will not harm themself and will still prioritize their own instincts. Costs 3 Mana." },
-      { "name": "Venom strike", "description": "Adds poison to a weapon attack. This poison reduces the opponent's Physical Damage Resistance by your Power, minus their Poison Resistance, for 1 minute. Costs 2 Mana." }
+      { "name": "Venom strike", "description": "Adds poison to a weapon attack. This poison reduces the opponent's Physical Damage Resistance by your Power, minus their Poison Resistance, for 1 minute. Costs 2 Mana." },
+      { "name": "Summon sprite", "description": "Summon a sprite with a 5 in all stats that acts on your command. It disappears on death. Costs 10 Mana." },
+      { "name": "Grow", "description": "Make a plant grow. Costs 1 Mana." },
+      { "name": "Decay", "description": "On touch, organic matter decays, taking damage = to your Power. This damage cannot be healed by anything but white magic." },
+      { "name": "Vitality", "description": "Enhance a living being, granting it a bonus to its stats = to your Power for 1 minute. Costs 5 Mana." },
+      { "name": "Tunnel", "description": "Tunnel beneath the earth. Your next attack has a +10 to accuracy. Costs 3 Mana." }
     ],
     "Wind": [
       { "name": "Air pocket", "description": "Create a pocket of air in a radius = to your Power. Lasts 10 minutes. Costs 3 Mana." },
@@ -265,14 +337,61 @@
       { "name": "Tornado", "description": "Create a swirling vortex, pulling all those in a radius = to your Magic who fail a Constitution roll inside for as many turns as they fail a Power vs Strength check. Costs 5 Mana." },
       { "name": "Levitation", "description": "Float a # of feet = to your Power off the ground. Lasts 10 minutes. Costs 2 Mana." },
       { "name": "Speed Boost", "description": "Double movement speed for those in a 5 ft radius next to you for 10 minutes. Costs 2 Mana." },
-      { "name": "Move", "description": "Move a small object a # of feet = to your Power. Costs 1 Mana." }
+      { "name": "Move", "description": "Move a small object a # of feet = to your Power. Costs 1 Mana." },
+      { "name": "Summon sprite", "description": "Summon a sprite with a 5 in all stats that acts on your command. It disappears on death. Costs 10 Mana." },
+      { "name": "Fly", "description": "For 1 minute, you can fly. Costs 5 Mana." },
+      { "name": "Push", "description": "Knock over a target on a Power vs Defense roll. While prone, all attacks against them succeed. Costs 3 Mana." },
+      { "name": "Sound", "description": "Make a short sound a maximum number of feet equal to your MAG away. Costs 1 Mana." }
     ],
     "Electricity": [
       { "name": "Lightning", "description": "Call forth a great bolt, causing damage = to your Power to everyone in a 20 ft radius (or more if in water). Must be outdoors. Double damage for targets wearing metal. Maximum distance = Magic. Costs 3 Mana." },
       { "name": "Spark", "description": "Cast a small arc of electricity towards someone, shocking them for as many turns as they fail a Power vs. Constitution roll." },
       { "name": "Surge", "description": "On touch, cause damage = to Power. Costs 1 Mana." },
       { "name": "Supercharge", "description": "Charge reflexes on touch, granting a bonus = to Power to all Agility tasks for 10 minutes. Costs 3 Mana." },
-      { "name": "Manipulate electronic", "description": "Force an electronic to turn off, surge, or explode. Damage of explosion is always 4. Costs 2 Mana." }
+      { "name": "Manipulate electronic", "description": "Force an electronic to turn off, surge, or explode. Damage of explosion is always 4. Costs 2 Mana." },
+      { "name": "Summon sprite", "description": "Summon a sprite with a 5 in all stats that acts on your command. It disappears on death. Costs 10 Mana." },
+      { "name": "Plasma", "description": "Supercharge particles, dealing damage = to your Power x 2 on touch. Costs 10 Mana." },
+      { "name": "Convert", "description": "Recharge Mana with electricity, causing a temporary blackout. Charges 4 Mana." },
+      { "name": "Electric arc", "description": "Attack multiple targets, splitting the damage caused by your Power among them. Costs 2 Mana." },
+      { "name": "Ground", "description": "Take all of the electricity out of an area of feet = to your MAG. Costs 5 Mana." }
+    ],
+    "Blood": [
+      { "name": "Blood flame", "description": "Light one's blood on fire, dealing Power damage to those who touch it. Costs 2 Mana." },
+      { "name": "Revenge", "description": "Upon taking damage, your next attack adds half the damage you received onto its normal damage. Does not guarantee a hit. Costs 2 Mana." },
+      { "name": "Mana drain", "description": "Ingest blood to regain Mana, draining the opponent's Mana. 2 Mana per turn." },
+      { "name": "HP drain", "description": "Ingest blood to regain HP, draining the opponent's HP. 2 HP per turn, ignoring resistance." },
+      { "name": "Cursebreaker", "description": "End all status effects and prevent new ones for a number of turns = to Power. Costs 3 Mana." },
+      { "name": "Polymorph", "description": "Change parts of your body. Costs 2 Mana." },
+      { "name": "Empower", "description": "Add 1/5 of one of your stats to a target's stat for 1 hour. Costs 5 Mana." },
+      { "name": "Madness", "description": "On a success, cause the target to go into a Frenzy. Costs 2 Mana." },
+      { "name": "Obscure", "description": "Hide within a shadow, unseen until you move. When you attack after being hidden, your crit chance is +20. Costs 3 Mana." },
+      { "name": "Enchant", "description": "Make your eyes glow. Anyone who sees it must succeed a Power vs Resist roll or be enchanted, obeying commands until they are harmed. Costs 5 Mana." },
+      { "name": "Influence", "description": "Plant a suggestion in someone's mind, making them subconsciously lean towards it. They will not act on anything outside of their moral compass. Power vs Resist. Costs 5 Mana." }
+    ],
+    "Martial": [
+      { "name": "Flame Fury Fist", "description": "Punch with so much power flames begin to swirl about. Deal damage = to Attack and Power. Costs 2 Mana." },
+      { "name": "Feather-Light Steps", "description": "Increase Agility tasks by Power for 1 hour. Costs 2 Mana." },
+      { "name": "Art of One-Thousand Blossoms", "description": "Dance with your sword, attacking three times in one turn. Costs 2 Mana." },
+      { "name": "Ice Spear Avalanche", "description": "Imbue your spear with frost, freezing the opponent on a hit. They may try to get out with a contested Power vs Strength check. When they do, the shards deal Power damage to all adjacent parties." },
+      { "name": "Wrath of the Storm", "description": "Fall into a primordial rage, doubling your Attack. You are unable to differentiate between friend and foe. Lasts 1 minute. Costs 1 Mana." },
+      { "name": "Claws of the Beast", "description": "Long, sharp claws protrude from your fingers for 10 minutes. Each deals 4 additional damage." },
+      { "name": "Immovable Earth", "description": "For 10 minutes, you cannot be affected by any status effects." },
+      { "name": "Perfect Harmony", "description": "When within 10 feet of any number of trusted comrades, gain a bonus = Power x number of comrades within range to all tasks. Costs 2 Mana." },
+      { "name": "Drunken Hand", "description": "When inebriated, gain Power damage to all hand-to-hand attacks. Costs 1 Mana for every hit this bonus is used; it does not cost Mana on a miss." },
+      { "name": "Sea King's Trident", "description": "Summon a wave of water with your staff or spear, pushing opponents back in a contested (Power + Constitution) vs Constitution roll a number of feet = to Power. Costs 2 Mana." },
+      { "name": "Sniper King", "description": "All ranged attacks, for the next minute, have a +20% chance to hit. Costs 2 Mana." }
+    ],
+    "Omniscient": [
+      { "name": "Prophecy", "description": "Give a prophecy of a specific topic. Costs 10 Mana." },
+      { "name": "See through space", "description": "See a number of miles = to Magic away for 1 hour. Costs 10 Mana." },
+      { "name": "Step through space", "description": "Teleport a number of miles = to Magic away. Costs 10 Mana." },
+      { "name": "Domain", "description": "Create a domain. When taking actions within it, gain +10%. Costs 10 Mana to create and 1 Mana per day to maintain. Cannot overlap with another Omniscient domain." },
+      { "name": "Create matter", "description": "Create an object a number of inches long = to the amount of Mana spent." }
+    ],
+    "Ascendant": [
+      { "name": "Calamity", "description": "When you roll a critical fail, something happens." },
+      { "name": "Miracle", "description": "When you roll a critical success, something happens." },
+      { "name": "Soulmate", "description": "Bond with an individual by having them ingest a part of your body. So long as you live, that individual lives. Gain the Obsessed title at level 10." }
     ]
   }
 }

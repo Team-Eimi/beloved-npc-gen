@@ -1,17 +1,333 @@
 (function (root) {
   const statKeys = ['STR', 'CON', 'CHA', 'INT', 'AGI', 'MAG'];
+  const elementalMagicSchools = new Set(['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity']);
   const statLabels = { STR: 'Strength', CON: 'Constitution', CHA: 'Charm', INT: 'Intelligence', AGI: 'Agility', MAG: 'Magic' };
   let rules;
   let typeRules;
+  let progressionRules = new Map();
   let magicRules;
   let monsterSkills;
+  let animalRules = [];
+  let substatDivisor = 5;
+
+  function parseProgressionBase(base, progression) {
+    if (!base) return;
+    for (const clause of base.split(';').map(value => value.trim()).filter(Boolean)) {
+      let match = clause.match(/^(\d+)\s+all$/i);
+      if (match) {
+        progression.baseStats = Number(match[1]);
+        continue;
+      }
+      match = clause.match(/^\+(\d+)$/);
+      if (match) {
+        progression.randomPoints = Number(match[1]);
+        continue;
+      }
+      const modifiers = [...clause.matchAll(/\+(\d+)\s+(STR|CON|CHA|INT|AGI|MAG)\b/gi)];
+      if (modifiers.length) {
+        progression.baseModifiers ??= [];
+        const remainder = clause.replace(/\+(\d+)\s+(STR|CON|CHA|INT|AGI|MAG)\b/gi, '').trim();
+        if (remainder) throw new Error(`Unknown progression base rule: ${clause}`);
+        for (const modifier of modifiers) {
+          progression.baseModifiers.push({ keys: [modifier[2].toUpperCase()], amount: [Number(modifier[1]), Number(modifier[1])] });
+        }
+        continue;
+      }
+      match = clause.match(/^minimum\s+(STR|CON|CHA|INT|AGI|MAG)\s+(\d+)$/i);
+      if (match) {
+        progression.minimumStats ??= {};
+        progression.minimumStats[match[1].toUpperCase()] = Number(match[2]);
+        continue;
+      }
+      match = clause.match(/^all stats\s+(\d+)\s+minimum$/i);
+      if (match) {
+        progression.minimumStats = Object.fromEntries(statKeys.map(key => [key, Number(match[1])]));
+        continue;
+      }
+      match = clause.match(/^lose\s+(STR|CON|CHA|INT|AGI|MAG)\s+until\s+(\d+)$/i);
+      if (match) {
+        progression.baseOverrides ??= {};
+        progression.baseOverrides[match[1].toUpperCase()] = Number(match[2]);
+        continue;
+      }
+      throw new Error(`Unknown progression base rule: ${clause}`);
+    }
+  }
+
+  function parseProgressionBonus(value, progression) {
+    if (!value || value.toLowerCase() === 'none') return;
+    const levelBonus = { randomCount: 0, randomAmount: 0, fixed: {} };
+    for (const clause of value.split(';').map(part => part.trim()).filter(Boolean)) {
+      let match = clause.match(/^(\d+)\s+stats?\s+by\s+(\d+)$/i);
+      if (match) {
+        const amount = Number(match[2]);
+        if (levelBonus.randomCount && levelBonus.randomAmount !== amount) {
+          throw new Error(`Conflicting random stat bonuses: ${value}`);
+        }
+        levelBonus.randomCount += Number(match[1]);
+        levelBonus.randomAmount = amount;
+        continue;
+      }
+      match = clause.match(/^all stats\s+by\s+(\d+)$/i);
+      if (match) {
+        for (const key of statKeys) levelBonus.fixed[key] = (levelBonus.fixed[key] ?? 0) + Number(match[1]);
+        continue;
+      }
+      match = clause.match(/^((?:STR|CON|CHA|INT|AGI|MAG)(?:\s*(?:,|and)\s*(?:STR|CON|CHA|INT|AGI|MAG))*)\s+by\s+(\d+)$/i);
+      if (match) {
+        const amount = Number(match[2]);
+        for (const key of match[1].split(/\s*(?:,|and)\s*/i)) {
+          const stat = key.toUpperCase();
+          levelBonus.fixed[stat] = (levelBonus.fixed[stat] ?? 0) + amount;
+        }
+        continue;
+      }
+      throw new Error(`Unknown progression level-up rule: ${clause}`);
+    }
+    progression.levelBonus = levelBonus;
+  }
+
+  function parseProgressionEntry(entry) {
+    const progression = {};
+    if (entry.levelRange) progression.levelRange = entry.levelRange;
+    parseProgressionBase(entry.base, progression);
+    parseProgressionBonus(entry.pointsOnLevelUp, progression);
+    for (const key of ['titleGain', 'traitGain', 'skillGain']) {
+      if (entry[key] !== undefined) progression[key] = entry[key];
+    }
+    return progression;
+  }
+
+  function parseChartTraitGain(value) {
+    const result = { categories: [], traits: [], removals: [], profession: false, rollAnimal: false };
+    if (!value || value.toLowerCase() === 'none') return result;
+    for (const part of value.split(',').map(item => item.trim()).filter(Boolean)) {
+      let match = part.match(/^remove\s+(.+)$/i);
+      if (match) {
+        result.removals.push(match[1].trim());
+        continue;
+      }
+      match = part.match(/^add\s+(.+)$/i);
+      const trait = match ? match[1].trim() : part;
+      if (/^profession$/i.test(trait)) {
+        result.profession = true;
+      } else if (/^roll animal$/i.test(trait)) {
+        result.rollAnimal = true;
+      } else if (/^(\d+)\s+temperaments?$/i.test(trait)) {
+        const [, count] = trait.match(/^(\d+)\s+temperaments?$/i);
+        result.categories.push(...Array(Number(count)).fill('temperament'));
+      } else if (/^(beauty|height|education|temperament)$/i.test(trait)) {
+        result.categories.push(trait.toLowerCase());
+      } else if (!/^none$/i.test(trait)) {
+        result.traits.push(trait);
+      }
+    }
+    return result;
+  }
+
+  function parseChartTitleGain(value) {
+    const result = { specialChances: [], fixedTitles: [], customTitles: [], profession: false, magicType: false };
+    if (!value || value.toLowerCase() === 'none') return result;
+    for (const part of value.split(',').map(item => item.trim()).filter(Boolean)) {
+      const chance = part.match(/^(\d+)%\s+special$/i);
+      if (chance) {
+        result.specialChances.push(Number(chance[1]) / 100);
+      } else if (/^profession(?:\s+\(.+\))?$/i.test(part)) {
+        result.profession = true;
+      } else if (/^magical type$/i.test(part)) {
+        result.magicType = true;
+      } else if (/^elemental$/i.test(part)) {
+        continue;
+      } else {
+        const titleName = /^ascendant$/i.test(part) ? 'Ascendent' : part;
+        const title = rules.titles?.entries.find(entry => entry.name.toLowerCase() === titleName.toLowerCase());
+        if (title) result.fixedTitles.push(title.name);
+        else result.customTitles.push(part);
+      }
+    }
+    return result;
+  }
+
+  function parseChartSkillGain(value, stage, currentSkills, random) {
+    const result = { skillRolls: [], specialitySkillRolls: [], magicRolls: [], fixedMagicSkills: [], pendingSkills: [], rolls: {} };
+    if (!value || value.toLowerCase() === 'none') return result;
+    let remaining = value;
+    let removingSkills = false;
+    remaining = remaining.split(',').map(part => part.trim()).filter(part => {
+      const removal = part.match(/^remove\s+(.+)$/i);
+      if (removal) {
+        removingSkills = true;
+        const name = removal[1].trim();
+        const index = currentSkills.findIndex(skill => skill.name.toLowerCase() === name.toLowerCase());
+        if (index >= 0) currentSkills.splice(index, 1);
+        return false;
+      }
+      if (removingSkills) {
+        const skill = monsterSkills?.find(item => item.name.toLowerCase() === part.toLowerCase());
+        if (skill) {
+          const index = currentSkills.findIndex(item => item.name === skill.name);
+          if (index >= 0) currentSkills.splice(index, 1);
+          return false;
+        }
+        removingSkills = false;
+      }
+      return true;
+    }).join(', ');
+    const variants = remaining.match(/Lunar:\s*([^;]+);\s*Solar:\s*(.+)$/i);
+    if (variants) {
+      const options = [
+        { names: variants[1].split(',').map(name => name.trim()) },
+        { names: variants[2].split(',').map(name => name.trim()) }
+      ];
+      const selected = options[roll([0, options.length - 1], random)];
+      for (const name of selected.names) {
+        const skill = monsterSkills?.find(item => item.name.toLowerCase() === name.toLowerCase());
+        if (!skill) throw new Error(`Unknown chart skill: ${name}`);
+        if (!currentSkills.some(item => item.name === skill.name)) currentSkills.push(skill);
+      }
+      remaining = remaining.replace(variants[0], '');
+    }
+
+    const schoolNames = Object.keys(magicRules ?? {});
+    const magicPattern = /(\d+)\s+(?:(Light|Darkness|Fire|Water|Earth|Wind|Electricity|Blood|Martial|Omniscient|Ascendant)\s+)?(?:magic|magical)\s+(?:skills?|spells?)(?:\s+of\s+(each\s+|type))?(?:\s*\+(\d+)\s*%)?/gi;
+    remaining = remaining.replace(magicPattern, (match, count, namedSchool, typeQualifier, bonus) => {
+      const schools = typeQualifier?.toLowerCase().startsWith('each')
+        ? [...elementalMagicSchools]
+        : [namedSchool && schoolNames.find(name => name.toLowerCase() === namedSchool.toLowerCase())];
+      if (typeQualifier && !typeQualifier.toLowerCase().startsWith('each') && !namedSchool) {
+        result.magicType = true;
+      }
+      for (const school of schools) {
+        result.magicRolls.push({
+          magicSkills: Number(count),
+          ...(school ? { magicSchool: school } : {}),
+          ...(bonus ? { magicSkillBonus: Number(bonus) } : {}),
+          ...(stage.rolls?.magicBonusPerLevel ? { magicBonusPerLevel: stage.rolls.magicBonusPerLevel } : {})
+        });
+      }
+      return ' ';
+    });
+    remaining = remaining.replace(/(\d+)\s+(Light|Darkness|Fire|Water|Earth|Wind|Electricity|Blood|Martial|Omniscient|Ascendant)\s+spells?(?:\s*\+(\d+)\s*%)?/gi,
+      (match, count, namedSchool, bonus) => {
+        const school = schoolNames.find(name => name.toLowerCase() === namedSchool.toLowerCase());
+        if (!school) throw new Error(`Unknown magic school in chart skill gain: ${namedSchool}.`);
+        result.magicRolls.push({
+          magicSkills: Number(count),
+          magicSchool: school,
+          ...(bonus ? { magicSkillBonus: Number(bonus) } : {}),
+          ...(stage.rolls?.magicBonusPerLevel ? { magicBonusPerLevel: stage.rolls.magicBonusPerLevel } : {})
+        });
+        return ' ';
+      });
+
+    remaining = remaining.replace(/(?:(\d+)\s+)?martial\s+magic\s+skills?/gi, (_, count) => {
+      result.rolls.martialMagicSkills = (result.rolls.martialMagicSkills ?? 0) + Number(count ?? 1);
+      return ' ';
+    });
+    remaining = remaining.replace(/(\d+)\s+martial\s+skills?(?:\s*\+(\d+)\s*%)?/gi, (_, count, bonus) => {
+      result.rolls.martialSkills = (result.rolls.martialSkills ?? 0) + Number(count);
+      if (bonus) result.rolls.martialBonus = Number(bonus);
+      return ' ';
+    });
+    remaining = remaining.replace(/\bmartial\s+magic\b/gi, () => {
+      result.rolls.martialMagicSkills = (result.rolls.martialMagicSkills ?? 0) + 1;
+      return ' ';
+    });
+
+    const categoryNames = [...new Set([
+      ...Object.keys(rules.skills.categories),
+      ...Object.keys(rules.specialitySkills ?? {})
+    ])];
+    const numberValue = value => /^\d+$/.test(value) ? Number(value) : ({
+      one: 1, two: 2, three: 3, four: 4, five: 5
+    })[value.toLowerCase()];
+    remaining = remaining.replace(/(\d+|one|two|three|four|five)\s+(?:(combat|emotional intelligence|artistic|art|subterfuge|knowledge|perception)\s+)?skills?(?:\s*\+(\d+)\s*%)?/gi,
+      (match, count, namedCategory, bonus) => {
+        const category = namedCategory && (
+          /^artistic$/i.test(namedCategory) ? 'Art'
+            : categoryNames.find(name => name.toLowerCase() === namedCategory.toLowerCase())
+        );
+        if (namedCategory && !category) {
+          result.pendingSkills.push(match.trim());
+        } else {
+          const request = {
+            count: numberValue(count),
+            ...(category ? { category } : {}),
+            bonus: Number(bonus ?? 0),
+            scaleSkillBonus: Boolean(stage.rolls?.skillBonusLevels)
+          };
+          if (category && rules.specialitySkills?.[category] && !rules.skills.categories[category]) {
+            result.specialitySkillRolls.push(request);
+          } else {
+            result.skillRolls.push(request);
+          }
+        }
+        return ' ';
+      });
+    remaining = remaining.replace(/\bcombat\b(?!\s+skills?)/gi, () => {
+      result.skillRolls.push({ count: 1, category: 'Combat', bonus: 0 });
+      return ' ';
+    });
+    remaining = remaining.replace(/\bmartial magic\b/gi, () => {
+      result.pendingSkills.push('Martial magic skills: 1 pending (skill list not supplied)');
+      return ' ';
+    });
+
+    remaining = remaining.replace(/\bAphrodisiac\b/gi, 'Aphordisiac');
+    const fixedMagicNames = Object.entries(magicRules ?? {}).flatMap(([school, skills]) =>
+      skills.map(skill => ({ ...skill, school }))).sort((a, b) => b.name.length - a.name.length);
+    for (const skill of fixedMagicNames) {
+      const escaped = skill.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = new RegExp(`(^|[^\\w])${escaped}(?=$|[^\\w])`, 'i');
+      if (skill.name === 'Heal' && /Heal\s*\(Monster\)/i.test(remaining)) continue;
+      if (!pattern.test(remaining)) continue;
+      if (!result.fixedMagicSkills.some(item => item.name === skill.name && item.school === skill.school)) {
+        result.fixedMagicSkills.push({ name: skill.name, school: skill.school, bonusIfOwned: /\+\s*\d+%\s*if already owned/i.test(value) ? 20 : 0 });
+      }
+      remaining = remaining.replace(pattern, ' ');
+    }
+
+    for (const skill of [...(monsterSkills ?? [])].sort((a, b) => b.name.length - a.name.length)) {
+      const escaped = skill.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const pattern = new RegExp(`(^|[^\\w])${escaped}(?=$|[^\\w])`, 'i');
+      if (!pattern.test(remaining)) continue;
+      if (!currentSkills.some(item => item.name === skill.name)) currentSkills.push(skill);
+      remaining = remaining.replace(pattern, ' ');
+    }
+
+    remaining = remaining.replace(/\(\s*\+\d+%\s*if already owned\)/gi, ' ');
+    for (const part of remaining.split(',').map(item => item.trim()).filter(Boolean)) {
+      if (/^(?:none|remove|add|profession|one arrow skill|one ranged weapon)(?:\s*\+\d+%)?$/i.test(part)) continue;
+      const cleaned = part.replace(/\s+/g, ' ').trim();
+      if (cleaned && !result.pendingSkills.includes(cleaned)) result.pendingSkills.push(cleaned);
+    }
+    return result;
+  }
 
   function configure(rolls, types, monsters) {
+    for (const type of types.types ?? []) {
+      const subtypeNames = new Set();
+      for (const subtype of type.subtypes ?? []) {
+        if (subtypeNames.has(subtype.subtype)) {
+          throw new Error(`Duplicate subtype: ${type.type} ${subtype.subtype}.`);
+        }
+        subtypeNames.add(subtype.subtype);
+        subtypeStages(type, subtype);
+      }
+    }
     rules = rolls;
     typeRules = types;
+    progressionRules = new Map();
+    for (const entry of types.progressionChart ?? []) {
+      const key = `${entry.type.toLowerCase()}|${entry.subtype.toLowerCase()}`;
+      if (progressionRules.has(key)) throw new Error(`Duplicate progression chart entry: ${entry.type} ${entry.subtype}`);
+      progressionRules.set(key, parseProgressionEntry(entry));
+    }
     if (monsters) {
+      substatDivisor = monsters.substatDivisor ?? 5;
       magicRules = monsters.magic;
-      monsterSkills = monsters.boss.flatMap(boss => boss.skills ?? []);
+      monsterSkills = [...(monsters.monsterMagic ?? []), ...monsters.boss.flatMap(boss => boss.skills ?? [])];
+      animalRules = monsters.animal ?? [];
     }
   }
 
@@ -26,6 +342,23 @@
       chosen.push(available.splice(roll([0, available.length - 1], random), 1)[0]);
     }
     return chosen;
+  }
+
+  function magicManaCost(skill) {
+    const match = (skill.description ?? '').match(/\bCosts?\s+(\d+)\s+Mana\b/i);
+    return match ? Number(match[1]) : 0;
+  }
+
+  function sampleAffordableMagicSkills(skills, count, mana, random = Math.random) {
+    const affordable = skills.filter(skill => magicManaCost(skill) <= mana);
+    if (affordable.length < count) throw new Error(`Not enough distinct spells affordable with ${mana} Mana.`);
+    return sample(affordable, count, random);
+  }
+
+  function rollTitleLevel(entry, age, random) {
+    if (entry.levelFormula === 'age/5') return Math.floor(age / 5);
+    const range = entry.levelRange ?? [1, 1];
+    return range[0] === range[1] ? range[0] : roll(range, random);
   }
 
   function weighted(values, random = Math.random) {
@@ -125,11 +458,15 @@
   function generateResistancesAndVulnerabilities() {
     return rules.resistances.map(name => `${name} Resistance: 0%`);
   }
-  function applyTraitResistances(resistances, traitRolls) {
+  function applyTraitResistances(resistances, traitRolls, level = 0) {
     const result = [...resistances];
     for (const { effect } of traitRolls) {
       if (!effect) continue;
-      for (const [name, amount] of Object.entries(effect.resistances ?? {})) {
+      const resistanceBonuses = { ...(effect.resistances ?? {}) };
+      for (const [name, amount] of Object.entries(effect.resistancesPerLevel ?? {})) {
+        resistanceBonuses[name] = (resistanceBonuses[name] ?? 0) + amount * level;
+      }
+      for (const [name, amount] of Object.entries(resistanceBonuses)) {
         const index = rules.resistances.indexOf(name);
         if (index < 0) throw new Error(`Unknown resistance: ${name}`);
         const match = result[index].match(/: (-?\d+)%$/);
@@ -178,8 +515,34 @@
   function generateTitles(selection, stats, random = Math.random) {
     const count = selection.rolls?.magicTypeTitles ?? 0;
     const magicTypes = rules.titles?.magicTypes ?? [];
-    const titles = sample(magicTypes, count, random).map(value => value.charAt(0).toUpperCase() + value.slice(1));
+    const selectedMagicTypes = sample(magicTypes, count, random);
+    if (selection.chartMagicTypeTitle && selectedMagicTypes.length) {
+      const school = Object.keys(magicRules ?? {}).find(value => value.toLowerCase() === selectedMagicTypes[0].toLowerCase());
+      if (!school) throw new Error(`Unknown magic school for generated magic type: ${selectedMagicTypes[0]}.`);
+      selection.magicSchoolRestriction = school;
+    }
+    const titles = selectedMagicTypes.map(value => value.charAt(0).toUpperCase() + value.slice(1));
+    selection.titleData = [];
     const available = [...rules.titles.entries];
+    const addTitle = (entry, name = entry.name, school) => {
+      const level = rollTitleLevel(entry, selection.age ?? 0, random);
+      const title = { entry, name, level, ...(school ? { school } : {}) };
+      selection.titleData.push(title);
+      if (entry.magicSkills || entry.lightMagicSkills) {
+        selection.titleMagicRolls ??= [];
+        selection.titleMagicRolls.push({
+          magicSkills: entry.magicSkills ?? 0,
+          lightMagicSkills: entry.lightMagicSkills ?? 0,
+          magicSchool: school,
+          titleLevel: level
+        });
+      }
+      if (school && entry.magicBonusPerLevel) {
+        selection.magicSchoolBonuses ??= {};
+        selection.magicSchoolBonuses[school] = (selection.magicSchoolBonuses[school] ?? 0) + level * entry.magicBonusPerLevel;
+      }
+      return `${name} (Level ${level}): ${entry.description}`;
+    };
     for (let index = 0; index < (selection.rolls?.titles ?? 0); index++) {
       if (random() < rules.titles.newTitleChance) {
         titles.push('Make a new title');
@@ -187,8 +550,24 @@
         const [title] = sample(available, 1, random);
         if (!title) throw new Error('Not enough distinct titles to roll.');
         available.splice(available.indexOf(title), 1);
-        titles.push(`${title.name}: ${title.description}`);
+        if (title.magicTypeTemplate) {
+          const schools = Object.keys(magicRules ?? {});
+          if (!schools.length) throw new Error('Load magic skill rules before generating a type magician title.');
+          const [school] = sample(schools, 1, random);
+          titles.push(addTitle(title, `${school} Magician`, school));
+        } else {
+          titles.push(addTitle(title));
+        }
       }
+    }
+    const raceTitle = rules.titles?.raceTitles?.find(entry => entry.race === selection.type?.toUpperCase());
+    if (raceTitle) {
+      const [element] = sample(raceTitle.elements, 1, random);
+      if (!element) throw new Error(`No elements are configured for the ${raceTitle.name} race title.`);
+      const school = Object.keys(magicRules ?? {}).find(value => value.toLowerCase() === element.toLowerCase());
+      if (!school) throw new Error(`Unknown magic school for the ${raceTitle.name} race title: ${element}.`);
+      selection.magicSchoolRestriction = school;
+      titles.push(addTitle(raceTitle, `${element} Elemental`, school));
     }
     return titles;
   }
@@ -198,7 +577,8 @@
     return speciality ? categorized : [...rules.skills.standalone.map(name => ({ name })), ...categorized];
   }
   function generateSkillResults(selection, traitData, speciality, random, attackSkills) {
-    const pool = skillPool(speciality);
+    const combatSkillsEnabled = selection.combatSkillsEnabled !== false;
+    const pool = skillPool(speciality).filter(skill => combatSkillsEnabled || skill.category !== 'Combat');
     const allSkills = [...skillPool(false), ...skillPool(true)];
     const results = [];
     const effects = (traitData.rolls ?? []).map(result => result.effect).filter(Boolean);
@@ -223,9 +603,9 @@
       for (const skill of sample(available, count, random)) add(skill, bonus, value);
     };
     for (const name of speciality ? [] : traitData.skills ?? []) {
-      const skill = pool.find(item => item.name === name);
+      const skill = allSkills.find(item => item.name === name);
       if (!skill) throw new Error(`Unknown skill: ${name}`);
-      add(skill);
+      if (combatSkillsEnabled || skill.category !== 'Combat') add(skill);
     }
     for (const effect of effects) {
       for (const skill of effect.fixedSkills ?? []) {
@@ -233,10 +613,11 @@
       }
       for (const request of effect.skillRolls ?? []) {
         if (Boolean(request.speciality) !== speciality) continue;
+        if (!combatSkillsEnabled && request.category === 'Combat') continue;
         choose(pool.filter(item => !request.category || item.category === request.category), request.count, request.bonus ?? 0, request.value);
       }
     }
-    if (!speciality) {
+    if (!speciality && combatSkillsEnabled) {
       for (const entry of selection.fixedWeaponSkills ?? []) {
         const weapons = rules.weapons.groups.flatMap(({ names, ...properties }) => names.map(name => ({ name, ...properties })));
         const weapon = weapons.find(value => value.name === entry.weapon);
@@ -259,8 +640,11 @@
     const requests = speciality
       ? [{ count: selection.rolls?.specialitySkills ?? 0 }]
       : [{ count: selection.rolls?.skills ?? 0 }, { count: selection.rolls?.combatSkills ?? 0, category: 'Combat', bonus: selection.rolls?.combatSkillBonus ?? 0 }];
-    for (const request of requests) {
-      choose(pool.filter(item => !request.category || item.category === request.category), request.count, request.bonus ?? 0);
+    const chartRequests = speciality ? selection.chartSpecialitySkillRolls : selection.chartSkillRolls;
+    for (const request of [...requests, ...(chartRequests ?? [])]) {
+      if (!combatSkillsEnabled && request.category === 'Combat') continue;
+      const bonus = request.scaleSkillBonus ? selection.skillBonus ?? request.bonus ?? 0 : request.bonus ?? 0;
+      choose(pool.filter(item => !request.category || item.category === request.category), request.count, bonus, request.value);
     }
     if (!speciality) choose(pool, selection.rolls?.bonusSkills ?? 0, selection.skillBonus ?? 0);
     for (const skill of results) {
@@ -283,21 +667,40 @@
     return { ...profession, level: roll([age - 10, age + 10], random) };
   }
   function generateMagicSkills(selection, random = Math.random) {
-    const groups = selection.magicRolls ?? [selection.rolls ?? {}];
+    const groups = [...(selection.magicRolls ?? [selection.rolls ?? {}]), ...(selection.titleMagicRolls ?? [])];
     const skills = [];
     const total = groups.reduce((sum, group) => sum + (group.magicSkills ?? 0) + (group.lightMagicSkills ?? 0), 0);
-    if (total) {
+    if (total || selection.fixedMagicSkills?.length) {
       if (!magicRules) throw new Error('Load magic skill rules before generating magic skills.');
       const available = Object.entries(magicRules).flatMap(([school, entries]) => entries.map(entry => ({ school, ...entry })));
       for (const group of groups) {
-        for (const [count, school] of [[group.lightMagicSkills ?? 0, 'Light'], [group.magicSkills ?? 0, undefined]]) {
-          const eligible = available.filter(skill => !school || skill.school === school);
-          if (eligible.length < count) throw new Error('Not enough distinct magic skills to roll.');
-          for (const skill of sample(eligible, count, random)) {
+        for (const [count, school] of [[group.lightMagicSkills ?? 0, 'Light'], [group.magicSkills ?? 0, group.magicSchool]]) {
+          const requestedSchool = selection.magicSchoolRestriction ?? school;
+          const eligible = available.filter(skill => requestedSchool
+            ? skill.school === requestedSchool
+            : elementalMagicSchools.has(skill.school));
+          for (const skill of sampleAffordableMagicSkills(eligible, count, selection.mana ?? Number.POSITIVE_INFINITY, random)) {
             available.splice(available.indexOf(skill), 1);
-            const value = 30 + (group.magicSkillBonus ?? 0) + (group.magicBonusPerLevel ?? 0) * (selection.level ?? 0);
-            skills.push(`${skill.name} (${skill.school}) ${value}%: ${skill.description}`);
+            const value = 30 + (group.magicSkillBonus ?? 0)
+              + (group.magicBonusPerLevel ?? 0) * (group.titleLevel ?? selection.level ?? 0)
+              + (selection.magicSchoolBonuses?.[skill.school] ?? 0);
+            skills.push({ ...skill, value });
           }
+        }
+      }
+      for (const request of selection.fixedMagicSkills ?? []) {
+        const skill = magicRules[request.school]?.find(value => value.name === request.name);
+        if (!skill) throw new Error(`Unknown chart magic skill: ${request.name} (${request.school}).`);
+        const existing = skills.find(value => value.name === skill.name && value.school === request.school);
+        if (existing) {
+          existing.value += request.bonusIfOwned ?? 0;
+        } else {
+          const cost = magicManaCost(skill);
+          if (cost > (selection.mana ?? Number.POSITIVE_INFINITY)) {
+            skills.push(`${skill.name} (${request.school}): unavailable (costs ${cost} Mana; only ${selection.mana} Mana available)`);
+            continue;
+          }
+          skills.push({ ...skill, school: request.school, value: 30 + (request.bonus ?? 0) });
         }
       }
     }
@@ -306,27 +709,102 @@
       const value = 30 + selection.rolls.martialBonus + Math.floor(selection.level / 10) * selection.rolls.martialBonusPerTenLevels;
       skills.push(`Martial skills: ${selection.rolls.martialSkills} pending at ${value}% (skill list not supplied)`);
     }
-    return skills;
+    return skills.map(skill => typeof skill === 'string'
+      ? skill
+      : `${skill.name} (${skill.school}) ${skill.value}%: ${skill.description}`);
   }
   function subtypeStages(type, subtype) {
     const stages = [];
-    let current = subtype;
-    while (current) {
-      if (stages.includes(current)) throw new Error('Cyclic subtype inheritance.');
-      stages.unshift(current);
-      if (!current.inherits) break;
-      const parent = type.subtypes.find(value => value.subtype === current.inherits);
-      if (!parent) throw new Error(`Unknown inherited subtype: ${current.inherits}`);
-      current = parent;
-    }
+    const included = new Set();
+    const visiting = new Set();
+    const visit = current => {
+      if (visiting.has(current.subtype)) throw new Error('Cyclic subtype inheritance.');
+      if (included.has(current.subtype)) return;
+      visiting.add(current.subtype);
+      const parents = current.inherits === undefined
+        ? []
+        : Array.isArray(current.inherits) ? current.inherits : [current.inherits];
+      for (const name of parents) {
+        const parent = type.subtypes.find(value => value.subtype === name);
+        if (!parent) throw new Error(`Unknown inherited subtype: ${name}`);
+        visit(parent);
+      }
+      visiting.delete(current.subtype);
+      included.add(current.subtype);
+      stages.push(current);
+    };
+    if (subtype) visit(subtype);
     return stages;
   }
+
+  function collectTraitGains(type, stages) {
+    const categories = [...(type.baseTraits ?? [])];
+    const traits = [];
+    let profession = false;
+    let rollAnimal = false;
+    let replacedBaseCategories = false;
+    for (const stage of stages) {
+      for (const removed of stage.removeTraits ?? []) {
+        const key = removed.toLowerCase();
+        for (let index = categories.length - 1; index >= 0; index--) {
+          if (categories[index].toLowerCase() === key) categories.splice(index, 1);
+        }
+        for (let index = traits.length - 1; index >= 0; index--) {
+          if (traits[index].toLowerCase() === key) traits.splice(index, 1);
+        }
+      }
+      const gain = stage.progressionTraitGain === undefined
+        ? { categories: stage.traits ?? [], traits: [], removals: [], profession: false, rollAnimal: false }
+        : parseChartTraitGain(stage.progressionTraitGain);
+      if (stage.progressionTraitGain !== undefined && !replacedBaseCategories) {
+        for (const category of new Set(gain.categories)) {
+          for (let index = categories.length - 1; index >= 0; index--) {
+            if (categories[index].toLowerCase() === category) categories.splice(index, 1);
+          }
+        }
+        replacedBaseCategories = true;
+      }
+      for (const removed of gain.removals) {
+        const key = removed.toLowerCase();
+        for (let index = categories.length - 1; index >= 0; index--) {
+          if (categories[index].toLowerCase() === key) categories.splice(index, 1);
+        }
+        for (let index = traits.length - 1; index >= 0; index--) {
+          if (traits[index].toLowerCase() === key) traits.splice(index, 1);
+        }
+      }
+      categories.push(...gain.categories);
+      traits.push(...gain.traits);
+      profession ||= Boolean(stage.profession || gain.profession);
+      rollAnimal ||= gain.rollAnimal;
+    }
+    return { categories, traits, profession, rollAnimal };
+  }
+
   function applyLevelBonus(stats, bonus, level, eligible, random) {
     if (!bonus) return;
     for (let currentLevel = 0; currentLevel < level; currentLevel++) {
-      for (const key of sample(eligible, bonus.randomCount, random)) stats[key] += bonus.randomAmount;
+      const randomStats = bonus.randomCount > eligible.length
+        ? Array.from({ length: bonus.randomCount }, () => eligible[roll([0, eligible.length - 1], random)])
+        : sample(eligible, bonus.randomCount, random);
+      for (const key of randomStats) stats[key] += bonus.randomAmount;
       for (const [key, amount] of Object.entries(bonus.fixed ?? {})) stats[key] += amount;
     }
+  }
+
+  function applyProgression(type, stage) {
+    const progression = progressionRules.get(`${type.type.toLowerCase()}|${stage.subtype.toLowerCase()}`);
+    if (!progression) return stage;
+    const result = { ...stage, ...progression };
+    if (stage.minimumStats || progression.minimumStats) {
+      result.minimumStats = { ...stage.minimumStats, ...progression.minimumStats };
+    }
+    if (progression.baseModifiers) result.progressionBaseModifiers = progression.baseModifiers;
+    if (progression.baseOverrides) result.progressionBaseOverrides = progression.baseOverrides;
+    for (const key of ['titleGain', 'traitGain', 'skillGain']) {
+      if (progression[key] !== undefined) result[`progression${key[0].toUpperCase()}${key.slice(1)}`] = progression[key];
+    }
+    return result;
   }
   function generateRelationships(random = Math.random) {
     return rules.relationships.map(table => {
@@ -344,7 +822,8 @@
       ? { type: selected, subtype: '' }
       : { type: selected?.type ?? '', subtype: selected?.subtype ?? '' };
     const type = typeRules.types.find(value => value.type.toLowerCase() === selection.type.toLowerCase());
-    const human = type?.type.toUpperCase() === 'HUMAN' && type.baseStats !== undefined;
+    const humanType = type?.type.toUpperCase() === 'HUMAN';
+    const human = humanType && type.baseStats !== undefined;
     const undead = type?.type.toUpperCase() === 'UNDEAD' && type.baseStats !== undefined;
     const fixedBase = human || undead;
     const subtype = selection.subtype
@@ -353,22 +832,32 @@
         ? type.subtypes.find(value => value.subtype === type.defaultSubtype)
         : weighted(type?.subtypes ?? [], random);
     if (fixedBase && !subtype) throw new Error(`Unknown ${type.type} subtype: ${selection.subtype}`);
-    const stages = undead ? subtypeStages(type, subtype) : subtype ? [subtype] : [];
+    const magicEnabled = Boolean(type) && !(humanType && ['Child', 'Adult'].includes(subtype?.subtype));
+    const stages = subtype ? subtypeStages(type, subtype).map(stage => applyProgression(type, stage)) : [];
     selection.subtype = subtype?.subtype ?? selection.subtype;
+    selection.combatSkillsEnabled = type?.type.toUpperCase() !== 'DRAGON'
+      || stages.some(stage => stage.subtype === 'Ascendant Dragon');
     selection.age = options.age ?? roll(subtype?.ageRange ?? rules.age.range, random);
     if (fixedBase && (!Number.isInteger(selection.age) || selection.age < subtype.ageRange[0] || selection.age > subtype.ageRange[1])) {
       throw new RangeError(`Age for ${type.type} ${subtype.subtype} must be between ${subtype.ageRange[0]} and ${subtype.ageRange[1]}.`);
     }
-    selection.traitCategories = options.traitCategories ?? [...(type?.baseTraits ?? []), ...stages.flatMap(stage => stage.traits ?? [])];
-    selection.rolls = undead ? {} : { ...(subtype?.rolls ?? {}) };
-    const generatedStats = fixedBase
-      ? Object.fromEntries(statKeys.map(key => [key, type.baseStats]))
+    const traitGains = collectTraitGains(type ?? {}, stages);
+    selection.traitCategories = options.traitCategories
+      ?? traitGains.categories;
+    selection.chartTraits = traitGains.traits;
+    selection.chartProfession = traitGains.profession;
+    selection.rollAnimal = traitGains.rollAnimal;
+    selection.rolls = {};
+    const configuredBase = [...stages].reverse().find(stage => stage.baseStats !== undefined)?.baseStats ?? type?.baseStats;
+    const generatedStats = configuredBase !== undefined
+      ? Object.fromEntries(statKeys.map(key => [key, typeof configuredBase === 'number' ? configuredBase : configuredBase[key] ?? rules.stats.base[0]]))
       : api.generateStats(selection, random) ?? {};
     const stats = Object.fromEntries(statKeys.map(key => [key, generatedStats[key] ?? '']));
     applyModifiers(stats, subtype?.modifiers, random);
+    for (const stage of stages) applyModifiers(stats, stage.progressionBaseModifiers, random);
     const traitResult = api.generateTraits(selection, stats, random) ?? [];
     const traitData = typeof traitResult === 'string' || Array.isArray(traitResult) ? { traits: traitResult } : traitResult;
-    if (undead) traitData.rolls ??= [];
+    traitData.rolls ??= [];
     let childLevel;
     if (human && subtype.subtype !== 'Child') {
       const child = type.subtypes.find(value => value.subtype === 'Child');
@@ -378,100 +867,208 @@
     }
     for (const stage of stages) {
       for (let index = 0; index < (stage.randomPoints ?? 0); index++) stats[statKeys[roll([0, statKeys.length - 1], random)]]++;
+      for (const [key, value] of Object.entries(stage.progressionBaseOverrides ?? {})) stats[key] = value;
     }
-    const level = subtype?.levelRange ? (fixedBase ? roll(subtype.levelRange, random) : rollLevel(subtype.levelRange, random)) : undefined;
+    const levelRange = [...stages].reverse().find(stage => stage.levelRange)?.levelRange;
+    const level = levelRange ? (fixedBase ? roll(levelRange, random) : rollLevel(levelRange, random)) : undefined;
     if (level !== undefined) {
-      const eligible = !fixedBase && subtype.magic === false ? statKeys.filter(key => key !== 'MAG') : statKeys;
+      const eligible = !fixedBase && !magicEnabled ? statKeys.filter(key => key !== 'MAG') : statKeys;
       for (const stage of stages) {
         applyLevelBonus(stats, stage.levelBonus, level, eligible, random);
       }
     }
-    if (undead) {
-      const fixedSkills = [];
-      selection.fixedWeaponSkills = [];
-      selection.magicRolls = [];
-      for (const stage of stages) {
-        for (const name of stage.removeSkills ?? []) {
-          const index = fixedSkills.findIndex(skill => skill.name === name);
-          if (index < 0) throw new Error(`Cannot remove unknown skill: ${name}`);
-          fixedSkills.splice(index, 1);
+    let animal;
+    if (selection.rollAnimal) {
+      if (!animalRules.length) throw new Error('Load monster animal rules before generating an animal-associated character.');
+      animal = animalRules[roll([0, animalRules.length - 1], random)];
+      for (const modifier of animal.modifiers ?? []) {
+        if (!(modifier.key in stats)) continue;
+        if (modifier.perLevel !== undefined) stats[modifier.key] += modifier.perLevel * (level ?? 0);
+        if (modifier.minimum !== undefined) stats[modifier.key] = Math.max(stats[modifier.key], modifier.minimum);
+      }
+    }
+    const fixedSkills = [];
+    selection.fixedWeaponSkills = [];
+    selection.fixedWeaponChoices = [];
+    selection.fixedSkillChoices = [];
+    selection.magicRolls = [];
+    selection.chartSkillRolls = [];
+    selection.chartSpecialitySkillRolls = [];
+    selection.fixedMagicSkills = [];
+    selection.pendingChartSkills = [];
+    selection.chartTitles = [];
+    for (const stage of stages) {
+      for (const name of stage.removeSkills ?? []) {
+        const index = fixedSkills.findIndex(skill => skill.name === name);
+        if (index < 0) throw new Error(`Cannot remove unknown skill: ${name}`);
+        fixedSkills.splice(index, 1);
+      }
+      fixedSkills.push(...(stage.fixedSkills ?? []));
+      selection.fixedWeaponSkills.push(...(stage.fixedWeaponSkills ?? []));
+      selection.fixedWeaponChoices.push(...(stage.fixedWeaponChoices ?? []));
+      selection.fixedSkillChoices.push(...(stage.fixedSkillChoices ?? []));
+      for (const name of stage.monsterSkills ?? []) {
+        const skill = monsterSkills?.find(value => value.name === name);
+        if (!skill) throw new Error(`Unknown monster skill: ${name}`);
+        fixedSkills.push(skill);
+      }
+      if (stage.progressionSkillGain !== undefined) {
+        const parsed = parseChartSkillGain(stage.progressionSkillGain, stage, fixedSkills, random);
+        selection.chartSkillRolls.push(...parsed.skillRolls);
+        selection.chartSpecialitySkillRolls.push(...parsed.specialitySkillRolls);
+        selection.magicRolls.push(...parsed.magicRolls);
+        selection.fixedMagicSkills.push(...parsed.fixedMagicSkills);
+        selection.pendingChartSkills.push(...parsed.pendingSkills);
+        for (const [key, count] of Object.entries(parsed.rolls)) {
+          selection.rolls[key] = (selection.rolls[key] ?? 0) + count;
         }
-        fixedSkills.push(...(stage.fixedSkills ?? []));
-        selection.fixedWeaponSkills.push(...(stage.fixedWeaponSkills ?? []));
-        for (const name of stage.monsterSkills ?? []) {
-          const skill = monsterSkills?.find(value => value.name === name);
-          if (!skill) throw new Error(`Unknown monster skill: ${name}`);
-          fixedSkills.push(skill);
-        }
-        const stageRolls = stage.rolls ?? {};
-        selection.magicRolls.push(stageRolls);
-        for (const key of ['skills', 'combatSkills', 'bonusSkills', 'martialSkills']) {
-          selection.rolls[key] = (selection.rolls[key] ?? 0) + (stageRolls[key] ?? 0);
-        }
-        for (const key of ['combatSkillBonus', 'skillBonus', 'martialBonus', 'martialBonusPerTenLevels']) {
-          if (stageRolls[key] !== undefined) selection.rolls[key] = stageRolls[key];
-        }
-        if (stageRolls.skillBonusLevels) selection.rolls.skillBonusLevels = stageRolls.skillBonusLevels;
-        if (stage.resistanceBonus) {
-          const bonus = stage.resistanceBonus;
-          const amount = level > bonus.aboveLevel ? bonus.higherAmount : bonus.amount;
-          traitData.rolls.push({ effect: { resistances: Object.fromEntries(bonus.names.map(name => [name, amount])) } });
+        if (parsed.magicType) {
+          selection.chartMagicTypeTitle = true;
+          selection.rolls.magicTypeTitles = (selection.rolls.magicTypeTitles ?? 0) + 1;
         }
       }
-      selection.undeadSkills = fixedSkills.map(skill => `${skill.name}: ${skill.description}`);
-      for (const skill of fixedSkills) {
-        if (skill.resistances || skill.vulnerabilities) traitData.rolls.push({ effect: skill });
+      if (stage.replaceRolls?.combatSkills !== undefined) {
+        selection.chartSkillRolls = selection.chartSkillRolls.filter(request => request.category !== 'Combat');
       }
+      const sourceRolls = stage.rolls ?? {};
+      const stageRolls = stage.progressionSkillGain === undefined
+        ? sourceRolls
+        : {
+          ...sourceRolls,
+          skills: 0,
+          combatSkills: 0,
+          bonusSkills: 0,
+          martialSkills: 0,
+          martialMagicSkills: 0,
+          magicSkills: 0,
+          lightMagicSkills: 0
+        };
+      selection.magicRolls.push(stageRolls);
+      for (const key of ['skills', 'combatSkills', 'bonusSkills', 'martialSkills', 'martialMagicSkills']) {
+        selection.rolls[key] = stage.replaceRolls?.[key] ?? ((selection.rolls[key] ?? 0) + (stageRolls[key] ?? 0));
+      }
+      for (const key of ['combatSkillBonus', 'skillBonus', 'martialBonus', 'martialBonusPerTenLevels']) {
+        if (stageRolls[key] !== undefined) selection.rolls[key] = stageRolls[key];
+      }
+      if (stageRolls.skillBonusLevels) selection.rolls.skillBonusLevels = stageRolls.skillBonusLevels;
+      const titleGain = parseChartTitleGain(stage.progressionTitleGain);
+      if (titleGain.profession) selection.chartProfession = true;
+      for (const chance of titleGain.specialChances) {
+        if (humanType && type.titleChance !== undefined) continue;
+        if (random() < chance) selection.rolls.titles = (selection.rolls.titles ?? 0) + 1;
+      }
+      if (titleGain.magicType) {
+        selection.chartMagicTypeTitle = true;
+        selection.rolls.magicTypeTitles = (selection.rolls.magicTypeTitles ?? 0) + 1;
+      }
+      for (const name of titleGain.fixedTitles) traitData.rolls.push({ effect: { title: name } });
+      selection.chartTitles.push(...titleGain.customTitles);
+      if (stage.resistanceBonus) {
+        const bonus = stage.resistanceBonus;
+        const amount = level > bonus.aboveLevel ? bonus.higherAmount : bonus.amount;
+        traitData.rolls.push({ effect: { resistances: Object.fromEntries(bonus.names.map(name => [name, amount])) } });
+      }
+    }
+    if (animal) fixedSkills.push(...(animal.skills ?? []));
+    for (const choice of selection.fixedSkillChoices) {
+      if (!choice.names?.length) throw new Error('Monster skill choice must include at least one option.');
+      const unknown = choice.names.filter(name => !monsterSkills?.some(skill => skill.name === name));
+      if (unknown.length) throw new Error(`Unknown monster skill choice: ${unknown.join(', ')}`);
+      const [name] = sample(choice.names, 1, random);
+      fixedSkills.push(monsterSkills.find(skill => skill.name === name));
+    }
+    traitData.traits.push(...(selection.chartTraits ?? []));
+    if (animal) traitData.traits.push(`Animal: ${animal.name}`);
+    const weapons = rules.weapons.groups.flatMap(({ names, ...properties }) => names.map(name => ({ name, ...properties })));
+    for (const choice of selection.fixedWeaponChoices) {
+      if (!choice.weapons?.length) throw new Error('Weapon choice must include at least one option.');
+      if (choice.weapons.some(name => !weapons.some(weapon => weapon.name === name))) throw new Error('Unknown weapon in fixed weapon choice.');
+      const [weapon] = sample(choice.weapons, 1, random);
+      selection.fixedWeaponSkills.push({ weapon, bonus: choice.bonus ?? 0 });
+    }
+    selection.typeSkills = fixedSkills.map(skill => skill.description ? `${skill.name}: ${skill.description}` : skill.name);
+    for (const skill of fixedSkills) {
+      if (skill.resistances || skill.vulnerabilities) traitData.rolls.push({ effect: skill });
     }
     if (subtype?.ageBonus && level > subtype.ageBonus.levelAbove) {
       selection.age += roll(subtype.ageBonus.amount, random);
     }
-    if (human && random() < type.titleChance) selection.rolls.titles = 1;
-    if (subtype?.profession) selection.profession = generateProfession(selection.age, random);
+    if (human && random() < type.titleChance) selection.rolls.titles = (selection.rolls.titles ?? 0) + 1;
+    if (subtype?.profession || selection.chartProfession) selection.profession = generateProfession(selection.age, random);
     selection.skillBonus = selection.rolls.skillBonus ?? 0;
     for (const threshold of selection.rolls.skillBonusLevels ?? []) {
       if (level > threshold.above) selection.skillBonus = threshold.bonus;
     }
     selection.level = level;
-    const titles = api.generateTitles(selection, stats, random) ?? [];
+    const titles = [...(api.generateTitles(selection, stats, random) ?? []), ...(selection.chartTitles ?? [])];
+    selection.titleData ??= [];
     if (selection.profession) titles.push(`${selection.profession.name} (Profession, level ${selection.profession.level})`);
     for (const result of traitData.rolls ?? []) {
       if (result.effect?.title) {
         const title = rules.titles.entries.find(entry => entry.name === result.effect.title);
         if (!title) throw new Error(`Unknown title: ${result.effect.title}`);
-        const text = `${title.name}: ${title.description}`;
-        if (!titles.includes(text)) titles.push(text);
+        if (!(selection.titleData ?? []).some(item => item.entry === title)) {
+          const level = rollTitleLevel(title, selection.age, random);
+          selection.titleData.push({ entry: title, name: title.name, level });
+          titles.push(`${title.name} (Level ${level}): ${title.description}`);
+        }
       }
     }
-    let includeMagic = subtype?.magic ?? options.includeMagic ?? false;
-    for (const title of rules.titles.entries) {
-      if (!titles.includes(`${title.name}: ${title.description}`)) continue;
-      if (title.allStats) for (const key of statKeys) stats[key] += title.allStats;
-      if (title.enableMagic) {
-        if (!includeMagic) stats.MAG = 15;
-        includeMagic = true;
+    let magical = magicEnabled;
+    const titleData = selection.titleData ?? [];
+    for (const entry of rules.titles.entries) {
+      const generatedTitle = titleData.find(item => item.entry === entry)
+        ?? (titles.some(text => text.startsWith(`${entry.name} (Level `) || text.startsWith(`${entry.name}:`))
+          ? { level: 1 }
+          : undefined);
+      if (!generatedTitle) continue;
+      const { level } = generatedTitle;
+      if (entry.allStats) for (const key of statKeys) stats[key] += entry.allStats;
+      if (entry.name === 'Weak') {
+        stats.STR -= level;
+        stats.CON -= level;
+      }
+      if (entry.enableMagic && magicEnabled) {
+        if (!magical) stats.MAG = 15;
+        magical = true;
       }
     }
     for (const stage of stages) {
       for (const [key, value] of Object.entries(stage.minimumStats ?? {})) stats[key] = Math.max(stats[key], value);
     }
+    if (titleData.some(({ entry }) => entry.redistributeStats)
+      || rules.titles.entries.some(entry => entry.redistributeStats
+        && titles.some(text => text.startsWith(`${entry.name} (Level `) || text.startsWith(`${entry.name}:`)))) {
+      const total = statKeys.reduce((sum, key) => sum + stats[key], 0);
+      for (const key of statKeys) stats[key] = 0;
+      const direction = Math.sign(total);
+      for (let point = 0; point < Math.abs(total); point++) {
+        stats[statKeys[roll([0, statKeys.length - 1], random)]] += direction;
+      }
+    }
+    selection.mana = Math.floor(stats.MAG / 5)
+      + traitData.rolls.reduce((sum, result) => sum + (result.effect?.manaBonus ?? 0), 0);
     const attackSkills = { weapons: [] };
     const generatedSkills = api.generateSkills(selection, stats, random, traitData, attackSkills) ?? [];
     return {
       ...selection,
       level,
       ...(childLevel !== undefined ? { childLevel } : {}),
-      magicRequired: subtype?.magic,
-      includeMagic,
+      magicRequired: magicEnabled,
+      magical,
       stats,
       traits: traitData.traits ?? [],
+      temperaments: traitData.rolls.filter(result => result.category === 'temperament').map(result => result.output),
       traitRolls: traitData.rolls ?? [],
-      resistancesAndVulnerabilities: applyTraitResistances(api.generateResistancesAndVulnerabilities(selection, stats) ?? [], traitData.rolls ?? []),
+      resistancesAndVulnerabilities: applyTraitResistances(api.generateResistancesAndVulnerabilities(selection, stats) ?? [], traitData.rolls ?? [], level ?? 0),
       titles,
-      skills: [...(typeof generatedSkills === 'string' ? [generatedSkills] : generatedSkills), ...(selection.undeadSkills ?? [])],
+      skills: [...(typeof generatedSkills === 'string' ? [generatedSkills] : generatedSkills), ...(selection.typeSkills ?? []), ...(selection.pendingChartSkills ?? [])],
       specialitySkills: api.generateSpecialitySkills(selection, stats, random, traitData) ?? [],
-      magicSkills: generateMagicSkills(selection, random),
-      attack: generateWeapon(random),
+      magicSkills: magicEnabled ? generateMagicSkills(selection, random) : [],
+      ...(animal ? { animal: animal.name } : {}),
+      attack: type?.naturalAttacks?.length
+        ? { ...type.naturalAttacks[roll([0, type.naturalAttacks.length - 1], random)] }
+        : generateWeapon(random),
       skillWeapons: attackSkills.weapons,
       brawlSkill: attackSkills.brawl,
       relationships: generateRelationships(random)
@@ -480,39 +1077,71 @@
 
   function formatType(npc) {
     const type = !npc.type && !npc.subtype ? 'TYPE (Subtype)' : `${npc.type || 'TYPE'}${npc.subtype ? ` (${npc.subtype})` : ''}`;
-    return `${type}${npc.age !== undefined ? ` | Age: ${npc.age}` : ''}${npc.level !== undefined ? ` | Level: ${npc.level}` : ''}`;
+    return `${type}${npc.age !== undefined ? ` | Age: ${npc.age}` : ''} | Level: ${npc.level ?? 'Not configured'}`;
   }
 
   function formatSection(value) {
-    return Array.isArray(value) ? value.join(', ') : String(value ?? '');
+    return Array.isArray(value) ? value.join('\n') : String(value ?? '');
+  }
+
+  function substats(npc) {
+    const stat = key => Math.floor(npc.stats[key] / substatDivisor);
+    return {
+      Attack: stat('STR'),
+      Defense: stat('CON'),
+      Resist: stat('INT'),
+      Accuracy: stat('INT') + stat('AGI'),
+      Dodge: stat('AGI'),
+      Power: stat('MAG')
+    };
+  }
+
+  function hitPoints(npc) {
+    return Math.floor(npc.stats.CON / substatDivisor);
   }
 
   function format(npc) {
     const resistances = visibleResistances(npc.resistancesAndVulnerabilities);
+    const temperaments = npc.temperaments ?? (npc.traitRolls ?? [])
+      .filter(result => result.category === 'temperament')
+      .map(result => result.output);
+    const traits = npc.traits.filter(trait => !trait.startsWith('Temperament: '));
+    const combat = substats(npc);
     return [
       formatType(npc),
-      ...visibleStatKeys(npc).map(key => `${statLabels[key]}: ${npc.stats[key]}`),
+      `${statLabels.STR}: ${npc.stats.STR} | Attack: ${combat.Attack}`,
+      `${statLabels.CON}: ${npc.stats.CON} | Defense: ${combat.Defense}`,
+      ...(visibleStatKeys(npc).includes('CHA') ? [`${statLabels.CHA}: ${npc.stats.CHA}`] : []),
+      `Resist: ${combat.Resist}`,
+      `${statLabels.INT}: ${npc.stats.INT} | Accuracy: ${combat.Accuracy}`,
+      `${statLabels.AGI}: ${npc.stats.AGI} | Dodge: ${combat.Dodge}`,
+      ...(visibleStatKeys(npc).includes('MAG')
+        ? [`${statLabels.MAG}: ${npc.stats.MAG} | Power: ${combat.Power}`]
+        : [`Power: ${combat.Power}`]),
+      `Hit Points Max: ${hitPoints(npc)}`,
       '',
-      ...(formatSection(npc.traits) ? [`Traits: ${formatSection(npc.traits)}`] : []),
+      ...(temperaments.length ? [`Temperaments:\n${formatSection(temperaments)}`] : []),
+      ...(formatSection(traits) ? [`Traits:\n${formatSection(traits)}`] : []),
       ...(resistances.length ? [`Resistances & Vulnerabilities:\n${resistances.join('\n')}`] : []),
-      `Attack: ${formatAttacks(npc)}`,
+      `Mana: ${npc.mana}`,
+      `Attack:\n${formatAttacks(npc)}`,
       `Relationships & Organizations:\n${npc.relationships.join('\n')}`,
-      `Titles: ${formatSection(npc.titles)}`,
-      `Skills: ${formatSection(npc.skills)}`,
-      `Speciality Skills: ${formatSection(npc.specialitySkills)}`,
-      ...(npc.magicSkills.length ? [`Magic Skills: ${npc.magicSkills.join('\n')}`] : [])
+      `Titles:\n${formatSection(npc.titles)}`,
+      `Skills:\n${formatSection(npc.skills)}`,
+      `Speciality Skills:\n${formatSection(npc.specialitySkills)}`,
+      ...(npc.magicSkills.length ? [`Magic Skills:\n${npc.magicSkills.join('\n')}`] : [])
     ].join('\n');
   }
 
   function visibleStatKeys(npc) {
-    return statKeys.filter(key => key !== 'MAG' || npc.includeMagic);
+    return statKeys.filter(key => key !== 'MAG' || npc.magical);
   }
 
   const api = {
     statKeys, statLabels, configure, roll, rollLevel, sample, weighted, applyModifiers, rollTrait, visibleStatKeys,
-    selectType, listTypes, generateStats, generateTraits,
+    selectType, listTypes, generateStats, generateTraits, substats, hitPoints,
     generateResistancesAndVulnerabilities, visibleResistances, generateWeapon, formatAttack, formatAttacks, generateTitles, generateRelationships,
-    generateSkills, generateSpecialitySkills, generateProfession, generateMagicSkills, generate, formatType, formatSection, format
+    generateSkills, generateSpecialitySkills, generateProfession, magicManaCost, sampleAffordableMagicSkills, generateMagicSkills, generate, formatType, formatSection, format
   };
   if (typeof module !== 'undefined' && module.exports) {
     configure(require('./data/rolls.json'), require('./data/types.json'), require('./data/monsters.json'));

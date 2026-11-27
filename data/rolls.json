@@ -259,7 +259,8 @@
     {
       "name": "Aloof",
       "description": "+5 INT, -5 CHA, +5 Mana.",
-      "stats": { "INT": 5, "CHA": -5 }
+      "stats": { "INT": 5, "CHA": -5 },
+      "manaBonus": 5
     },
     { "name": "Charming", "description": "+10 CHA.", "stats": { "CHA": 10 } },
     {
@@ -440,8 +441,8 @@
     },
     {
       "name": "Selfless",
-      "description": "When you gain EXP, you may choose to instead give it to someone else. +10 CHA.",
-      "stats": { "CHA": 10 }
+      "description": "When you gain EXP, you may choose to instead give it to someone else. +20 CHA.",
+      "stats": { "CHA": 20 }
     },
     {
       "name": "Sleepless",
@@ -457,6 +458,56 @@
       "name": "Well-read",
       "description": "Gain two additional skills with +10%.",
       "skillRolls": [{ "count": 2, "bonus": 10 }]
+    },
+    {
+      "name": "Pacifist",
+      "description": "Unwilling to commit violence. Gain 3 emotional intelligence skills with +1% x the level of this title."
+    },
+    {
+      "name": "Fixated",
+      "description": "Gain +60% in one skill. All other skills start at base 0%."
+    },
+    {
+      "name": "Volatile",
+      "description": "Gain Frenzy Vulnerability and +5 STR.",
+      "stats": { "STR": 5 },
+      "vulnerabilities": ["Frenzy"]
+    },
+    {
+      "name": "Dramatic",
+      "description": "Gain Fear Vulnerability, Frenzy Vulnerability, and the Idiot Savant title.",
+      "vulnerabilities": ["Fear", "Frenzy"],
+      "title": "Idiot Savant"
+    },
+    {
+      "name": "Iron will",
+      "description": "Gain Magical, Fear, and Charm Resistance at +1% per level.",
+      "resistancesPerLevel": { "Magical": 1, "Fear": 1, "Charm": 1 }
+    },
+    {
+      "name": "Dutiful",
+      "description": "Gain the Obsessed title and ignore its negative effects.",
+      "title": "Obsessed"
+    },
+    {
+      "name": "Obsessive",
+      "description": "Gain the Obsessed title.",
+      "title": "Obsessed"
+    },
+    {
+      "name": "Lone wolf",
+      "description": "This character is incapable of joining an organization. Upgrade an extra skill on leveling up."
+    },
+    {
+      "name": "Rebellious",
+      "description": "This character is incapable of going above Level 10 in an organization. Gain +5 STR and +5 CON.",
+      "stats": { "STR": 5, "CON": 5 }
+    },
+    {
+      "name": "Curious",
+      "description": "Gain +5 INT and +10% in a Perception skill.",
+      "stats": { "INT": 5 },
+      "skillRolls": [{ "category": "Perception", "count": 1, "bonus": 10 }]
     }
   ],
   "levels": {
@@ -509,74 +560,40 @@
     ],
     "newTitleChance": 0.5,
     "entries": [
+      { "name": "Risk Taker", "description": "Gain +1% per level when doing something risky.", "levelRange": [1, 20] },
+      { "name": "Lover Boy", "description": "Gain +1% per level when doing something romantic or sexual.", "levelRange": [1, 40] },
+      { "name": "Idiot Savant", "description": "Choose a stat. All skills using that stat gain +1% per level in this title.", "levelFormula": "age/5" },
+      { "name": "Obsessed", "description": "Choose an object of obsession. When you are not acting towards it, or physically around it, gain -1% x the level of this title. When you are acting towards it, or are physically around it, gain +1% x level of this title.", "levelRange": [1, 30] },
+      { "name": "Prince/ss", "description": "Gain one additional stat point per title level every time you level up.", "levelRange": [1, 1] },
+      { "name": "Weak", "description": "-1 STR and CON for every level.", "levelFormula": "age/5" },
+      { "name": "Idiot", "description": "Lose 1 random stat point per title level every time you level up.", "levelRange": [1, 5] },
+      { "name": "Bloodthirsty", "description": "Gain 10 EXP every time you kill something sentient.", "levelRange": [1, 1] },
+      { "name": "Criminal (Guild)", "description": "Gain a marking on your forehead. All stats decreased by 10.", "allStats": -10, "levelRange": [1, 1] },
+      { "name": "Protector", "description": "Gain light magic and one light magic spell. If magic was unavailable, MAGIC starts at 15.", "enableMagic": true, "lightMagicSkills": 1, "levelRange": [1, 1] },
+      { "name": "Lucky", "description": "Add the percentage of this title's level to all rolls. Levels up when luck makes the difference.", "levelRange": [1, 25] },
+      { "name": "Unlucky", "description": "Inverse the title Lucky.", "levelRange": [1, 25] },
+      { "name": "Coward", "description": "Gain +1% per level to skills when running away.", "levelRange": [1, 30] },
+      { "name": "Prodigy", "description": "Pick a stat. All values added to that stat are doubled, for a maximum of 4.", "levelRange": [1, 1] },
+      { "name": "Beloved", "description": "A Goddess grants you use of a skill.", "levelRange": [1, 1] },
+      { "name": "Hero", "description": "All EXP gain is multiplied by 5.", "levelRange": [1, 1] },
+      { "name": "Student", "description": "All EXP gain is doubled; level up an additional skill at level up.", "levelRange": [1, 1] },
+      { "name": "(Type) Magician", "description": "Gain a magic spell of this type. Add +1% per title level to all spells of this type.", "levelFormula": "age/5", "magicTypeTemplate": true, "magicSkills": 1, "magicBonusPerLevel": 1 },
+      { "name": "Ascendent", "description": "Gain light or dark magic and Miracle or Calamity. For every title level, increase a stat of your choice by 2.", "levelRange": [1, 20] },
+      { "name": "Resilient", "description": "Every time you level up, gain 4 levels in a resistance of your choice.", "levelRange": [1, 1] },
+      { "name": "Normal person", "description": "All EXP gain is multiplied by 0.5.", "levelRange": [1, 1] },
+      { "name": "Normal", "description": "This creature is terrifically normal. All EXP gain is multiplied by 0.5.", "levelRange": [1, 1] },
+      { "name": "Peculiar", "description": "All stat gain for this creature is randomized.", "levelRange": [1, 1], "redistributeStats": true }
+    ],
+    "raceTitles": [
       {
-        "name": "Risk Taker",
-        "description": "Gain +1% per level when doing something risky."
-      },
-      {
-        "name": "Lover Boy",
-        "description": "Gain +1% per level when doing something romantic or sexual."
-      },
-      {
-        "name": "Prince/ss",
-        "description": "Gain one additional stat point per title level every time you level up."
-      },
-      { "name": "Weak", "description": "-1 STR and CON for every level." },
-      {
-        "name": "Idiot",
-        "description": "Lose 1 random stat point per title level every time you level up."
-      },
-      {
-        "name": "Bloodthirsty",
-        "description": "Gain 10 EXP every time you kill something sentient."
-      },
-      {
-        "name": "Criminal (Guild)",
-        "description": "Gain a marking on your forehead. All stats decreased by 10.",
-        "allStats": -10
-      },
-      {
-        "name": "Protector",
-        "description": "Gain light magic and one light magic spell. If magic was unavailable, MAGIC starts at 15.",
-        "enableMagic": true
-      },
-      {
-        "name": "Lucky",
-        "description": "Add the percentage of this title's level to all rolls. Levels up when luck makes the difference."
-      },
-      { "name": "Unlucky", "description": "Inverse the title Lucky." },
-      {
-        "name": "Coward",
-        "description": "Gain +1% per level to skills when running away."
-      },
-      {
-        "name": "Prodigy",
-        "description": "Pick a stat. All values added to that stat are doubled, for a maximum of 4."
-      },
-      {
-        "name": "Beloved",
-        "description": "A Goddess grants you use of a skill."
-      },
-      { "name": "Hero", "description": "All EXP gain is multiplied by 5." },
-      {
-        "name": "Student",
-        "description": "All EXP gain is doubled; level up an additional skill at level up."
-      },
-      {
-        "name": "(Type) Magician",
-        "description": "Gain a magic spell of this type. Add +1% per title level to all spells of this type."
-      },
-      {
-        "name": "Ascendent",
-        "description": "Gain light or dark magic and Miracle or Calamity. For every title level, increase a stat of your choice by 2."
-      },
-      {
-        "name": "Resilient",
-        "description": "Every time you level up, gain 4 levels in a resistance of your choice."
-      },
-      {
-        "name": "Normal person",
-        "description": "All EXP gain is multiplied by 0.5."
+        "race": "ELEMENTAL",
+        "name": "Elemental",
+        "description": "Choose an element. You may only cast spells of this type, but gain +2% per level of this title to spellcasting.",
+        "levelFormula": "age/5",
+        "magicTypeTemplate": true,
+        "magicSkills": 1,
+        "magicBonusPerLevel": 2,
+        "elements": ["Fire", "Water", "Earth", "Wind", "Electricity"]
       }
     ]
   },

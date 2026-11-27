@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const generator = require('./generator.js');
 const rolls = require('./data/rolls.json');
 const types = require('./data/types.json');
+const monsters = require('./data/monsters.json');
 
 function sequence(values, fallback = 0.5) {
   let index = 0;
@@ -39,7 +40,7 @@ test('weapons have a 30% unarmed chance and every named weapon has the specified
 });
 
 test('character output hides zero resistances but shows nonzero values and the generated attack', () => {
-  const npc = generator.generate({ type: 'DRAGON', age: 25 }, () => 0);
+  const npc = generator.generate({ type: 'Vampire', age: 25 }, () => 0);
   assert.deepEqual(npc.resistancesAndVulnerabilities, [
     'Damage Resistance: 0%', 'Limb Damage Resistance: 0%', 'Magical Resistance: 0%',
     'Poison Resistance: 0%', 'Fall Resistance: 0%', 'Fear Resistance: 0%',
@@ -47,12 +48,29 @@ test('character output hides zero resistances but shows nonzero values and the g
     'Insomnia Resistance: 0%', 'Electric Resistance: 0%', 'Frenzy Resistance: 0%'
   ]);
   assert.ok(!generator.format(npc).includes('Resistances & Vulnerabilities:'));
-  assert.ok(generator.format(npc).includes('Attack: Unarmed (+0 damage)'));
+  assert.ok(generator.format(npc).includes('Attack:\nUnarmed (+0 damage)'));
   npc.resistancesAndVulnerabilities[0] = 'Damage Resistance: 25%';
   npc.resistancesAndVulnerabilities[1] = 'Limb Damage Resistance: -10%';
   const text = generator.format(npc);
   assert.ok(text.includes('Resistances & Vulnerabilities:\nDamage Resistance: 25%\nLimb Damage Resistance: -10%'));
   assert.ok(!text.includes('Resistance: 0%'));
+});
+
+test('NPC combat substats use the same floored stat derivations as monsters', () => {
+  const npc = generator.generate({ type: 'DRAGON', age: 25 }, () => 0);
+  npc.stats = { STR: 49, CON: 54, INT: 27, AGI: 33, MAG: 39, CHA: 20 };
+  assert.deepEqual(generator.substats(npc), {
+    Attack: 9, Defense: 10, Resist: 5, Accuracy: 11, Dodge: 6, Power: 7
+  });
+  assert.equal(generator.hitPoints(npc), 10);
+  const text = generator.format(npc);
+  assert.ok(text.includes('Strength: 49 | Attack: 9'));
+  assert.ok(text.includes('Constitution: 54 | Defense: 10'));
+  assert.ok(text.includes('Resist: 5'));
+  assert.ok(text.includes('Intelligence: 27 | Accuracy: 11'));
+  assert.ok(text.includes('Agility: 33 | Dodge: 6'));
+  assert.ok(text.includes('Magic: 39 | Power: 7'));
+  assert.ok(text.includes('Hit Points Max: 10'));
 });
 
 test('unconfigured type weights do not silently select Human', () => {
@@ -68,11 +86,13 @@ test('unconfigured type weights do not silently select Human', () => {
 });
 
 test('available type weights are applied proportionally', () => {
-  const expected = { HUMAN: 60, UNDEAD: 10 };
-  assert.deepEqual(Object.fromEntries(types.types.map(value => [value.type, value.weight])), expected);
-  const counts = Object.fromEntries(types.types.map(value => [value.type, 0]));
-  for (let index = 0; index < 700; index++) counts[generator.selectType(() => (index + 0.5) / 700)]++;
-  for (const [type, weight] of Object.entries(expected)) assert.equal(counts[type], weight * 10);
+  const weightedTypes = [{ type: 'HUMAN', weight: 60 }, { type: 'UNDEAD', weight: 10 }];
+  try {
+    generator.configure(rolls, { types: weightedTypes });
+    const counts = Object.fromEntries(weightedTypes.map(value => [value.type, 0]));
+    for (let index = 0; index < 700; index++) counts[generator.selectType(() => (index + 0.5) / 700)]++;
+    assert.deepEqual(counts, { HUMAN: 600, UNDEAD: 100 });
+  } finally { generator.configure(rolls, types); }
 });
 
 test('non-Human types without subtypes output only a type and use shared rules', () => {
@@ -84,6 +104,7 @@ test('non-Human types without subtypes output only a type and use shared rules',
     assert.equal(npc.level, undefined);
     assert.deepEqual(npc.traits, []);
     assert.ok(generator.formatType(npc).startsWith('Example | Age: 25'));
+    assert.ok(generator.formatType(npc).endsWith('Level: Not configured'));
     assert.ok(Object.values(npc.stats).every(Number.isFinite));
   } finally { generator.configure(rolls, types); }
 });
@@ -245,34 +266,273 @@ test('traits are opt-in and education skills reach the final output', () => {
     assert.deepEqual(npc.traits, ['Education: Uneducated']);
     assert.deepEqual(npc.skills, ['Knowledge: Street smarts 30%']);
     assert.equal(npc.stats.INT, 25);
-    assert.ok(!generator.format(generator.generate({ type: 'ELEMENTAL', age: 25 })).includes('Traits:'));
+    assert.ok(generator.format(generator.generate({ type: 'ELEMENTAL', age: 25 })).includes('Temperaments:\n'));
   } finally { generator.generateStats = original; }
 });
 
-test('output uses full stat names, age, and excludes magic when not applicable', () => {
+test('Elemental output shows its automatic magic status and full stat names', () => {
   const npc = generator.generate({ type: 'ELEMENTAL', age: 40, includeMagic: false }, () => 0.5);
   const text = generator.format(npc);
   assert.ok(text.startsWith('ELEMENTAL | Age: 40'));
   assert.ok(text.includes('Strength:'));
   assert.ok(text.includes('Constitution:'));
-  assert.ok(!text.includes('Magic:'));
-  assert.ok(!text.includes('Traits:'));
-  npc.includeMagic = true;
-  assert.ok(generator.format(npc).includes('Magic:'));
+  assert.ok(text.includes('Magic:'));
+  assert.ok(text.includes('Temperaments:\n'));
 });
 
-test('Human subtype magic rules override the generic display preference', () => {
+test('Elemental inherited subtypes receive their own bases, level bonuses, and visible levels', () => {
+  const fairy = generator.generate({
+    type: 'Elemental',
+    subtype: 'Fairy',
+    age: 25,
+    traitCategories: []
+  }, () => 0);
+  assert.ok(fairy.level >= 1 && fairy.level <= 80);
+  assert.ok(generator.formatType(fairy).includes(`Level: ${fairy.level}`));
+  assert.ok(Object.values(fairy.stats).every(value => value >= 10));
+  assert.ok(Object.values(fairy.stats).reduce((sum, value) => sum + value, 0) >= 90);
+  assert.ok(fairy.stats.MAG >= 10 + fairy.level);
+
+  const elemental = generator.generate({
+    type: 'Elemental',
+    subtype: 'Elemental',
+    age: 25,
+    traitCategories: []
+  }, () => 0);
+  assert.ok(elemental.level >= 1 && elemental.level <= 25);
+  assert.ok(Object.values(elemental.stats).every(value => value >= 10));
+  assert.ok(Object.values(elemental.stats).reduce((sum, value) => sum + value, 0) >= 120);
+  assert.deepEqual(elemental.temperaments, []);
+
+  const inheritedTypes = structuredClone(types);
+  const fairyRule = inheritedTypes.types.find(value => value.type === 'Elemental')
+    .subtypes.find(value => value.subtype === 'Fairy');
+  delete fairyRule.levelRange;
+  inheritedTypes.progressionChart = inheritedTypes.progressionChart
+    .filter(entry => !(entry.type === 'Elemental' && entry.subtype === 'Fairy'));
+  generator.configure(rolls, inheritedTypes, monsters);
+  try {
+    const inheritedLevel = generator.generate({
+      type: 'Elemental',
+      subtype: 'Fairy',
+      age: 25,
+      traitCategories: []
+    }, () => 0).level;
+    assert.ok(inheritedLevel >= 1 && inheritedLevel <= 5);
+  } finally { generator.configure(rolls, types, monsters); }
+});
+
+test('progression chart drives every subtype level and stat bonuses', () => {
+  const configuredTypes = structuredClone(types);
+  for (const type of configuredTypes.types) {
+    for (const subtype of type.subtypes ?? []) {
+      if (subtype.rolls) {
+        subtype.rolls.magicSkills = 0;
+        subtype.rolls.lightMagicSkills = 0;
+      }
+    }
+  }
+  generator.configure(rolls, configuredTypes, monsters);
+  try {
+    const chart = new Map(configuredTypes.progressionChart.map(entry => [
+      `${entry.type.toLowerCase()}|${entry.subtype.toLowerCase()}`,
+      entry
+    ]));
+    const findRange = (type, subtype, visited = new Set()) => {
+      if (visited.has(subtype.subtype)) return undefined;
+      visited.add(subtype.subtype);
+      const entry = chart.get(`${type.type.toLowerCase()}|${subtype.subtype.toLowerCase()}`);
+      const range = entry?.levelRange ?? subtype.levelRange;
+      if (range) return range;
+      const parents = subtype.inherits === undefined
+        ? []
+        : Array.isArray(subtype.inherits) ? subtype.inherits : [subtype.inherits];
+      for (const name of parents.reverse()) {
+        const parent = type.subtypes.find(value => value.subtype === name);
+        const inheritedRange = parent && findRange(type, parent, visited);
+        if (inheritedRange) return inheritedRange;
+      }
+      return undefined;
+    };
+
+    for (const type of configuredTypes.types) {
+      for (const subtype of type.subtypes ?? []) {
+        const npc = generator.generate({
+          type: type.type,
+          subtype: subtype.subtype,
+          age: subtype.ageRange?.[0] ?? 25,
+          traitCategories: []
+        }, () => 0.5);
+        const range = findRange(type, subtype);
+        if (range) {
+          assert.ok(npc.level >= range[0] && npc.level <= range[1], `${type.type} ${subtype.subtype}: ${npc.level} not in ${range}`);
+          assert.ok(generator.formatType(npc).includes(`Level: ${npc.level}`));
+        } else {
+          assert.equal(npc.level, undefined, `${type.type} ${subtype.subtype}`);
+          assert.ok(generator.formatType(npc).endsWith('Level: Not configured'));
+        }
+        assert.ok(Object.values(npc.stats).every(Number.isFinite), `${type.type} ${subtype.subtype}`);
+      }
+    }
+
+    const hatchling = generator.generate({
+      type: 'Dragon',
+      subtype: 'Dragon Hatchling',
+      age: 25,
+      traitCategories: []
+    }, () => 0.9999);
+    assert.equal(hatchling.level, 3);
+    assert.equal(Object.values(hatchling.stats).reduce((sum, value) => sum + value, 0), 150);
+
+    const spark = generator.generate({
+      type: 'Omniscient',
+      subtype: 'Spark',
+      age: 25,
+      traitCategories: []
+    }, () => 0.9999);
+    assert.equal(spark.level, 20);
+    assert.equal(Object.values(spark.stats).reduce((sum, value) => sum + value, 0), 600);
+
+    const elder = generator.generate({
+      type: 'Dragon',
+      subtype: 'Elder Dragon',
+      age: 25,
+      traitCategories: []
+    }, () => 0);
+    assert.ok(elder.stats.CON >= 120);
+
+    const genasi = generator.generate({
+      type: 'Elemental',
+      subtype: 'Genasi',
+      age: 25,
+      traitCategories: []
+    }, () => 0);
+    assert.ok(genasi.stats.INT >= 30);
+
+    const humanoidSlime = generator.generate({
+      type: 'Slime',
+      subtype: 'Humanoid',
+      age: 25,
+      traitCategories: []
+    }, () => 0);
+    assert.ok(Object.values(humanoidSlime.stats).every(value => value >= 30));
+
+    const monstrous = generator.generate({
+      type: 'Vampire',
+      subtype: 'Monstrous',
+      age: 25,
+      traitCategories: []
+    }, () => 0);
+    assert.equal(monstrous.stats.INT, 15);
+  } finally { generator.configure(rolls, types, monsters); }
+});
+
+test('Omniscient chart gains include spells, Domain, and a Monster-list animal with its modifiers', () => {
+  const spark = generator.generate({
+    type: 'Omniscient',
+    subtype: 'Spark',
+    age: 25,
+    traitCategories: []
+  }, () => 0);
+  assert.equal(spark.magicSkills.length, 2);
+  assert.ok(spark.magicSkills.every(skill => skill.includes('(Omniscient) 50%:')));
+
+  const bird = generator.generate({
+    type: 'Omniscient',
+    subtype: 'Animal God',
+    age: 25,
+    traitCategories: []
+  }, () => 0);
+  let randomCalls = 0;
+  const bear = generator.generate({
+    type: 'Omniscient',
+    subtype: 'Animal God',
+    age: 25,
+    traitCategories: []
+  }, () => randomCalls++ === 20 ? 0.04 : 0);
+  assert.ok(monsters.animal.some(animal => animal.name === bear.animal));
+  assert.equal(bear.animal, 'Bear');
+  assert.equal(bear.level, 1);
+  assert.equal(bear.stats.STR, bird.stats.STR + 1);
+  assert.equal(bear.stats.CON, bird.stats.CON + 1);
+  assert.equal(bear.magicSkills.filter(skill => skill.includes('(Omniscient)')).length, 3);
+  assert.ok(bear.magicSkills.some(skill => skill.startsWith('Domain (Omniscient) 30%:')));
+  assert.equal(bear.skills.filter(skill => skill.endsWith('50%')).length, 5);
+});
+
+test('Dragons use Bite or Claws and only Ascendant Dragons can receive combat skills', () => {
+  const original = generator.generateStats;
+  const cruelIndex = rolls.temperaments.findIndex(item => item.name === 'Cruel');
+  const rollCruel = () => sequence([(cruelIndex + 0.5) / rolls.temperaments.length], 0);
+  try {
+    generator.generateStats = () => Object.fromEntries(generator.statKeys.map(key => [key, 30]));
+    const hatchling = generator.generate({
+      type: 'Dragon',
+      subtype: 'Dragon Hatchling',
+      age: 25,
+      traitCategories: ['temperament']
+    }, rollCruel());
+    assert.ok(['Bite', 'Claws'].includes(hatchling.attack.name));
+    assert.ok(!hatchling.skills.some(skill => skill.startsWith('Combat:')));
+
+    const ascendant = generator.generate({
+      type: 'Dragon',
+      subtype: 'Ascendant Dragon',
+      age: 25,
+      traitCategories: ['temperament']
+    }, rollCruel());
+    assert.ok(['Bite', 'Claws'].includes(ascendant.attack.name));
+    assert.ok(ascendant.skills.some(skill => skill.startsWith('Combat: ')));
+  } finally { generator.generateStats = original; }
+});
+
+test('Human subtype magic status is automatic and ignores the former display option', () => {
   for (const subtype of ['Child', 'Adult']) {
     const npc = generator.generate({ type: 'HUMAN', subtype, age: subtype === 'Child' ? 12 : 25, includeMagic: true }, () => 0.5);
-    assert.equal(npc.includeMagic, false);
+    assert.equal(npc.magical, false);
     assert.equal(npc.magicRequired, false);
     assert.ok(!generator.format(npc).includes('Magic:'));
   }
   for (const subtype of ['Lord', 'Magician']) {
     const npc = generator.generate({ type: 'HUMAN', subtype, age: 25, includeMagic: false }, () => 0.5);
-    assert.equal(npc.includeMagic, true);
+    assert.equal(npc.magical, true);
     assert.equal(npc.magicRequired, true);
     assert.ok(generator.format(npc).includes('Magic:'));
+  }
+});
+
+test('Aloof applies INT, CHA, and Mana effects and is listed separately as a temperament', () => {
+  const index = rolls.temperaments.findIndex(item => item.name === 'Aloof');
+  const randomValues = [(index + 0.5) / rolls.temperaments.length, ...Array(100).fill(0.5)];
+  const npc = generator.generate({
+    type: 'Elemental',
+    subtype: 'Sprite',
+    age: 25,
+    traitCategories: ['temperament']
+  }, sequence(randomValues, 0.5));
+  const baseline = generator.generate({
+    type: 'Elemental',
+    subtype: 'Sprite',
+    age: 25,
+    traitCategories: []
+  }, sequence(randomValues.slice(1), 0.5));
+  assert.equal(npc.stats.INT - baseline.stats.INT, 5);
+  assert.equal(npc.stats.CHA - baseline.stats.CHA, -5);
+  assert.equal(npc.mana - baseline.mana, 5);
+  assert.deepEqual(npc.temperaments, ['Aloof: +5 INT, -5 CHA, +5 Mana.']);
+  const text = generator.format(npc);
+  assert.ok(text.includes('Temperaments:\nAloof: +5 INT, -5 CHA, +5 Mana.'));
+  assert.ok(!text.includes('Traits:\nTemperament:'));
+  assert.ok(text.includes(`Mana: ${npc.mana}`));
+});
+
+test('every configured non-Human type enables Magic', () => {
+  for (const type of types.types.filter(value => value.type !== 'HUMAN')) {
+    const subtype = type.subtypes[0];
+    const npc = generator.generate({ type: type.type, subtype: subtype.subtype }, () => 0.5);
+    assert.equal(npc.magicRequired, true, `${type.type} ${subtype.subtype}`);
+    assert.equal(npc.magical, true, `${type.type} ${subtype.subtype}`);
+    assert.ok(generator.format(npc).includes('Magic:'), `${type.type} ${subtype.subtype}`);
   }
 });
 
@@ -309,17 +569,23 @@ test('all Human levels are uniformly reachable and apply every level bonus', () 
 });
 
 test('Human base, random points and one subtype level use the specified stat bonuses', () => {
+  const originalTitles = generator.generateTitles;
   const cases = [
     ['Child', 12, 0, { STR: 25, CON: 25, CHA: 25, INT: 25, AGI: 20, MAG: 20 }],
     ['Adult', 25, 15, { STR: 42, CON: 27, CHA: 25, INT: 25, AGI: 20, MAG: 20 }],
     ['Lord', 25, 30, { STR: 58, CON: 28, CHA: 25, INT: 25, AGI: 20, MAG: 20 }],
     ['Magician', 25, 20, { STR: 46, CON: 25, CHA: 25, INT: 26, AGI: 20, MAG: 23 }]
   ];
-  for (const [subtype, age, points, expected] of cases) {
-    const childRolls = subtype === 'Child' ? [] : Array(5).fill(0);
-    const npc = generator.generate({ type: 'HUMAN', subtype, age, traitCategories: [] }, sequence([...childRolls, ...Array(points).fill(0), ...Array(5).fill(0)], 0.9999));
-    assert.equal(npc.level, 1);
-    assert.deepEqual(npc.stats, expected, subtype);
+  try {
+    generator.generateTitles = () => [];
+    for (const [subtype, age, points, expected] of cases) {
+      const childRolls = subtype === 'Child' ? [] : Array(5).fill(0);
+      const npc = generator.generate({ type: 'HUMAN', subtype, age, traitCategories: [] }, sequence([...childRolls, ...Array(points).fill(0), ...Array(5).fill(0), 0.9999], 0.9999));
+      assert.equal(npc.level, 1);
+      assert.deepEqual(npc.stats, expected, subtype);
+    }
+  } finally {
+    generator.generateTitles = originalTitles;
   }
 });
 
@@ -343,7 +609,10 @@ test('Adult, Lord and Magician independently roll and apply the full Child level
 
 test('Human base traits include two distinct temperaments, and overlapping resistances stack', () => {
   const options = { type: 'HUMAN', subtype: 'Child', age: 12 };
-  const npc = generator.generate(options, sequence([0.5, 8.5 / 41, 17.5 / 40], 0.9999));
+  const idiotIndex = rolls.temperaments.findIndex(item => item.name === 'Idiot');
+  const remaining = rolls.temperaments.filter(item => item.name !== 'Idiot');
+  const braveIndex = remaining.findIndex(item => item.name === 'Brave');
+  const npc = generator.generate(options, sequence([0.5, (idiotIndex + 0.5) / rolls.temperaments.length, (braveIndex + 0.5) / remaining.length], 0.9999));
   assert.deepEqual(npc.traitRolls.map(item => item.category), ['beauty', 'temperament', 'temperament']);
   assert.deepEqual(npc.traitRolls.slice(1).map(item => item.effect.name), ['Idiot', 'Brave']);
   assert.deepEqual(generator.visibleResistances(npc.resistancesAndVulnerabilities), ['Fear Resistance: 30%', 'Charm Resistance: 10%']);
@@ -366,7 +635,7 @@ test('Human non-profession title chance is 30%', () => {
 
 test('Lord and Magician bonus skill thresholds apply strictly above each level', () => {
   for (const [subtype, points, max, cases] of [
-    ['Lord', 30, 40, [[20, 20], [21, 30], [30, 30], [31, 40]]],
+    ['Lord', 30, 40, [[9, 20], [10, 30], [19, 30], [20, 40], [29, 40], [30, 50], [39, 50], [40, 60]]],
     ['Magician', 20, 65, [[20, 20], [21, 30], [35, 30], [36, 40], [50, 40], [51, 50]]]
   ]) {
     for (const [level, bonus] of cases) {
@@ -405,12 +674,12 @@ test('bonus skills stack with existing profession skills and report repeated rol
 });
 
 test('Weapon combat skills add the selected weapon alongside an unarmed attack', () => {
-  const random = sequence([...Array(5).fill(0), ...Array(30).fill(0), 0, 0, 0, 0.99, 0.9, 0, 0, 0, 0], 0.5);
-  const npc = generator.generate({ type: 'HUMAN', subtype: 'Lord', age: 25, traitCategories: [] }, random);
-  assert.ok(npc.skills.includes('Combat: Weapon (Dagger) 30%'));
-  assert.deepEqual(npc.attack, { name: 'Unarmed', damage: 0 });
-  assert.deepEqual(npc.skillWeapons, [{ name: 'Dagger', damage: 2, skillPercent: 30 }]);
-  assert.ok(generator.format(npc).includes('Attack: Unarmed (+0 damage)\nDagger (+2 damage, Weapon skill: 30%)'));
+  const npc = generator.generate({ type: 'HUMAN', subtype: 'Lord', age: 25, traitCategories: [] }, () => 0.9999);
+  assert.ok(npc.skills.some(skill => skill.startsWith('Combat: Weapon (')));
+  assert.equal(npc.skillWeapons.length, 1);
+  const formattedAttacks = generator.formatAttacks({ ...npc, attack: { name: 'Unarmed', damage: 0 } });
+  const formattedWeapon = generator.formatAttack(npc.skillWeapons[0], { name: 'Weapon skill', value: 30 });
+  assert.equal(formattedAttacks, `Unarmed (+0 damage)\n${formattedWeapon}`);
 });
 
 test('multiple weapon skills preserve damage and properties without duplicate attacks', () => {
@@ -452,7 +721,7 @@ test('generated unarmed characters include their rolled Brawl percentage in the 
   const random = sequence([...Array(5).fill(0), ...Array(30).fill(0), 0, 0, 0, 0.99, 0, 0, 0, 0], 0.5);
   const npc = generator.generate({ type: 'HUMAN', subtype: 'Lord', age: 25, traitCategories: [] }, random);
   assert.ok(npc.skills.includes('Combat: Brawl 30%'));
-  assert.ok(generator.format(npc).includes('Attack: Unarmed (+0 damage, Brawl: 30%)'));
+  assert.ok(generator.format(npc).includes('Attack:\nUnarmed (+0 damage, Brawl: 30%)'));
 });
 
 test('Weapon combat skills remain available through direct skill generation', () => {
@@ -460,13 +729,17 @@ test('Weapon combat skills remain available through direct skill generation', ()
   assert.deepEqual(skills, ['Combat: Weapon (Dagger) 30%']);
 });
 
-test('Magicians receive distinct monster-list spells; Lords show the pending martial skill', () => {
-  const magician = generator.generate({ type: 'HUMAN', subtype: 'Magician', age: 25, traitCategories: [] }, () => 0.9999);
+test('Magicians receive distinct elemental spells; Lords show the pending martial skill', () => {
+  const magician = generator.generate({ type: 'HUMAN', subtype: 'Magician', age: 25 }, () => 0.9999);
   assert.equal(magician.magicSkills.length, 2);
   assert.notEqual(magician.magicSkills[0], magician.magicSkills[1]);
-  const lord = generator.generate({ type: 'HUMAN', subtype: 'Lord', age: 25, traitCategories: [] }, () => 0.9999);
+  const lord = generator.generate({ type: 'HUMAN', subtype: 'Lord', age: 25 }, () => 0.9999);
   assert.ok(lord.magicSkills[0].includes('1 pending'));
   assert.ok(lord.skills.some(skill => skill.startsWith('Combat:')));
+  for (const npc of [magician, lord]) {
+    assert.ok(npc.traitRolls.some(trait => trait.category === 'education'));
+    assert.ok(npc.traitRolls.some(trait => trait.category === 'height'));
+  }
 });
 
 function undeadAtLevel(subtype, age, level, fallback = 0.9) {
@@ -481,7 +754,7 @@ function undeadAtLevel(subtype, age, level, fallback = 0.9) {
 test('Undead subtypes use specified age and uniform level ranges', () => {
   for (const [subtype, minAge, maxAge, maxLevel] of [
     ['Skeleton', 1, 100, 10], ['Walking Corpse', 1, 100, 10], ['Corpse Mage', 50, 200, 50],
-    ['Lich', 100, 1000, 80], ['Fierce Corpse', 50, 300, 80], ['Skeleton Warrior', 5, 100, 10],
+    ['Lich', 100, 1000, 80], ['Fierce Corpse', 50, 300, 70], ['Skeleton Warrior', 5, 100, 10],
     ['Archer Skeleton', 15, 150, 20], ['Shield Skeleton', 15, 150, 20], ['Healer Skeleton', 1, 100, 30]
   ]) {
     const min = generator.generate({ type: 'UNDEAD', subtype, traitCategories: [] }, () => 0);
@@ -497,13 +770,62 @@ test('Undead subtypes use specified age and uniform level ranges', () => {
 
 test('Undead inherited stat bonuses stack at the selected level', () => {
   for (const [subtype, age, points, perLevel] of [
-    ['Skeleton', 50, 0, 1], ['Walking Corpse', 50, 10, 3], ['Corpse Mage', 50, 25, 6],
-    ['Lich', 100, 75, 12], ['Fierce Corpse', 50, 30, 7],
+    ['Skeleton', 50, 0, 1], ['Walking Corpse', 50, 10, 5], ['Corpse Mage', 50, 25, 8],
+    ['Lich', 100, 75, 14], ['Fierce Corpse', 50, 30, 9],
     ['Skeleton Warrior', 50, 10, 3], ['Archer Skeleton', 50, 25, 5], ['Shield Skeleton', 50, 15, 3]
   ]) {
     const npc = undeadAtLevel(subtype, age, 10);
-    assert.equal(npc.level, 10, subtype);
-    assert.equal(Object.values(npc.stats).reduce((sum, value) => sum + value, 0), 30 + points + 10 * perLevel, subtype);
+    assert.ok(npc.level >= 1 && npc.level <= types.types.find(value => value.type === 'UNDEAD')
+      .subtypes.find(value => value.subtype === subtype).levelRange[1], subtype);
+    assert.equal(Object.values(npc.stats).reduce((sum, value) => sum + value, 0), 30 + points + npc.level * perLevel, subtype);
+  }
+});
+
+test('subtype inheritance accepts multiple parents, deduplicates shared ancestors, and retains string parents', () => {
+  const configuredTypes = {
+    types: [{
+      type: 'Example',
+      subtypes: [
+        { subtype: 'Shared', randomPoints: 1, rolls: { skills: 1 } },
+        { subtype: 'Parent A', inherits: 'Shared', randomPoints: 2, rolls: { skills: 1 } },
+        { subtype: 'Parent B', inherits: ['Shared'], randomPoints: 3, rolls: { skills: 1 } },
+        { subtype: 'Humanoid', inherits: ['Parent A', 'Parent B'], randomPoints: 4 }
+      ]
+    }]
+  };
+  const originalStats = generator.generateStats;
+  try {
+    generator.configure(rolls, configuredTypes);
+    generator.generateStats = () => Object.fromEntries(generator.statKeys.map(key => [key, 30]));
+    const npc = generator.generate({ type: 'Example', subtype: 'Humanoid', age: 25 }, () => 0);
+    assert.equal(Object.values(npc.stats).reduce((sum, value) => sum + value, 0), 190);
+    assert.equal(npc.skills.length, 3);
+  } finally {
+    generator.generateStats = originalStats;
+    generator.configure(rolls, types);
+  }
+});
+
+test('subtype inheritance rejects cycles and unknown parent names', () => {
+  try {
+    assert.throws(() => generator.configure(rolls, {
+      types: [{
+        type: 'Example',
+        subtypes: [
+          { subtype: 'A', inherits: ['B', 'Missing'] },
+          { subtype: 'B', inherits: 'A' }
+        ]
+      }]
+    }), /Cyclic subtype inheritance/);
+
+    assert.throws(() => generator.configure(rolls, {
+      types: [{
+        type: 'Example',
+        subtypes: [{ subtype: 'A', inherits: 'Missing' }]
+      }]
+    }), /Unknown inherited subtype: Missing/);
+  } finally {
+    generator.configure(rolls, types);
   }
 });
 
@@ -525,14 +847,24 @@ test('Skeleton traits and inherited fixed skills, removals and resistance effect
   assert.ok(warrior.skills.some(skill => /^Combat:.*50%/.test(skill)));
 });
 
-test('Archer retains warrior skills and adds longbow, arrow skills and Fragile', () => {
-  const npc = undeadAtLevel('Archer Skeleton', 20, 1);
-  for (const name of ['Slow', 'Bony', 'Undead', 'Fragile', 'Sniper', 'Frost arrow', 'Poison arrow', 'Sleep arrow']) {
-    assert.ok(npc.skills.some(skill => skill.startsWith(`${name}:`)), name);
+test('Archer randomly receives one arrow skill and one ranged weapon at +30%', () => {
+  for (const [random, arrow, weapon, damage] of [
+    [0, 'Frost arrow', 'Longbow', 4],
+    [0.25, 'Frost arrow', 'Crossbow', 4],
+    [0.5, 'Poison arrow', 'Short bow', 2],
+    [0.999, 'Sleep arrow', 'Sling', 2]
+  ]) {
+    const npc = undeadAtLevel('Archer Skeleton', 20, 1, random);
+    for (const name of ['Slow', 'Bony', 'Undead', 'Fragile', 'Sniper']) {
+      assert.ok(npc.skills.some(skill => skill.startsWith(`${name}:`)), name);
+    }
+    assert.equal(npc.skills.filter(skill => /^(Frost arrow|Poison arrow|Sleep arrow):/.test(skill)).length, 1);
+    assert.ok(npc.skills.some(skill => skill.startsWith(`${arrow}:`)));
+    assert.deepEqual(npc.skillWeapons.map(value => [value.name, value.skillPercent]), [[weapon, 60]]);
+    assert.deepEqual(npc.skills.filter(skill => skill.startsWith('Combat:')), [`Combat: Weapon (${weapon}) 60%`]);
+    assert.ok(generator.format(npc).includes(`${weapon} (+${damage} damage, Weapon skill: 60%)`));
+    assert.ok(generator.visibleResistances(npc.resistancesAndVulnerabilities).includes('Damage Vulnerability'));
   }
-  assert.ok(npc.skills.includes('Combat: Weapon (Longbow) 60%'));
-  assert.ok(generator.format(npc).includes('Longbow (+4 damage, Weapon skill: 60%)'));
-  assert.ok(generator.visibleResistances(npc.resistancesAndVulnerabilities).includes('Damage Vulnerability'));
 });
 
 test('Shield resistances increase strictly above level 15 and retain Skeleton defenses', () => {
@@ -559,6 +891,84 @@ test('Corpse Mage and Lich retain spell counts and level-dependent bonuses', () 
   assert.equal(new Set(lich.magicSkills.map(skill => skill.split(' 30%:')[0].split(' 130%:')[0])).size, 5);
 });
 
+test('Monster Magic catalog is assignable separately from elemental Magic Skill rolls', () => {
+  assert.equal(monsters.monsterMagic.length, 53);
+  const rolled = generator.generateMagicSkills({ rolls: { magicSkills: 38 } }, () => 0);
+  assert.equal(rolled.length, 38);
+  assert.ok(rolled.every(skill => / \((Light|Darkness|Fire|Water|Earth|Wind|Electricity)\) /.test(skill)));
+  assert.ok(!rolled.some(skill => monsters.monsterMagic.some(entry => skill.startsWith(`${entry.name} (`))));
+});
+
+test('elemental spell rolls never exceed available Mana', () => {
+  const spell = generator.generateMagicSkills({ mana: 1, rolls: { magicSkills: 1 } }, () => 0);
+  assert.equal(spell.length, 1);
+  assert.ok(spell[0].includes('Light mote (Light)'));
+  assert.equal(generator.magicManaCost({ description: 'Costs 1 Mana.' }), 1);
+  assert.deepEqual(generator.sampleAffordableMagicSkills([
+    { name: 'Affordable', description: 'Costs 1 Mana.' },
+    { name: 'Too expensive', description: 'Costs 5 Mana.' }
+  ], 1, 1, () => 0).map(skill => skill.name), ['Affordable']);
+  assert.throws(() => generator.sampleAffordableMagicSkills([
+    { name: 'Too expensive', description: 'Costs 5 Mana.' }
+  ], 1, 1, () => 0), /Not enough distinct spells affordable with 1 Mana/);
+  assert.deepEqual(generator.generateMagicSkills({
+    mana: 1,
+    fixedMagicSkills: [{ name: 'Fly', school: 'Wind' }]
+  }), ['Fly (Wind): unavailable (costs 5 Mana; only 1 Mana available)']);
+});
+
+test('non-elemental schools are excluded by default but available when explicitly requested', () => {
+  const defaultSpells = generator.generateMagicSkills({
+    mana: Number.POSITIVE_INFINITY,
+    rolls: { magicSkills: 69 }
+  }, () => 0);
+  assert.equal(defaultSpells.length, 69);
+  assert.ok(defaultSpells.every(skill => !/\((Blood|Martial|Omniscient|Ascendant)\)/.test(skill)));
+
+  const martial = generator.generateMagicSkills({
+    mana: 2,
+    magicRolls: [{ magicSkills: 1, magicSchool: 'Martial' }]
+  }, () => 0);
+  assert.ok(martial[0].startsWith('Flame Fury Fist (Martial)'));
+  const omniscient = generator.generateMagicSkills({
+    mana: 10,
+    magicRolls: [{ magicSkills: 1, magicSchool: 'Omniscient' }]
+  }, () => 0);
+  assert.ok(omniscient[0].startsWith('Prophecy (Omniscient)'));
+});
+
+test('titles roll configured levels and Peculiar redistributes the same stat total', () => {
+  const savantIndex = rolls.titles.entries.findIndex(entry => entry.name === 'Idiot Savant');
+  const ageTitle = generator.generateTitles(
+    { age: 40, rolls: { titles: 1 } },
+    {},
+    sequence([0.5, (savantIndex + 0.5) / rolls.titles.entries.length])
+  );
+  assert.ok(ageTitle[0].startsWith('Idiot Savant (Level 8):'));
+
+  const originalStats = generator.generateStats;
+  const originalTitles = generator.generateTitles;
+  try {
+    generator.generateStats = () => Object.fromEntries(generator.statKeys.map(key => [key, 30]));
+    const peculiar = rolls.titles.entries.find(entry => entry.name === 'Peculiar');
+    generator.generateTitles = () => [`${peculiar.name}: ${peculiar.description}`];
+    const npc = generator.generate({ type: 'DRAGON', age: 25 }, () => 0);
+    assert.equal(Object.values(npc.stats).reduce((sum, value) => sum + value, 0), 180);
+    assert.deepEqual(npc.stats, { STR: 180, CON: 0, CHA: 0, INT: 0, AGI: 0, MAG: 0 });
+  } finally {
+    generator.generateStats = originalStats;
+    generator.generateTitles = originalTitles;
+  }
+});
+
+test('Elemental race titles restrict generated spells to their chosen school', () => {
+  const elemental = generator.generate({ type: 'ELEMENTAL', age: 40 }, () => 0.5);
+  const title = elemental.titleData.find(item => item.entry.race === 'ELEMENTAL');
+  assert.ok(title);
+  assert.ok(elemental.magicSkills.every(skill => skill.includes(`(${title.school})`)));
+  assert.ok(elemental.magicSkills.every(skill => skill.includes(` ${30 + title.level * 2}%:`)));
+});
+
 test('Fierce Corpse martial bonus and Healer light spell and intelligence floor', () => {
   for (const [level, percent] of [[1, 50], [9, 50], [10, 60], [80, 130]]) {
     const npc = undeadAtLevel('Fierce Corpse', 50, level);
@@ -570,8 +980,8 @@ test('Fierce Corpse martial bonus and Healer light spell and intelligence floor'
   assert.ok(healer.skills.some(skill => skill.startsWith('Heal (Monster):')));
   assert.equal(healer.magicSkills.length, 1);
   assert.ok(healer.magicSkills[0].includes('(Light) 30%:'));
-  assert.equal(healer.skills.filter(skill => skill.endsWith('30%')).length, 2);
-  assert.equal(healer.includeMagic, true);
+  assert.equal(healer.skills.filter(skill => skill.endsWith('50%')).length, 2);
+  assert.equal(healer.magical, true);
 });
 
 test('configured type data can be extended without editing the selection algorithm', () => {
@@ -588,6 +998,37 @@ test('listTypes exposes every type with its subtype names and default for the dr
   assert.equal(listed.HUMAN.defaultSubtype, 'Adult');
   assert.deepEqual(listed.UNDEAD.subtypes, ['Skeleton', 'Walking Corpse', 'Corpse Mage', 'Lich', 'Fierce Corpse', 'Skeleton Warrior', 'Archer Skeleton', 'Shield Skeleton', 'Healer Skeleton']);
   assert.equal(listed.UNDEAD.defaultSubtype, 'Skeleton');
+  for (const [type, subtypes] of Object.entries({
+    Elemental: ['Sprite', 'Fairy', 'Elemental', 'Genasi'],
+    Omniscient: ['Spark', 'Elemental Elf', 'World Elf', 'Solar/Lunar World Elf', 'Animal God'],
+    Dragon: ['Dragon Hatchling', 'Wyrm', 'Fairy Dragon', 'Young Dragon', 'Dragon', 'Ascendant Dragon', 'Elder Dragon'],
+    Lupine: ['Cub', 'Wolf', 'Werewolf', 'Alpha Werewolf', 'Lesser Wolf', 'Greater Wolf', 'Horned Wolf', 'Pegasi Wolf'],
+    Vampire: ['Vampire Spawn', 'Seductress', 'Blood Caster', 'Vampire Lord', 'Monstrous', 'Parasite', 'Phantom'],
+    Slime: ['Baby Slime', 'Fruit Jelly', 'Humanoid', 'Black Ooze', 'Elder Ooze', 'Blobsucker', 'Blue Slime', 'Poison Slime', 'Pink Slime'],
+    Mermaid: ['Mermaid', 'Siren', 'Dark Siren', 'Enchantress', 'Sea Serpent', 'Kraken', 'Megalodora', 'Elder Mermaid', 'Keeper of Beasts', 'Witch of the Seas'],
+    'Animal Kin': ['Childling', 'Kiyone', 'Daimata', 'Guardian Crow']
+  })) {
+    assert.deepEqual(listed[type].subtypes, subtypes, type);
+  }
+  const hatchling = generator.generate({ type: 'Dragon', subtype: 'Dragon Hatchling', age: 25 }, () => 0);
+  assert.equal(hatchling.type, 'Dragon');
+  assert.equal(hatchling.subtype, 'Dragon Hatchling');
+  assert.ok(generator.statKeys.every(key => Number.isFinite(hatchling.stats[key])));
+});
+
+test('progression chart preserves nonblank source columns and multi-parent Slime inheritance', () => {
+  const chart = types.progressionChart;
+  assert.ok(chart.length > 40);
+  assert.deepEqual(chart.find(row => row.type === 'Slime' && row.subtype === 'Black Ooze'), {
+    type: 'Slime',
+    subtype: 'Black Ooze',
+    levelRange: [1, 20],
+    base: '+10',
+    pointsOnLevelUp: 'MAG by 2; AGI by 1',
+    netGainMaxCumulative: '3*'
+  });
+  const slime = types.types.find(value => value.type === 'Slime');
+  assert.deepEqual(slime.subtypes.find(value => value.subtype === 'Humanoid').inherits, ['Fruit Jelly', 'Blue Slime', 'Pink Slime']);
 });
 
 test('magic type titles come from the supplied table and are distinct', () => {
@@ -613,10 +1054,14 @@ test('relationship tables cover every level and retain boundary outcomes', () =>
 test('generic title rolls split at 50% and use the supplied title descriptions', () => {
   const selection = { rolls: { titles: 1 } };
   assert.deepEqual(generator.generateTitles(selection, {}, () => 0.4999), ['Make a new title']);
-  assert.deepEqual(generator.generateTitles(selection, {}, sequence([0.5, 0])), ['Risk Taker: Gain +1% per level when doing something risky.']);
+  const riskTaker = generator.generateTitles(selection, {}, sequence([0.5, 0, 0]));
+  assert.match(riskTaker[0], /^Risk Taker \(Level (?:[1-9]|1\d|20)\): Gain \+1% per level when doing something risky\.$/);
   for (let index = 0; index < rolls.titles.entries.length; index++) {
     const output = generator.generateTitles(selection, {}, sequence([0.5, (index + 0.5) / rolls.titles.entries.length]));
-    assert.ok(output[0].startsWith(`${rolls.titles.entries[index].name}: `));
+    const name = rolls.titles.entries[index].magicTypeTemplate
+      ? new RegExp(`^(${Object.keys(monsters.magic).join('|')}) Magician`)
+      : null;
+    assert.ok(name ? name.test(output[0]) : output[0].startsWith(`${rolls.titles.entries[index].name} (Level `));
   }
 });
 
@@ -638,7 +1083,7 @@ test('temperament applies immediate stats, category skill bonuses, and vulnerabi
     assert.equal(npc.stats.CHA, 35);
     assert.deepEqual(npc.skills, ['Emotional Intelligence: Insight 32%', 'Emotional Intelligence: Deception 32%']);
     assert.deepEqual(generator.visibleResistances(npc.resistancesAndVulnerabilities), ['Charm Vulnerability']);
-    assert.ok(generator.format(npc).includes('Temperament: Heartfelt:'));
+    assert.ok(generator.format(npc).includes('Temperaments:\nHeartfelt:'));
     const sturdyIndex = rolls.temperaments.findIndex(item => item.name === 'Sturdy');
     const sturdy = generator.generate({ type: 'DRAGON', age: 25, traitCategories: ['temperament'] }, sequence([(sturdyIndex + 0.5) / rolls.temperaments.length], 0));
     assert.deepEqual(generator.visibleResistances(sturdy.resistancesAndVulnerabilities), ['Damage Resistance: 10%', 'Limb Damage Resistance: 10%']);
@@ -662,7 +1107,41 @@ test('all temperament entries generate successfully and sensitive grants ten ski
   } finally { generator.generateStats = original; }
 });
 
-test('immediate title effects alter stats and magic without requiring a title level', () => {
+test('new temperament entries apply immediate effects and scale Iron will resistances by level', () => {
+  const originalStats = generator.generateStats;
+  try {
+    generator.generateStats = () => Object.fromEntries(generator.statKeys.map(key => [key, 30]));
+    for (const name of ['Pacifist', 'Fixated', 'Volatile', 'Dramatic', 'Iron will', 'Dutiful', 'Obsessive', 'Lone wolf', 'Rebellious', 'Curious']) {
+      assert.ok(rolls.temperaments.some(item => item.name === name), name);
+    }
+    const volatileIndex = rolls.temperaments.findIndex(item => item.name === 'Volatile');
+    const volatile = generator.generate({ type: 'DRAGON', age: 25, traitCategories: ['temperament'] },
+      sequence([(volatileIndex + 0.5) / rolls.temperaments.length], 0));
+    assert.equal(volatile.stats.STR, 35);
+    assert.ok(generator.visibleResistances(volatile.resistancesAndVulnerabilities).includes('Frenzy Vulnerability'));
+
+    const curiousIndex = rolls.temperaments.findIndex(item => item.name === 'Curious');
+    const curious = generator.generate({ type: 'DRAGON', age: 25, traitCategories: ['temperament'] },
+      sequence([(curiousIndex + 0.5) / rolls.temperaments.length, 0], 0));
+    assert.equal(curious.stats.INT, 35);
+    assert.ok(curious.skills.some(skill => skill.startsWith('Perception:') && skill.endsWith('40%')));
+
+    const ironWillIndex = rolls.temperaments.findIndex(item => item.name === 'Iron will');
+    const ironWill = generator.generate({ type: 'HUMAN', subtype: 'Child', age: 12, traitCategories: ['temperament'] },
+      sequence([(ironWillIndex + 0.5) / rolls.temperaments.length, 0.5], 0.5));
+    assert.equal(ironWill.level, 3);
+    for (const name of ['Magical', 'Fear', 'Charm']) {
+      assert.ok(generator.visibleResistances(ironWill.resistancesAndVulnerabilities).includes(`${name} Resistance: 3%`));
+    }
+
+    const selflessIndex = rolls.temperaments.findIndex(item => item.name === 'Selfless');
+    const selfless = generator.generate({ type: 'DRAGON', age: 25, traitCategories: ['temperament'] },
+      sequence([(selflessIndex + 0.5) / rolls.temperaments.length], 0));
+    assert.equal(selfless.stats.CHA, 50);
+  } finally { generator.generateStats = originalStats; }
+});
+
+test('title effects apply automatically without overriding the Human magic exceptions', () => {
   const originalStats = generator.generateStats;
   const originalTitles = generator.generateTitles;
   try {
@@ -676,14 +1155,24 @@ test('immediate title effects alter stats and magic without requiring a title le
     assert.deepEqual(Object.values(criminal.stats), Array(6).fill(20));
     generator.generateTitles = () => title('Protector');
     const protector = generator.generate({ type: 'DRAGON', age: 25 }, () => 0);
-    assert.equal(protector.includeMagic, true);
-    assert.equal(protector.stats.MAG, 15);
+    assert.equal(protector.magical, true);
+    assert.equal(protector.stats.MAG, 30);
+    generator.generateTitles = () => [];
     const magical = generator.generate({ type: 'DRAGON', age: 25, includeMagic: true }, () => 0);
-    assert.equal(magical.stats.MAG, 30);
+    assert.equal(magical.magical, true);
+    assert.ok(generator.format(magical).includes('Magic:'));
+    generator.generateTitles = selection => {
+      selection.titleMagicRolls = [{ lightMagicSkills: 1 }];
+      return title('Protector');
+    };
+    const humanChild = generator.generate({ type: 'HUMAN', subtype: 'Child', age: 12 }, () => 0.5);
+    assert.equal(humanChild.magical, false);
+    assert.ok(!generator.format(humanChild).includes('Magic:'));
+    assert.deepEqual(humanChild.magicSkills, []);
     generator.generateTitles = () => title('Lover Boy');
     const romanticIndex = rolls.temperaments.findIndex(item => item.name === 'Romantic');
     const romantic = generator.generate({ type: 'DRAGON', age: 25, traitCategories: ['temperament'] }, sequence([(romanticIndex + 0.5) / rolls.temperaments.length], 0));
-    assert.deepEqual(romantic.titles, title('Lover Boy'));
+    assert.ok(romantic.titles.some(value => value.startsWith('Lover Boy (Level ')));
   } finally {
     generator.generateStats = originalStats;
     generator.generateTitles = originalTitles;

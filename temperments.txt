@@ -1,0 +1,105 @@
+Temperament:
+Timid
+-5 CHA, take a knowledge skill
+Outgoing
++2 CHA, take an emotional intelligence skill +20%
+Aloof
++5 INT, -5 CHA, +5 Mana
+Charming
++10 CHA
+Sturdy
+Gain +10% to Damage Resistance, +10% Limb Damage Resistance
+Weak
+Gain Damage Vulnerability
+Arcane
+Gain +20% Magical Resistance
+Magically sensitive
+Gain Magical Vulnerability
+Idiot
+-10 INT, take Fear and Charm resistance +10%
+Clever
++10 INT
+Breakable
+Gain Fall Vulnerability, Limb Damage Vulnerability
+Pacifist
+Unwilling to commit violence. Gain 3 emotional intelligence skills with +1% x the level of this title.
+Logical
++15 INT, -5 CHA
+Heartfelt
+Take 2 emotional intelligence skills +2-%, +5 CHA, take Charm Vulnerability
+Studious
+Take 2 specialty skills +10%, one additional skill +10%
+Spontaneous
+Add 2 points to 3 random stats
+Passionate
+Choose a stat of passion. Every time you level up, add an additional point in that stat.
+Sober
+Gain Poker Face starting at level 20.
+Sensitive
+Take all vulnerabilities. Increase 10 skills by +10%
+Brave
+Gain Fear Resistance +20%, and +3 to CON.
+Romantic
+Gain the Lover Boy title.
+Apathetic
+-5 CHA, gain Frenzy resistance at level 20
+Fixated
+Gain +60% in one skill. All other skills start at base 0%.
+Evil
+Gain 5 EXP every time you succeed at a truly diabolical task.
+Good
+Gain 5 EXP every time you do something truly good.
+Meathead
+Gain 1 CON every time you level up.
+Whimsical
+Gain 1 MAG every time you level up.
+Hard-working
+When you would gain 5 EXP, gain 8.
+Talented
+When you would gain a single stat point in a stat, gain 2. This only works once per level up.
+Lazy
+When you would gain 5 EXP, only gain 4.
+Talentless
+When you would gain a single stat point in a stat, gain 0. This only happens once per level up.
+Genius
+When you see someone else gain EXP, gain 2 EXP.
+Athletic
+Gain 1 STR every time you level up.
+Anxious
+-5 levels to all Emotional Intelligence skills. Gain a specialty skill at level 15.
+Cruel
+Gain an additional combat skill, +3 STR
+Kind
+Gain +5 levels to all emotional intelligence skills.
+Playboy
+Gain a skill in Seduction at level 20, and +5 CHA, -2 INT.
+Lonely
+Add +3 levels to all subterfuge skills and take the title Unlucky.
+Selfish	
+When only you gain EXP in an entire session, add an additional 5.
+Selfless
+When you gain EXP, you may choose to instead give it to someone else. +20 CHA.
+Sleepless
+Gain Insomnia Resistance at level 40. Roll a Constitution check to sleep well enough to actually rest at night.
+Angry
+CHA -5, STR +10, CON +10, Vulnerable to Frenzy
+Sleepy
+Take Insomnia Vulnerability. Roll a Constitution check to wake up. If you sleep in as much as you desire, gain a temporary +10 to any stat of your choice.
+Well-read
+Gain two additional skills with +10%
+Volatile
+Gain Frenzy Vulnerability, +5 STR
+Dramatic
+Gain Fear Vulnerability, Frenzy Vulnerability, gain title Idiot Savant
+Iron will
+Gain Magical Resistance, Fear Resistance, Charm Resistance +1% per level
+Dutiful
+Gain title Obsessed. Ignore the negative effects of the title.
+Obsessive
+Gain title Obsessed
+Lone wolf
+This character is incapable of joining  an organization. Upgrade an extra skill on leveling up
+Rebellious
+This character is incapable of going above Level 10 in an organization. Gain +5 STR and +5 CON
+Curious
+Gain +5 INT and +10% in a perception skill

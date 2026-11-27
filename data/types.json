@@ -2,7 +2,6 @@
   "types": [
     {
       "type": "HUMAN",
-      "weight": 60,
       "defaultSubtype": "Adult",
       "baseStats": 20,
       "baseTraits": ["beauty", "temperament", "temperament"],
@@ -35,9 +34,8 @@
         },
         {
           "subtype": "Lord",
-          "magic": true,
           "ageRange": [17, 300],
-          "traits": [],
+          "traits": ["education", "height"],
           "randomPoints": 30,
           "levelRange": [1, 40],
           "levelBonus": {
@@ -50,14 +48,18 @@
             "combatSkills": 1,
             "bonusSkills": 2,
             "skillBonus": 20,
-            "skillBonusLevels": [{ "above": 20, "bonus": 30 }, { "above": 30, "bonus": 40 }]
+            "skillBonusLevels": [
+              { "above": 9, "bonus": 30 },
+              { "above": 19, "bonus": 40 },
+              { "above": 29, "bonus": 50 },
+              { "above": 39, "bonus": 60 }
+            ]
           }
         },
         {
           "subtype": "Magician",
-          "magic": true,
           "ageRange": [17, 500],
-          "traits": [],
+          "traits": ["education", "height"],
           "randomPoints": 20,
           "levelRange": [1, 65],
           "levelBonus": {
@@ -69,103 +71,1036 @@
             "magicSkills": 2,
             "bonusSkills": 2,
             "skillBonus": 20,
-            "skillBonusLevels": [{ "above": 20, "bonus": 30 }, { "above": 35, "bonus": 40 }, { "above": 50, "bonus": 50 }]
+            "skillBonusLevels": [
+              { "above": 20, "bonus": 30 },
+              { "above": 35, "bonus": 40 },
+              { "above": 50, "bonus": 50 }
+            ]
           }
         }
       ]
     },
     {
       "type": "UNDEAD",
-      "weight": 10,
       "defaultSubtype": "Skeleton",
       "baseStats": 5,
-      "baseTraits": ["temperament", "temperament"],
+      "baseTraits": ["temperament", "temperament", "height"],
       "subtypes": [
         {
           "subtype": "Skeleton",
           "description": "A creature brought back to life by darkness magic. Weak.",
-          "magic": false, "ageRange": [1, 100], "levelRange": [1, 10],
+          "ageRange": [1, 100],
+          "levelRange": [1, 10],
           "levelBonus": { "randomCount": 1, "randomAmount": 1 },
           "fixedSkills": [
             { "name": "Slow", "description": "Moves at half speed." },
-            { "name": "Bony", "description": "100% Magic Resistance.", "resistances": { "Magical": 100 } },
-            { "name": "Fragile", "description": "Vulnerable to Damage.", "vulnerabilities": ["Damage"] },
-            { "name": "Undead", "description": "Upon reaching 0 HP, roll luck. On <50, reanimate at 1 HP." }
+            {
+              "name": "Bony",
+              "description": "100% Magic Resistance.",
+              "resistances": { "Magical": 100 }
+            },
+            {
+              "name": "Fragile",
+              "description": "Vulnerable to Damage.",
+              "vulnerabilities": ["Damage"]
+            },
+            {
+              "name": "Undead",
+              "description": "Upon reaching 0 HP, roll luck. On <50, reanimate at 1 HP."
+            }
           ]
         },
         {
-          "subtype": "Walking Corpse", "inherits": "Skeleton",
+          "subtype": "Walking Corpse",
+          "inherits": "Skeleton",
           "description": "A re-fleshed skeleton with a semblance of humanity based on intelligence.",
-          "magic": false, "ageRange": [1, 100], "levelRange": [1, 10],
-          "randomPoints": 10, "traits": ["beauty"],
+          "ageRange": [1, 100],
+          "levelRange": [1, 10],
+          "randomPoints": 10,
+          "traits": ["beauty"],
           "removeSkills": ["Slow", "Bony", "Fragile"],
-          "levelBonus": { "randomCount": 2, "randomAmount": 1 }
+          "levelBonus": { "randomCount": 2, "randomAmount": 2 }
         },
         {
-          "subtype": "Corpse Mage", "inherits": "Walking Corpse",
+          "subtype": "Corpse Mage",
+          "inherits": "Walking Corpse",
           "description": "An undead with magic abilities.",
-          "magic": true, "ageRange": [50, 200], "levelRange": [1, 50],
+          "ageRange": [50, 200],
+          "levelRange": [1, 50],
           "randomPoints": 15,
-          "levelBonus": { "randomCount": 2, "randomAmount": 1, "fixed": { "MAG": 1 } },
-          "rolls": { "magicSkills": 2, "bonusSkills": 1, "skillBonus": 20,
-            "skillBonusLevels": [{ "above": 20, "bonus": 30 }, { "above": 35, "bonus": 40 }, { "above": 45, "bonus": 50 }] }
+          "levelBonus": {
+            "randomCount": 2,
+            "randomAmount": 1,
+            "fixed": { "MAG": 1 }
+          },
+          "rolls": {
+            "magicSkills": 2,
+            "bonusSkills": 1,
+            "skillBonus": 20,
+            "skillBonusLevels": [
+              { "above": 20, "bonus": 30 },
+              { "above": 35, "bonus": 40 },
+              { "above": 45, "bonus": 50 }
+            ]
+          }
         },
         {
-          "subtype": "Lich", "inherits": "Corpse Mage",
+          "subtype": "Lich",
+          "inherits": "Corpse Mage",
           "description": "A powerful spellcaster.",
-          "magic": true, "ageRange": [100, 1000], "levelRange": [1, 80],
+          "ageRange": [100, 1000],
+          "levelRange": [1, 80],
           "randomPoints": 50,
-          "levelBonus": { "randomCount": 4, "randomAmount": 1, "fixed": { "MAG": 2 } },
-          "rolls": { "magicSkills": 3, "magicSkillBonus": 20, "magicBonusPerLevel": 1 }
+          "levelBonus": {
+            "randomCount": 4,
+            "randomAmount": 1,
+            "fixed": { "MAG": 2 }
+          },
+          "rolls": {
+            "magicSkills": 3,
+            "magicSkillBonus": 20,
+            "magicBonusPerLevel": 1
+          }
         },
         {
-          "subtype": "Fierce Corpse", "inherits": "Walking Corpse",
+          "subtype": "Fierce Corpse",
+          "inherits": "Walking Corpse",
           "description": "An undead with powerful physical abilities.",
-          "magic": false, "ageRange": [50, 300], "levelRange": [1, 80],
+          "ageRange": [50, 300],
+          "levelRange": [1, 70],
           "randomPoints": 20,
-          "levelBonus": { "randomCount": 2, "randomAmount": 1, "fixed": { "CON": 1, "STR": 1 } },
-          "rolls": { "combatSkills": 2, "martialSkills": 1, "martialBonus": 20, "martialBonusPerTenLevels": 10 }
+          "levelBonus": {
+            "randomCount": 2,
+            "randomAmount": 1,
+            "fixed": { "CON": 1, "STR": 1 }
+          },
+          "rolls": {
+            "combatSkills": 2,
+            "martialSkills": 1,
+            "martialBonus": 20,
+            "martialBonusPerTenLevels": 10
+          }
         },
         {
-          "subtype": "Skeleton Warrior", "inherits": "Skeleton",
+          "subtype": "Skeleton Warrior",
+          "inherits": "Skeleton",
           "description": "A skeleton with reinforced bones, specialized for melee combat.",
-          "magic": false, "ageRange": [5, 100], "levelRange": [1, 10],
-          "randomPoints": 10, "removeSkills": ["Fragile"],
-          "levelBonus": { "randomCount": 0, "randomAmount": 0, "fixed": { "STR": 1, "CON": 1 } },
+          "ageRange": [5, 100],
+          "levelRange": [1, 10],
+          "randomPoints": 10,
+          "removeSkills": ["Fragile"],
+          "levelBonus": {
+            "randomCount": 0,
+            "randomAmount": 0,
+            "fixed": { "STR": 1, "CON": 1 }
+          },
           "rolls": { "combatSkills": 1, "combatSkillBonus": 20 }
         },
         {
-          "subtype": "Archer Skeleton", "inherits": "Skeleton Warrior",
+          "subtype": "Archer Skeleton",
+          "inherits": "Skeleton Warrior",
           "description": "A skeleton adept at ranged combat.",
-          "magic": false, "ageRange": [15, 150], "levelRange": [1, 20],
+          "ageRange": [15, 150],
+          "levelRange": [1, 20],
           "randomPoints": 15,
-          "levelBonus": { "randomCount": 1, "randomAmount": 1, "fixed": { "AGI": 1 } },
-          "fixedWeaponSkills": [{ "weapon": "Longbow", "bonus": 30 }],
+          "levelBonus": {
+            "randomCount": 1,
+            "randomAmount": 1,
+            "fixed": { "AGI": 1 }
+          },
+          "replaceRolls": { "combatSkills": 0 },
+          "fixedWeaponChoices": [
+            {
+              "weapons": ["Longbow", "Crossbow", "Short bow", "Sling"],
+              "bonus": 30
+            }
+          ],
           "fixedSkills": [
-            { "name": "Fragile", "description": "Vulnerable to Damage.", "vulnerabilities": ["Damage"] },
-            { "name": "Sniper", "description": "All damage done with a ranged weapon is doubled." },
-            { "name": "Frost arrow", "description": "Instead of dealing damage, freeze the target for turns equal to the damage that would have been taken. Each turn they may make a Frost Resistance check." },
-            { "name": "Poison arrow", "description": "Instead of dealing damage, deal 1 damage to the target for turns equal to the damage that would have been taken." },
-            { "name": "Sleep arrow", "description": "Instead of dealing damage, the target falls asleep until woken up." }
+            {
+              "name": "Fragile",
+              "description": "Vulnerable to Damage.",
+              "vulnerabilities": ["Damage"]
+            },
+            {
+              "name": "Sniper",
+              "description": "All damage done with a ranged weapon is doubled."
+            }
+          ],
+          "fixedSkillChoices": [
+            { "names": ["Frost arrow", "Poison arrow", "Sleep arrow"] }
           ]
         },
         {
-          "subtype": "Shield Skeleton", "inherits": "Skeleton",
+          "subtype": "Shield Skeleton",
+          "inherits": "Skeleton",
           "description": "A skeleton adept at taking hits.",
-          "magic": false, "ageRange": [15, 150], "levelRange": [1, 20],
+          "ageRange": [15, 150],
+          "levelRange": [1, 20],
           "randomPoints": 15,
-          "levelBonus": { "randomCount": 0, "randomAmount": 0, "fixed": { "CON": 2 } },
-          "resistanceBonus": { "names": ["Damage", "Limb Damage", "Poison", "Fire", "Frost", "Electric"], "amount": 30, "aboveLevel": 15, "higherAmount": 40 }
+          "levelBonus": {
+            "randomCount": 0,
+            "randomAmount": 0,
+            "fixed": { "CON": 2 }
+          },
+          "resistanceBonus": {
+            "names": [
+              "Damage",
+              "Limb Damage",
+              "Poison",
+              "Fire",
+              "Frost",
+              "Electric"
+            ],
+            "amount": 30,
+            "aboveLevel": 15,
+            "higherAmount": 40
+          }
         },
         {
-          "subtype": "Healer Skeleton", "inherits": "Skeleton",
+          "subtype": "Healer Skeleton",
+          "inherits": "Skeleton",
           "description": "A skeleton with low-level healing magic.",
-          "magic": true, "ageRange": [1, 100], "levelRange": [1, 30],
-          "randomPoints": 30, "minimumStats": { "INT": 15 },
+          "ageRange": [1, 100],
+          "levelRange": [1, 30],
+          "randomPoints": 30,
+          "minimumStats": { "INT": 15 },
           "monsterSkills": ["Heal (Monster)"],
           "rolls": { "lightMagicSkills": 1, "skills": 2 }
         }
       ]
+    },
+    {
+      "type": "Elemental",
+      "defaultSubtype": "Sprite",
+      "baseStats": 10,
+      "baseTraits": ["temperament"],
+      "subtypes": [
+        {
+          "subtype": "Sprite",
+          "description": "A small, whimsical elemental. Low consciousness. Lives for 100 years. Exceptional sprites may evolve.",
+          "ageRange": [1, 100],
+          "levelRange": [1, 5],
+          "levelBonus": { "randomCount": 3, "randomAmount": 2 },
+          "fixedSkills": []
+        },
+        {
+          "subtype": "Fairy",
+          "inherits": "Sprite",
+          "levelRange": [1, 80],
+          "levelBonus": { "randomCount": 2, "randomAmount": 2, "fixed": { "MAG": 1 } }
+        },
+        {
+          "subtype": "Elemental",
+          "inherits": "Sprite",
+          "removeTraits": ["temperament"],
+          "levelRange": [1, 25],
+          "levelBonus": { "fixed": { "MAG": 1, "STR": 1, "CON": 1 } }
+        },
+        {
+          "subtype": "Genasi",
+          "inherits": "Sprite",
+          "minimumStats": { "INT": 30 },
+          "traits": ["height", "beauty", "education"],
+          "levelRange": [1, 20],
+          "levelBonus": { "randomCount": 3, "randomAmount": 1, "fixed": { "MAG": 1 } }
+        }
+      ]
+    },
+    {
+      "type": "Omniscient",
+      "subtypes": [
+        { "subtype": "Spark" },
+        { "subtype": "Elemental Elf", "inherits": "Spark" },
+        { "subtype": "World Elf", "inherits": "Spark" },
+        { "subtype": "Solar/Lunar World Elf", "inherits": "Spark" },
+        { "subtype": "Animal God", "inherits": "Spark" }
+      ]
+    },
+    {
+      "type": "Dragon",
+      "naturalAttacks": [
+        { "name": "Bite", "damage": 2 },
+        { "name": "Claws", "damage": 2 }
+      ],
+      "subtypes": [
+        { "subtype": "Dragon Hatchling" },
+        { "subtype": "Wyrm", "inherits": "Dragon Hatchling" },
+        { "subtype": "Fairy Dragon", "inherits": "Dragon Hatchling" },
+        { "subtype": "Young Dragon", "inherits": "Dragon Hatchling" },
+        { "subtype": "Dragon", "inherits": "Young Dragon" },
+        { "subtype": "Ascendant Dragon", "inherits": "Young Dragon" },
+        { "subtype": "Elder Dragon", "inherits": "Dragon" }
+      ]
+    },
+    {
+      "type": "Lupine",
+      "subtypes": [
+        { "subtype": "Cub" },
+        { "subtype": "Wolf", "inherits": "Cub" },
+        { "subtype": "Werewolf", "inherits": "Cub" },
+        { "subtype": "Alpha Werewolf", "inherits": "Werewolf" },
+        { "subtype": "Lesser Wolf", "inherits": "Cub" },
+        { "subtype": "Greater Wolf", "inherits": "Lesser Wolf" },
+        { "subtype": "Horned Wolf", "inherits": "Lesser Wolf" },
+        { "subtype": "Pegasi Wolf", "inherits": "Horned Wolf" }
+      ]
+    },
+    {
+      "type": "Vampire",
+      "subtypes": [
+        { "subtype": "Vampire Spawn" },
+        { "subtype": "Seductress", "inherits": "Vampire Spawn" },
+        { "subtype": "Blood Caster", "inherits": "Vampire Spawn" },
+        { "subtype": "Vampire Lord", "inherits": "Blood Caster" },
+        { "subtype": "Monstrous", "inherits": "Vampire Spawn" },
+        { "subtype": "Parasite", "inherits": "Monstrous" },
+        { "subtype": "Phantom", "inherits": "Monstrous" }
+      ]
+    },
+    {
+      "type": "Slime",
+      "subtypes": [
+        { "subtype": "Baby Slime" },
+        { "subtype": "Fruit Jelly", "inherits": "Baby Slime" },
+        {
+          "subtype": "Humanoid",
+          "inherits": ["Fruit Jelly", "Blue Slime", "Pink Slime"]
+        },
+        { "subtype": "Black Ooze", "inherits": "Baby Slime" },
+        { "subtype": "Elder Ooze", "inherits": "Black Ooze" },
+        { "subtype": "Blobsucker", "inherits": "Baby Slime" },
+        { "subtype": "Blue Slime", "inherits": "Baby Slime" },
+        { "subtype": "Poison Slime", "inherits": "Baby Slime" },
+        { "subtype": "Pink Slime", "inherits": "Baby Slime" }
+      ]
+    },
+    {
+      "type": "Mermaid",
+      "subtypes": [
+        { "subtype": "Mermaid" },
+        { "subtype": "Siren", "inherits": "Mermaid" },
+        { "subtype": "Dark Siren", "inherits": "Siren" },
+        { "subtype": "Enchantress", "inherits": "Siren" },
+        { "subtype": "Sea Serpent", "inherits": "Mermaid" },
+        { "subtype": "Kraken", "inherits": "Sea Serpent" },
+        { "subtype": "Megalodora", "inherits": "Sea Serpent" },
+        { "subtype": "Elder Mermaid", "inherits": "Mermaid" },
+        { "subtype": "Keeper of Beasts", "inherits": "Elder Mermaid" },
+        { "subtype": "Witch of the Seas", "inherits": "Elder Mermaid" }
+      ]
+    },
+    {
+      "type": "Animal Kin",
+      "subtypes": [
+        { "subtype": "Childling" },
+        { "subtype": "Kiyone", "inherits": "Childling" },
+        { "subtype": "Daimata", "inherits": "Childling" },
+        { "subtype": "Guardian Crow", "inherits": "Childling" }
+      ]
+    }
+  ],
+  "progressionChart": [
+    {
+      "type": "HUMAN",
+      "subtype": "Child",
+      "levelRange": [1, 4],
+      "base": "20 all",
+      "pointsOnLevelUp": "4 stats by 5",
+      "netGainMaxCumulative": "20 (200)",
+      "titleGain": "30% special",
+      "traitGain": "beauty, 2 temperaments",
+      "skillGain": "none"
+    },
+    {
+      "type": "HUMAN",
+      "subtype": "Adult",
+      "levelRange": [1, 10],
+      "base": "+15",
+      "pointsOnLevelUp": "2 stats by 2",
+      "netGainMaxCumulative": "4 (55) (255)",
+      "titleGain": "profession",
+      "traitGain": "height, education",
+      "skillGain": "5 skills +20%"
+    },
+    {
+      "type": "HUMAN",
+      "subtype": "Lord",
+      "levelRange": [1, 40],
+      "base": "+30",
+      "pointsOnLevelUp": "2 stats by 1; CON and STR by 2",
+      "netGainMaxCumulative": "6 (270) (470)",
+      "titleGain": "none",
+      "traitGain": "height, education",
+      "skillGain": "martial magic, combat, 2 skills +20%"
+    },
+    {
+      "type": "HUMAN",
+      "subtype": "Magician",
+      "levelRange": [1, 65],
+      "base": "+20",
+      "pointsOnLevelUp": "1 stat by 1; MAG by 3; INT by 1",
+      "netGainMaxCumulative": "5 (545)",
+      "titleGain": "none",
+      "traitGain": "height, education",
+      "skillGain": "2 magic skills, 2 skills"
+    },
+    {
+      "type": "UNDEAD",
+      "subtype": "Skeleton",
+      "levelRange": [1, 10],
+      "base": "5 all",
+      "pointsOnLevelUp": "1 stat by 1",
+      "netGainMaxCumulative": "1 (40)",
+      "titleGain": "none",
+      "traitGain": "2 temperaments, height",
+      "skillGain": "Slow, Bony, Fragile, Undead"
+    },
+    {
+      "type": "UNDEAD",
+      "subtype": "Walking Corpse",
+      "levelRange": [1, 10],
+      "base": "+10",
+      "pointsOnLevelUp": "2 stats by 2",
+      "netGainMaxCumulative": "4 (50) (90)",
+      "titleGain": "profession (5% skills)",
+      "traitGain": "beauty",
+      "skillGain": "remove Slow, Bony, Fragile"
+    },
+    {
+      "type": "UNDEAD",
+      "subtype": "Corpse Mage",
+      "levelRange": [1, 50],
+      "base": "+15",
+      "pointsOnLevelUp": "2 stats by 1; MAG by 1",
+      "netGainMaxCumulative": "3 (165) (255)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "2 magic spells, 1 skill +20%"
+    },
+    {
+      "type": "UNDEAD",
+      "subtype": "Lich",
+      "levelRange": [1, 80],
+      "base": "+50",
+      "pointsOnLevelUp": "4 stats by 1; MAG by 2",
+      "netGainMaxCumulative": "6 (330) (785)",
+      "titleGain": "50% special",
+      "traitGain": "none",
+      "skillGain": "3 magic skills +20%"
+    },
+    {
+      "type": "UNDEAD",
+      "subtype": "Fierce Corpse",
+      "levelRange": [1, 70],
+      "base": "+20",
+      "pointsOnLevelUp": "2 stats by 1; CON and STR by 1",
+      "netGainMaxCumulative": "4 (300) (390)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "2 combat skills, 1 martial skill +20%"
+    },
+    {
+      "type": "UNDEAD",
+      "subtype": "Skeleton Warrior",
+      "levelRange": [1, 10],
+      "base": "+10",
+      "pointsOnLevelUp": "STR and CON by 1",
+      "netGainMaxCumulative": "2 (30) (70)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "remove Fragile, 1 combat skill +20%"
+    },
+    {
+      "type": "UNDEAD",
+      "subtype": "Archer Skeleton",
+      "levelRange": [1, 20],
+      "base": "+15",
+      "pointsOnLevelUp": "1 stat by 1; AGI by 1",
+      "netGainMaxCumulative": "2 (135) (125)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Fragile, Sniper, one arrow skill, one ranged weapon +30%"
+    },
+    {
+      "type": "UNDEAD",
+      "subtype": "Shield Skeleton",
+      "levelRange": [1, 20],
+      "base": "+15",
+      "pointsOnLevelUp": "CON by 2",
+      "netGainMaxCumulative": "2 (155) (125)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Damage, Limb Damage, Poison, Fire, Frost, Electric resistance +30%"
+    },
+    {
+      "type": "UNDEAD",
+      "subtype": "Healer Skeleton",
+      "levelRange": [1, 30],
+      "base": "+30; minimum INT 15",
+      "pointsOnLevelUp": "INT and MAG by 1",
+      "netGainMaxCumulative": "2 (190) (130)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Heal (Monster), 1 Light magic skill, 2 skills +20%"
+    },
+    {
+      "type": "Elemental",
+      "subtype": "Sprite",
+      "levelRange": [1, 5],
+      "base": "10 all",
+      "pointsOnLevelUp": "3 stats by 2",
+      "netGainMaxCumulative": "6 (90)",
+      "titleGain": "10% special, Elemental",
+      "traitGain": "1 temperament",
+      "skillGain": "none"
+    },
+    {
+      "type": "Elemental",
+      "subtype": "Fairy",
+      "levelRange": [1, 80],
+      "base": "+30",
+      "pointsOnLevelUp": "2 stats by 2; MAG by 1",
+      "netGainMaxCumulative": "4 (350) (450)",
+      "titleGain": "none",
+      "traitGain": "1 temperament",
+      "skillGain": "2 magical skills of type +20%, 2 skills +20%"
+    },
+    {
+      "type": "Elemental",
+      "subtype": "Elemental",
+      "levelRange": [1, 25],
+      "base": "+60",
+      "pointsOnLevelUp": "MAG, STR, CON by 1",
+      "netGainMaxCumulative": "3 (75) (165)",
+      "titleGain": "none",
+      "traitGain": "remove temperament",
+      "skillGain": "2 magical skills of type +30%"
+    },
+    {
+      "type": "Elemental",
+      "subtype": "Genasi",
+      "levelRange": [1, 20],
+      "base": "+60; minimum INT 30",
+      "pointsOnLevelUp": "MAG by 1; 3 stats by 1",
+      "netGainMaxCumulative": "4 (140) (230)",
+      "titleGain": "profession, 20% special",
+      "traitGain": "height, beauty, education, 1 temperament",
+      "skillGain": "2 magical skills of type +20%"
+    },
+    {
+      "type": "Omniscient",
+      "subtype": "Spark",
+      "levelRange": [1, 20],
+      "base": "50 all",
+      "pointsOnLevelUp": "MAG by 5; 5 stats by 2",
+      "netGainMaxCumulative": "15 (600)",
+      "titleGain": "Beloved",
+      "traitGain": "2 temperaments",
+      "skillGain": "2 omniscient magic skills +20%"
+    },
+    {
+      "type": "Omniscient",
+      "subtype": "Elemental Elf",
+      "levelRange": [1, 50],
+      "base": "+50",
+      "pointsOnLevelUp": "2 stats by 2; MAG by 1",
+      "netGainMaxCumulative": "6 (350) (950)",
+      "titleGain": "50% special, profession",
+      "traitGain": "height, beauty, education, 2 temperaments",
+      "skillGain": "1 magical skill of each type +20%"
+    },
+    {
+      "type": "Omniscient",
+      "subtype": "World Elf",
+      "levelRange": [1, 70],
+      "base": "+100",
+      "pointsOnLevelUp": "5 stats by 2",
+      "netGainMaxCumulative": "10 (800) (1300)",
+      "titleGain": "50% special, profession",
+      "traitGain": "height, beauty, education, 2 temperaments",
+      "skillGain": "3 magic skills +20%, Terraform (World Elf)"
+    },
+    {
+      "type": "Omniscient",
+      "subtype": "Solar/Lunar World Elf",
+      "levelRange": [1, 70],
+      "base": "+100",
+      "pointsOnLevelUp": "6 stats by 2",
+      "netGainMaxCumulative": "12 (1060) (1540)",
+      "titleGain": "50% special, profession",
+      "traitGain": "height, beauty, education, 2 temperaments",
+      "skillGain": "Lunar: Antimagic, Gravity; Solar: Climate control, Annihilation"
+    },
+    {
+      "type": "Omniscient",
+      "subtype": "Animal God",
+      "levelRange": [1, 80],
+      "base": "+10",
+      "pointsOnLevelUp": "3 stats by 1",
+      "netGainMaxCumulative": "3 (250) (850)",
+      "titleGain": "none",
+      "traitGain": "1 temperament, roll animal",
+      "skillGain": "5 skills +20%, Domain (+20% if already owned)"
+    },
+    {
+      "type": "Dragon",
+      "subtype": "Dragon Hatchling",
+      "levelRange": [1, 3],
+      "base": "20 all",
+      "pointsOnLevelUp": "10 stats by 1",
+      "netGainMaxCumulative": "10 (150)",
+      "titleGain": "30% special",
+      "traitGain": "2 temperaments",
+      "skillGain": "2 skills +20%"
+    },
+    {
+      "type": "Dragon",
+      "subtype": "Wyrm",
+      "levelRange": [1, 30],
+      "base": "+60",
+      "pointsOnLevelUp": "1 stat by 1; STR, CON, INT by 1",
+      "netGainMaxCumulative": "4 (180) (330)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "2 Water magic skills +20%, River God"
+    },
+    {
+      "type": "Dragon",
+      "subtype": "Fairy Dragon",
+      "levelRange": [1, 10],
+      "base": "+30",
+      "pointsOnLevelUp": "MAG by 1; 2 stats by 1",
+      "netGainMaxCumulative": "3 (60) (210)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "2 magic skills +20%, Trick, Treat"
+    },
+    {
+      "type": "Dragon",
+      "subtype": "Young Dragon",
+      "levelRange": [1, 10],
+      "base": "+20",
+      "pointsOnLevelUp": "4 stats by 1; CON by 1",
+      "netGainMaxCumulative": "5 (70) (220)",
+      "titleGain": "Magical type",
+      "traitGain": "education",
+      "skillGain": "2 skills, 1 magic skill of type +20%"
+    },
+    {
+      "type": "Dragon",
+      "subtype": "Dragon",
+      "levelRange": [1, 100],
+      "base": "+40",
+      "pointsOnLevelUp": "5 stats by 1",
+      "netGainMaxCumulative": "5 (540) (720)",
+      "titleGain": "none",
+      "traitGain": "profession",
+      "skillGain": "5 skills +20%"
+    },
+    {
+      "type": "Dragon",
+      "subtype": "Ascendant Dragon",
+      "levelRange": [1, 80],
+      "base": "+70",
+      "pointsOnLevelUp": "all stats by 1; 1 stat by 2",
+      "netGainMaxCumulative": "8 (640) (860)",
+      "titleGain": "Ascendant",
+      "traitGain": "profession",
+      "skillGain": "Shapeshifting, Soulmate, 1 magic skill, 1 omniscient magic skill, 2 skills +20%"
+    },
+    {
+      "type": "Dragon",
+      "subtype": "Elder Dragon",
+      "levelRange": [1, 100],
+      "base": "+100 CON",
+      "pointsOnLevelUp": "CON by 2; 2 stats by 2",
+      "netGainMaxCumulative": "6 (700) (1420)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Natural form"
+    },
+    {
+      "type": "Lupine",
+      "subtype": "Cub",
+      "levelRange": [1, 5],
+      "base": "10 all",
+      "pointsOnLevelUp": "CON and STR by 1; 2 stats by 1",
+      "netGainMaxCumulative": "20 (80)",
+      "titleGain": "none",
+      "traitGain": "1 temperament",
+      "skillGain": "bite and claw +20%, Pack call"
+    },
+    {
+      "type": "Lupine",
+      "subtype": "Wolf",
+      "levelRange": [1, 40],
+      "base": "+30",
+      "pointsOnLevelUp": "STR by 2; 1 stat by 1",
+      "netGainMaxCumulative": "3 (150) (230)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "none"
+    },
+    {
+      "type": "Lupine",
+      "subtype": "Werewolf",
+      "levelRange": [1, 40],
+      "base": "+50; minimum INT 30",
+      "pointsOnLevelUp": "STR by 1; 3 stats by 1",
+      "netGainMaxCumulative": "4 (210) (290)",
+      "titleGain": "profession, 30% special",
+      "traitGain": "height, beauty, education, 1 temperament",
+      "skillGain": "Shapeshifting, True mate, Pheromone, Heat cycle, 2 skills +20%"
+    },
+    {
+      "type": "Lupine",
+      "subtype": "Alpha Werewolf",
+      "levelRange": [1, 40],
+      "base": "+50",
+      "pointsOnLevelUp": "STR and CON by 1; 3 stats by 1",
+      "netGainMaxCumulative": "5 (250) (540)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Pheromone control, Heat cycle (alpha), remove Heat cycle, 2 skills +20%"
+    },
+    {
+      "type": "Lupine",
+      "subtype": "Lesser Wolf",
+      "levelRange": [1, 20],
+      "base": "+20",
+      "pointsOnLevelUp": "STR and AGI by 1; 1 stat by 2",
+      "netGainMaxCumulative": "4 (100) (180)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "none"
+    },
+    {
+      "type": "Lupine",
+      "subtype": "Greater Wolf",
+      "levelRange": [1, 30],
+      "base": "+25",
+      "pointsOnLevelUp": "STR and CON by 2; 1 stat by 1",
+      "netGainMaxCumulative": "5 (125) (305)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "none"
+    },
+    {
+      "type": "Lupine",
+      "subtype": "Horned Wolf",
+      "levelRange": [1, 20],
+      "base": "+20",
+      "pointsOnLevelUp": "STR and AGI by 1; 1 stat by 1",
+      "netGainMaxCumulative": "3 (80) (260)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Bond"
+    },
+    {
+      "type": "Lupine",
+      "subtype": "Pegasi Wolf",
+      "levelRange": [1, 40],
+      "base": "+20",
+      "pointsOnLevelUp": "3 stats by 1",
+      "netGainMaxCumulative": "3 (120) (380)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "2 magic skills, Fly"
+    },
+    {
+      "type": "Vampire",
+      "subtype": "Vampire Spawn",
+      "levelRange": [1, 15],
+      "base": "30 all",
+      "pointsOnLevelUp": "3 stats by 1",
+      "netGainMaxCumulative": "3 (225)",
+      "titleGain": "30% special, profession",
+      "traitGain": "2 temperaments, beauty, height, education",
+      "skillGain": "Painful bite, HP drain, 1 Blood magic skill +20%"
+    },
+    {
+      "type": "Vampire",
+      "subtype": "Seductress",
+      "levelRange": [1, 50],
+      "base": "+30",
+      "pointsOnLevelUp": "CHA by 1; 3 stats by 1",
+      "netGainMaxCumulative": "4 (230) (455)",
+      "titleGain": "none",
+      "traitGain": "beautiful",
+      "skillGain": "Lustful bite, Life steal, 2 Emotional Intelligence skills +20%"
+    },
+    {
+      "type": "Vampire",
+      "subtype": "Blood Caster",
+      "levelRange": [1, 40],
+      "base": "+30",
+      "pointsOnLevelUp": "MAG and STR by 1; 3 stats by 1",
+      "netGainMaxCumulative": "5 (230) (455)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "2 Blood magic skills, 2 skills +20%"
+    },
+    {
+      "type": "Vampire",
+      "subtype": "Vampire Lord",
+      "levelRange": [1, 45],
+      "base": "+50",
+      "pointsOnLevelUp": "3 stats by 2",
+      "netGainMaxCumulative": "6 (320) (725)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "2 Blood magic skills +20%"
+    },
+    {
+      "type": "Vampire",
+      "subtype": "Monstrous",
+      "levelRange": [1, 20],
+      "base": "lose INT until 15",
+      "pointsOnLevelUp": "STR and CON by 1",
+      "netGainMaxCumulative": "2 (25) (250)",
+      "titleGain": "none",
+      "traitGain": "ugly",
+      "skillGain": "Mute, Bite +4 damage"
+    },
+    {
+      "type": "Vampire",
+      "subtype": "Parasite",
+      "levelRange": [1, 45],
+      "base": "+10",
+      "pointsOnLevelUp": "MAG and CON by 1",
+      "netGainMaxCumulative": "2 (40) (290)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Parasitic"
+    },
+    {
+      "type": "Vampire",
+      "subtype": "Phantom",
+      "levelRange": [1, 50],
+      "base": "+10",
+      "pointsOnLevelUp": "MAG and CON by 1",
+      "netGainMaxCumulative": "2 (40) (290)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Obscure, Madness, Shadow Jump +20%"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Baby Slime",
+      "levelRange": [1, 10],
+      "base": "1 all",
+      "pointsOnLevelUp": "1 stat by 1",
+      "netGainMaxCumulative": "1 (16)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "none"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Fruit Jelly",
+      "levelRange": [1, 20],
+      "base": "+10",
+      "pointsOnLevelUp": "2 stats by 1",
+      "netGainMaxCumulative": "2 (50) (66)",
+      "titleGain": "none",
+      "traitGain": "1 temperament",
+      "skillGain": "Sweet smell +20%"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Humanoid",
+      "sourceSubtype": "Pink Slime Humanoid",
+      "levelRange": [1, 20],
+      "base": "all stats 30 minimum",
+      "pointsOnLevelUp": "MAG by 2; 3 stats by 1",
+      "netGainMaxCumulative": "5 (148) (284)",
+      "titleGain": "30% special",
+      "traitGain": "1 temperament, beauty, height, education",
+      "skillGain": "Shapeshifting, skills +20%"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Black Ooze",
+      "levelRange": [1, 20],
+      "base": "+10",
+      "pointsOnLevelUp": "MAG by 2; AGI by 1",
+      "netGainMaxCumulative": "3*"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Pink Slime",
+      "levelRange": [1, 20],
+      "base": "+20 INT +20 MAG",
+      "pointsOnLevelUp": "MAG by 2; 2 stats by 1",
+      "netGainMaxCumulative": "4 (120) (136)",
+      "titleGain": "none",
+      "traitGain": "1 temperament",
+      "skillGain": "Emotion, Aphrodisiac +20%"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Poison Slime",
+      "levelRange": [1, 10],
+      "base": "+10",
+      "pointsOnLevelUp": "AGI and MAG by 1; 2 stats by 1",
+      "netGainMaxCumulative": "4 (50) (66)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Poison slime"
+    },
+    {
+      "type": "Mermaid",
+      "subtype": "Mermaid",
+      "levelRange": [1, 10],
+      "base": "20 all",
+      "pointsOnLevelUp": "MAG by 1; 3 stats by 2",
+      "netGainMaxCumulative": "7 (190)",
+      "titleGain": "30% special, profession",
+      "traitGain": "2 temperaments, beauty, education",
+      "skillGain": "three skills, Enchanting Voice, Water ability"
+    },
+    {
+      "type": "Mermaid",
+      "subtype": "Siren",
+      "levelRange": [1, 10],
+      "base": "+30",
+      "pointsOnLevelUp": "CHA by 1; 2 stats by 2",
+      "netGainMaxCumulative": "5 (80) (270)",
+      "titleGain": "none",
+      "traitGain": "remove beauty, add monstrous",
+      "skillGain": "remove Enchanting Voice, Siren songs, Hypnosis"
+    },
+    {
+      "type": "Mermaid",
+      "subtype": "Dark Siren",
+      "levelRange": [1, 50],
+      "base": "+50",
+      "pointsOnLevelUp": "CHA by 1; MAG by 1; 2 stats by 1",
+      "netGainMaxCumulative": "4 (250) (520)",
+      "titleGain": "Magician (Darkness)",
+      "traitGain": "remove beauty, add monstrous",
+      "skillGain": "Dark Siren songs"
+    },
+    {
+      "type": "Mermaid",
+      "subtype": "Enchantress",
+      "levelRange": [1, 25],
+      "base": "+20",
+      "pointsOnLevelUp": "CHA by 2; 2 stats by 1",
+      "netGainMaxCumulative": "4 (120) (390)",
+      "titleGain": "Lover Boy",
+      "traitGain": "height",
+      "skillGain": "Shapeshifting, Emotion, Aphrodisiac +20%"
+    },
+    {
+      "type": "Mermaid",
+      "subtype": "Sea Serpent",
+      "levelRange": [1, 10],
+      "base": "+10",
+      "pointsOnLevelUp": "AGI by 2; 1 stat by 1",
+      "netGainMaxCumulative": "3 (40) (230)",
+      "titleGain": "none",
+      "traitGain": "remove beauty, remove education",
+      "skillGain": "two Subterfuge skills +10%, bite and claw attack"
+    },
+    {
+      "type": "Mermaid",
+      "subtype": "Kraken",
+      "levelRange": [1, 40],
+      "base": "+50 CON",
+      "pointsOnLevelUp": "STR by 2; CON by 1; AGI by 1",
+      "netGainMaxCumulative": "4 (210) (440)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Poison breath, Manipulate water, Grapple"
+    },
+    {
+      "type": "Mermaid",
+      "subtype": "Megalodora",
+      "levelRange": [1, 40],
+      "base": "+50 CON",
+      "pointsOnLevelUp": "STR by 2; CON by 2",
+      "netGainMaxCumulative": "4 (240) (440)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Blood feast, Sleep"
+    },
+    {
+      "type": "Mermaid",
+      "subtype": "Elder Mermaid",
+      "levelRange": [1, 20],
+      "base": "+20",
+      "pointsOnLevelUp": "3 stats by 2",
+      "netGainMaxCumulative": "6 (140) (230)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Gain a Water spell, Commanding Voice +20%"
+    },
+    {
+      "type": "Mermaid",
+      "subtype": "Keeper of Beasts",
+      "levelRange": [1, 20],
+      "base": "+20",
+      "pointsOnLevelUp": "MAG by 2; 2 stats by 2",
+      "netGainMaxCumulative": "6 (140) (370)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Manipulate animal +20%"
+    },
+    {
+      "type": "Mermaid",
+      "subtype": "Witch of the Seas",
+      "levelRange": [1, 20],
+      "base": "+20",
+      "pointsOnLevelUp": "MAG by 2; 2 stats by 2",
+      "netGainMaxCumulative": "6 (140) (370)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Manipulate state, Manipulate weather +20%"
+    },
+    {
+      "type": "Animal Kin",
+      "subtype": "Childling",
+      "levelRange": [1, 4],
+      "base": "20 all",
+      "pointsOnLevelUp": "4 stats by 5",
+      "netGainMaxCumulative": "20 (200)",
+      "titleGain": "30% special",
+      "traitGain": "1 temperament",
+      "skillGain": "none"
+    },
+    {
+      "type": "Animal Kin",
+      "subtype": "Kiyone",
+      "levelRange": [1, 30],
+      "base": "+15",
+      "pointsOnLevelUp": "CHA by 1; INT by 1; 2 stats by 1",
+      "netGainMaxCumulative": "4 (145) (345)",
+      "titleGain": "profession",
+      "traitGain": "beauty, very short, education",
+      "skillGain": "two skills +20%, Trick, Treat"
+    },
+    {
+      "type": "Animal Kin",
+      "subtype": "Daimata",
+      "levelRange": [1, 30],
+      "base": "+15",
+      "pointsOnLevelUp": "AGI by 1; INT by 1; 2 stats by 1",
+      "netGainMaxCumulative": "4 (145) (345)",
+      "titleGain": "profession",
+      "traitGain": "beauty, very short, education",
+      "skillGain": "Divine favor, 2 Fire magic skills +20%"
+    },
+    {
+      "type": "Animal Kin",
+      "subtype": "Guardian Crow",
+      "levelRange": [1, 30],
+      "base": "+15",
+      "pointsOnLevelUp": "AGI by 1; INT by 1; 2 stats by 1",
+      "netGainMaxCumulative": "4 (145) (345)",
+      "titleGain": "profession",
+      "traitGain": "beauty, very short, education",
+      "skillGain": "Fly, 3 skills +20%"
     }
   ]
 }

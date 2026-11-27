@@ -2,8 +2,8 @@
   const core = typeof module !== 'undefined' && module.exports ? require('./generator.js') : root.NPCGenerator;
   const { roll, sample, weighted, generateWeapon, formatAttack, generateResistancesAndVulnerabilities, visibleResistances } = core;
   const statKeys = ['STR', 'CON', 'AGI', 'INT', 'CHA', 'MAG'];
+  const elementalMagicSchools = new Set(['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity']);
   const statLabels = { STR: 'Strength', CON: 'Constitution', AGI: 'Agility', INT: 'Intelligence', CHA: 'Charm', MAG: 'Magic' };
-  const notApplicable = 'Not Applicable';
   let rules;
 
   function configure(monsters) {
@@ -42,7 +42,14 @@
   }
 
   function magicSkillList() {
-    return Object.entries(rules.magic).flatMap(([school, skills]) => skills.map(skill => ({ school, ...skill })));
+    return Object.entries(rules.magic)
+      .filter(([school]) => elementalMagicSchools.has(school))
+      .flatMap(([school, skills]) => skills.map(skill => ({ school, ...skill })));
+  }
+
+  function magicManaCost(skill) {
+    const match = (skill.description ?? '').match(/\bCosts?\s+(\d+)\s+Mana\b/i);
+    return match ? Number(match[1]) : 0;
   }
 
   function generate(options = {}, random = Math.random) {
@@ -51,12 +58,11 @@
     const level = rollLevel(area, random);
     const stats = Object.fromEntries(statKeys.map(key => [key, level + roll(rules.statDie, random) * level]));
     const extras = rollExtras(random);
-    let magical = false;
+    const magical = true;
     let magicSkillCount = 0;
     const skills = [];
     for (const extra of extras) {
       applyModifiers(stats, extra.modifiers, level);
-      magical ||= Boolean(extra.enableMagic);
       magicSkillCount += extra.magicSkills ?? 0;
       skills.push(...(extra.skills ?? []));
     }
@@ -66,18 +72,21 @@
       substat.from.reduce((sum, key) => sum + Math.floor(stats[key] / rules.substatDivisor), 0)
     ]));
     for (const extra of extras) applyModifiers(substats, extra.modifiers, level);
+    const affordableMagicSkills = magicSkillList().filter(skill => magicManaCost(skill) <= substats.Mana);
+    if (affordableMagicSkills.length < magicSkillCount) {
+      throw new Error(`Not enough distinct monster spells affordable with ${substats.Mana} Mana.`);
+    }
     return {
       kind: 'monster',
       area,
       level,
       magical,
-      includeMagic: magical,
       showCharm: extras.some(extra => extra.showCharm),
       stats,
       substats,
       extras: extras.map(extra => ({ category: extra.category, name: extra.name })),
       skills,
-      magicSkills: sample(magicSkillList(), magicSkillCount, random),
+      magicSkills: sample(affordableMagicSkills, magicSkillCount, random),
       resistancesAndVulnerabilities: generateResistancesAndVulnerabilities(),
       attack: extras.some(extra => extra.usesWeapon)
         ? generateWeapon(random)
@@ -85,29 +94,17 @@
     };
   }
 
-  function isMagicKey(key) {
-    return key === 'MAG' || (rules.substats.find(substat => substat.key === key)?.from.includes('MAG') ?? false);
-  }
-
-  function showsMagic(monster) {
-    return monster.includeMagic ?? monster.magical;
-  }
-
-  function isMuted(monster, key) {
-    return isMagicKey(key) && !showsMagic(monster);
-  }
-
-  function formatValue(monster, key, value) {
-    return isMuted(monster, key) ? `${value} (${notApplicable})` : String(value);
+  function showsMagic() {
+    return true;
   }
 
   function statTotal(monster) {
-    const total = statKeys.filter(key => (key !== 'CHA' || monster.showCharm) && !isMuted(monster, key)).reduce((sum, key) => sum + monster.stats[key], 0);
+    const total = statKeys.filter(key => key !== 'CHA' || monster.showCharm).reduce((sum, key) => sum + monster.stats[key], 0);
     return Math.floor(total / rules.substatDivisor);
   }
 
   function sheet(monster) {
-    const cell = (key, label, value) => ({ key, label, value: formatValue(monster, key, value), muted: isMuted(monster, key) });
+    const cell = (key, label, value) => ({ key, label, value: String(value), muted: false });
     return {
       stats: rules.sheet.stats.map(key => key === 'CHA' && !monster.showCharm
         ? { key, label: '', value: '', muted: false }
@@ -122,7 +119,7 @@
   }
 
   function formatHeading(monster) {
-    return `MONSTER | Level: ${monster.level} (Level ${monster.area} area)${showsMagic(monster) ? ' | MAGICAL' : ''}`;
+    return `MONSTER | Level: ${monster.level} (Level ${monster.area} area) | MAGICAL`;
   }
 
   function formatExtra(extra) {
@@ -151,7 +148,7 @@
     ].join('\n');
   }
 
-  const api = { statKeys, statLabels, notApplicable, configure, rollLevel, rollExtras, applyModifiers, magicSkillList, generate, isMagicKey, showsMagic, formatValue, statTotal, sheet, formatHeading, sections, format };
+  const api = { statKeys, statLabels, configure, rollLevel, rollExtras, applyModifiers, magicSkillList, generate, showsMagic, statTotal, sheet, formatHeading, sections, format };
   if (typeof module !== 'undefined' && module.exports) {
     configure(require('./data/monsters.json'));
     module.exports = api;

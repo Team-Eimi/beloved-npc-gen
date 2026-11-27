@@ -1,0 +1,47 @@
+Titles (special):
+Risk Taker (Levels 1-20)
+Gain +1% per level when doing something risky.
+Lover Boy (Levels 1-40)
+Gain +1% per level when doing something romantic or sexual.
+Weak (Level Age/5)
+-1 STR and CON for every level.
+Idiot (Level 1-5)
+Lose 1 (per level) random stat point every time you level up.
+Bloodthirsty (Level 1)
+Gain 10 EXP every time you kill something sentient.
+Criminal (Guild) (Level 1)
+Gain a marking on your forehead. All stats decreased by 10.
+Protector (Level 1)
+Gain the ability to use light magic. If you do not have the ability to use magic already, your MAGIC stat starts at 15. Gain 1 light magic spell.
+Lucky (Level 1-25)
+Add the % of the level of this skill to all rolls. Levels up when luck makes the difference.
+Unlucky (Level 1-25)
+Inverse the title Lucky.
+Coward (Level 1-30)
+Gain +1% per level to skills when running away
+Prodigy (Level 1)
+Pick a random stat. Increase it by value/2.
+Hero (Level 1)
+All EXP gain is multiplied by 5
+Student (Level 1)
+All EXP gain is doubled, level up an additional skill at level up
+(Type) (Level age/5) Magician
+Gain a magic spell of this type. For every level in this title, add +1% to all spells of this type.
+Ascendent (Level 1-20)
+Gain light or dark magic. Gain skill: Miracle or Calamity. For every level in this title, increase a random stat by 2.
+Resilient (Level 1)
+Every time you level up, gain 4 levels in a Resistance of your choice.
+Normal (Level 1)
+This creature is terrifically normal. All EXP gain multiplied by 0.5.
+Peculiar (Level 1)
+All stat gain for this creature is randomized.
+- Instructions: AFTER CREATURE IS DONE GENERATING: add all stats together into a value, make all stats 0, then redistribute that value RANDOMLY across all stats
+Idiot Savant (Level Age/5)
+Choose a stat. All skills using that stat gain +1% per level in this title.
+Obsessed (Level 1-30)
+Choose an object of obsession. When you are not acting towards it, or physically around it, gain -1% x the level of this title. When you are acting towards it, or are physically around it, gain +1% x level of this title.
+
+
+Race Titles:
+Elemental (Level Age/5)
+Choose an element (Fire, Water, Earth, Wind, Electricity). You may only cast spells of this type, but gain +2% per level of this title to spellcasting
