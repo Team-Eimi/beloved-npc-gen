@@ -85,7 +85,7 @@ Animal List: (Output animal type and modify stats accordingly)
 Trait List: Output trait and modify stats.
 1) Human intelligence. if INT is <50, make = 50.
 2) Decays. Add Skill: Decay. When this creature harms another creature, they take additional damage = to 1/5 of Attack (minimum 1) for a # of turns = to Attack.
-3) Gelatinous. Add Skill: Swallow. Any melee attack against this creature that fails results in the attacker being swallowed up. They take damage = to the creature's attack until they can escape.
+3) Gelatinous. Add Trait: Swallow. Any melee attack against this creature that fails results in the attacker being swallowed up. They take damage = to the creature's attack until they can escape.
 4) Infected. Add Skill: Disease. Any creature successfully injured by this creature becomes sick.
 5) Cannibalistic
 6) Vampiric. Add Skill: Vampirism. When this creature bites, it can regain HP = to 1/2 damage dealed

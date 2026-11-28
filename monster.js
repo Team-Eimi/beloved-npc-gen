@@ -1,6 +1,6 @@
 (function (root) {
   const core = typeof module !== 'undefined' && module.exports ? require('./generator.js') : root.NPCGenerator;
-  const { roll, sample, weighted, generateWeapon, formatMagicValue, formatSkillBonus, formatAttack, generateResistancesAndVulnerabilities, visibleResistances } = core;
+  const { roll, sample, weighted, generateWeapon, rolledSkillBase, formatMagicValue, formatSkillBonus, formatAttack, generateResistancesAndVulnerabilities, visibleResistances } = core;
   const statKeys = ['STR', 'CON', 'AGI', 'INT', 'CHA', 'MAG'];
   const elementalMagicSchools = new Set(['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity']);
   const statLabels = { STR: 'Strength', CON: 'Constitution', AGI: 'Agility', INT: 'Intelligence', CHA: 'Charm', MAG: 'Magic' };
@@ -94,7 +94,7 @@
       extras: extras.map(extra => ({ category: extra.category, name: extra.name })),
       traits,
       skills,
-      magicSkills: sample(affordableMagicSkills, magicSkillCount, random),
+      magicSkills: sample(affordableMagicSkills, magicSkillCount, random).map(skill => ({ ...skill, value: rolledSkillBase })),
       resistancesAndVulnerabilities: generateResistancesAndVulnerabilities(),
       attack: extras.some(extra => extra.usesWeapon)
         ? generateWeapon(random)

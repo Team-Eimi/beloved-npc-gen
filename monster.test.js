@@ -113,7 +113,7 @@ test('Spellcaster plus the Magical extra grant three distinct magic skills', () 
     return cost <= result.substats.Mana;
   }));
   assert.ok(monster.format(result).includes('Extras: Boss: Spellcaster, Magical'));
-  assert.ok(monster.format(result).includes('Magic Skills: Heal (Light) +0%: Heal an amount of HP'));
+  assert.ok(monster.format(result).includes('Magic Skills: Heal (Light) +20%: Heal an amount of HP'));
 });
 
 test('Weaponmaster rolls a character weapon and adds LEVEL x 2 to STR', () => {
@@ -163,6 +163,17 @@ test('explicit monster extras grant reserved traits and skills in separate secti
   assert.deepEqual(result.skills, [{ ...data.reservedSkills.find(skill => skill.name === 'Hypnosis'), value: 0 }]);
   assert.ok(monster.sections(result).some(section => section.label === 'Traits:' && section.text.startsWith('Revive:')));
   assert.ok(monster.sections(result).some(section => section.label === 'Skills:' && section.text.startsWith('Hypnosis +0%:')));
+});
+
+test('Gelatinous grants Swallow as a trait without a skill percentage', () => {
+  const gelatinous = data.trait.findIndex(trait => trait.name === 'Gelatinous');
+  const result = monster.generate({ level: 20 }, sequence([
+    LEVEL_23, ...Array(6).fill(0), TRAIT, pick(gelatinous, data.trait.length), ANIMAL, pick(7, data.animal.length)
+  ]));
+  const swallow = data.reservedTraits.find(trait => trait.name === 'Swallow');
+  assert.deepEqual(result.traits, [swallow]);
+  assert.ok(!result.skills.some(skill => skill.name === 'Swallow'));
+  assert.ok(monster.sections(result).some(section => section.label === 'Traits:' && section.text === `Swallow: ${swallow.description}`));
 });
 
 test('only the specified extras show CHA, but CHA always contributes to EXP', () => {

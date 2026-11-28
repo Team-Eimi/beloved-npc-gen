@@ -1,5 +1,6 @@
 (function (root) {
   const statKeys = ['STR', 'CON', 'CHA', 'INT', 'AGI', 'MAG'];
+  const rolledSkillBase = 20;
   const elementalMagicSchools = new Set(['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity']);
   const statLabels = { STR: 'Strength', CON: 'Constitution', CHA: 'Charm', INT: 'Intelligence', AGI: 'Agility', MAG: 'Magic' };
   let rules;
@@ -593,7 +594,7 @@
     const allSkills = [...skillPool(false), ...skillPool(true)];
     const results = [];
     const effects = (traitData.rolls ?? []).map(result => result.effect).filter(Boolean);
-    const add = (selected, bonus = 0, value) => {
+    const add = (selected, bonus = 0, value, rolled = false) => {
       let skill = selected;
       if (selected.name === 'Weapon (specific)') {
         const weapon = generateArmedWeapon(random);
@@ -602,16 +603,25 @@
       let existing = results.find(result => result.name === skill.name && result.category === skill.category);
       if (existing) {
         existing.rolls++;
-        if (value !== undefined) existing.value = Math.max(existing.value, value);
+        if (value !== undefined) {
+          if (existing.rolledBase) existing.value -= rolledSkillBase;
+          existing.rolledBase = false;
+          existing.specifiedValue = true;
+          existing.value = Math.max(existing.value, value);
+        }
       } else {
-        existing = { ...skill, value: value ?? 0, rolls: 1 };
+        existing = { ...skill, value: value ?? 0, rolls: 1, specifiedValue: value !== undefined, rolledBase: false };
         results.push(existing);
+      }
+      if (rolled && !existing.rolledBase && !existing.specifiedValue) {
+        existing.value += rolledSkillBase;
+        existing.rolledBase = true;
       }
       existing.value += bonus;
     };
     const choose = (available, count, bonus = 0, value) => {
       if (available.length < count) throw new Error('Not enough distinct skills to roll.');
-      for (const skill of sample(available, count, random)) add(skill, bonus, value);
+      for (const skill of sample(available, count, random)) add(skill, bonus, value, true);
     };
     for (const name of speciality ? [] : traitData.skills ?? []) {
       const skill = allSkills.find(item => item.name === name);
@@ -633,7 +643,7 @@
         const weapons = rules.weapons.groups.flatMap(({ names, ...properties }) => names.map(name => ({ name, ...properties })));
         const weapon = weapons.find(value => value.name === entry.weapon);
         if (!weapon) throw new Error(`Unknown weapon: ${entry.weapon}`);
-        add({ category: 'Combat', name: `Weapon (${weapon.name})`, weapon }, entry.bonus ?? 0);
+        add({ category: 'Combat', name: `Weapon (${weapon.name})`, weapon }, entry.bonus ?? 0, undefined, entry.rolled);
       }
     }
     for (const request of selection.profession?.skills ?? []) {
@@ -647,7 +657,7 @@
       if (!available.length) continue;
       if (available.length !== candidates.length) throw new Error('Profession choices cannot mix skill types.');
       const value = selection.halfProfessionSkills
-        ? Math.floor(((request.value ?? 0) + selection.profession.level) / 2)
+        ? Math.floor(((request.value ?? rolledSkillBase) + selection.profession.level) / 2)
         : request.value;
       choose(available, request.count ?? 1, selection.halfProfessionSkills ? 0 : selection.profession.level, value);
     }
@@ -695,7 +705,7 @@
             : elementalMagicSchools.has(skill.school));
           for (const skill of sampleAffordableMagicSkills(eligible, count, selection.mana ?? Number.POSITIVE_INFINITY, random)) {
             available.splice(available.indexOf(skill), 1);
-            const value = (group.magicSkillBonus ?? 0)
+            const value = rolledSkillBase + (group.magicSkillBonus ?? 0)
               + (group.magicBonusPerLevel ?? 0) * (group.titleLevel ?? selection.level ?? 0)
               + (selection.magicSchoolBonuses?.[skill.school] ?? 0);
             skills.push({ ...skill, value });
@@ -720,7 +730,7 @@
     }
     if (selection.rolls?.martialMagicSkills) skills.push(`Martial magic skills: ${selection.rolls.martialMagicSkills} pending (skill list not supplied)`);
     if (selection.rolls?.martialSkills) {
-      const value = selection.rolls.martialBonus + Math.floor(selection.level / 10) * selection.rolls.martialBonusPerTenLevels;
+      const value = rolledSkillBase + selection.rolls.martialBonus + Math.floor(selection.level / 10) * selection.rolls.martialBonusPerTenLevels;
       skills.push(`Martial skills: ${selection.rolls.martialSkills} pending at ${formatSkillBonus(value)} (skill list not supplied)`);
     }
     return skills.map(skill => typeof skill === 'string'
@@ -1007,7 +1017,8 @@
       const unknown = choice.names.filter(name => !monsterSkills?.some(skill => skill.name === name));
       if (unknown.length) throw new Error(`Unknown monster skill choice: ${unknown.join(', ')}`);
       const [name] = sample(choice.names, 1, random);
-      fixedSkills.push(monsterSkills.find(skill => skill.name === name));
+      const skill = monsterSkills.find(skill => skill.name === name);
+      fixedSkills.push({ ...skill, value: skill.value ?? rolledSkillBase });
     }
     for (const name of selection.chartTraits ?? []) {
       const ability = monsterSkills?.find(skill => skill.name.toLowerCase() === name.toLowerCase());
@@ -1023,7 +1034,7 @@
       if (!choice.weapons?.length) throw new Error('Weapon choice must include at least one option.');
       if (choice.weapons.some(name => !weapons.some(weapon => weapon.name === name))) throw new Error('Unknown weapon in fixed weapon choice.');
       const [weapon] = sample(choice.weapons, 1, random);
-      selection.fixedWeaponSkills.push({ weapon, bonus: choice.bonus ?? 0 });
+      selection.fixedWeaponSkills.push({ weapon, bonus: choice.bonus ?? 0, rolled: true });
     }
     const formatFixed = (skill, isTrait) => `${skill.name}${!isTrait ? ` ${formatSkillBonus(skill.value ?? 0)}` : ''}${skill.description ? `: ${skill.description}` : ''}`;
     traitData.traits.push(...fixedSkills.filter(skill => reservedTraitNames.has(skill.name.toLowerCase())).map(skill => formatFixed(skill, true)));
@@ -1209,7 +1220,7 @@
   const api = {
     statKeys, statLabels, configure, roll, rollLevel, sample, weighted, applyModifiers, rollTrait, formatMagicValue,
     selectType, listTypes, generateStats, generateTraits, substats, hitPoints, sheet,
-    generateResistancesAndVulnerabilities, visibleResistances, generateWeapon, formatSkillBonus, formatAttack, formatAttacks, generateTitles, generateRelationships,
+    generateResistancesAndVulnerabilities, visibleResistances, generateWeapon, rolledSkillBase, formatSkillBonus, formatAttack, formatAttacks, generateTitles, generateRelationships,
     generateSkills, generateSpecialitySkills, generateProfession, magicManaCost, sampleAffordableMagicSkills, generateMagicSkills, generate, formatType, formatSection, format
   };
   if (typeof module !== 'undefined' && module.exports) {

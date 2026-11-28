@@ -221,6 +221,7 @@
     { "name": "Wants something" }
   ],
   "reservedTraits": [
+    { "name": "Swallow", "description": "Any melee attack against this creature that fails results in the attacker being swallowed up. They take damage = to the creature's attack until they can escape." },
     { "name": "Fly (Monster)", "description": "Enables flight." },
     { "name": "Divine flame", "description": "You have three flames on each of your tails. So long as one of them is alight, you will live. All damage that would reduce you to 0 reduces you to 1, instead. However, when all three flames are out, gain all Vulnerabilities." },
     { "name": "Soulmate", "description": "Bond with an individual by having them ingest a part of your body. So long as you live, that individual lives. Gain the Obsessed title at title level 10.", "title": "Obsessed", "titleLevel": 10 },
