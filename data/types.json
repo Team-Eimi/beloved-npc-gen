@@ -1,7 +1,7 @@
 {
   "types": [
     {
-      "type": "HUMAN",
+      "type": "Human",
       "defaultSubtype": "Adult",
       "baseStats": 20,
       "baseTraits": ["beauty", "temperament", "temperament"],
@@ -81,13 +81,14 @@
       ]
     },
     {
-      "type": "UNDEAD",
+      "type": "Undead",
       "defaultSubtype": "Skeleton",
       "baseStats": 5,
       "baseTraits": ["temperament", "temperament", "height"],
       "subtypes": [
         {
           "subtype": "Skeleton",
+          "generateRelationships": false,
           "description": "A creature brought back to life by darkness magic. Weak.",
           "ageRange": [1, 100],
           "levelRange": [1, 10],
@@ -183,6 +184,7 @@
         },
         {
           "subtype": "Skeleton Warrior",
+          "generateRelationships": false,
           "inherits": "Skeleton",
           "description": "A skeleton with reinforced bones, specialized for melee combat.",
           "ageRange": [5, 100],
@@ -198,6 +200,7 @@
         },
         {
           "subtype": "Archer Skeleton",
+          "generateRelationships": false,
           "inherits": "Skeleton Warrior",
           "description": "A skeleton adept at ranged combat.",
           "ageRange": [15, 150],
@@ -232,6 +235,7 @@
         },
         {
           "subtype": "Shield Skeleton",
+          "generateRelationships": false,
           "inherits": "Skeleton",
           "description": "A skeleton adept at taking hits.",
           "ageRange": [15, 150],
@@ -258,6 +262,7 @@
         },
         {
           "subtype": "Healer Skeleton",
+          "generateRelationships": false,
           "inherits": "Skeleton",
           "description": "A skeleton with low-level healing magic.",
           "ageRange": [1, 100],
@@ -277,6 +282,7 @@
       "subtypes": [
         {
           "subtype": "Sprite",
+          "generateRelationships": false,
           "description": "A small, whimsical elemental. Low consciousness. Lives for 100 years. Exceptional sprites may evolve.",
           "ageRange": [1, 100],
           "levelRange": [1, 5],
@@ -291,6 +297,7 @@
         },
         {
           "subtype": "Elemental",
+          "generateRelationships": false,
           "inherits": "Sprite",
           "removeTraits": ["temperament"],
           "levelRange": [1, 25],
@@ -309,7 +316,7 @@
     {
       "type": "Omniscient",
       "subtypes": [
-        { "subtype": "Spark" },
+        { "subtype": "Spark", "generateRelationships": false },
         { "subtype": "Elemental Elf", "inherits": "Spark" },
         { "subtype": "World Elf", "inherits": "Spark" },
         { "subtype": "Solar/Lunar World Elf", "inherits": "Spark" },
@@ -323,25 +330,44 @@
         { "name": "Claws", "damage": 2 }
       ],
       "subtypes": [
-        { "subtype": "Dragon Hatchling" },
+        { "subtype": "Dragon Hatchling", "naturalAttacksOnly": true },
         { "subtype": "Wyrm", "inherits": "Dragon Hatchling" },
         { "subtype": "Fairy Dragon", "inherits": "Dragon Hatchling" },
         { "subtype": "Young Dragon", "inherits": "Dragon Hatchling" },
         { "subtype": "Dragon", "inherits": "Young Dragon" },
-        { "subtype": "Ascendant Dragon", "inherits": "Young Dragon" },
+        {
+          "subtype": "Ascendant Dragon",
+          "inherits": "Young Dragon",
+          "description": "A dragon born to be a holy guardian (light magic) or a calamity (darkness magic). These dragons are powerful enough to use omniscient magic and even take the forms of humans. As such, it is said the territory they take is in the form of a soulmate.",
+          "naturalAttacks": [],
+          "showMagicTypeInHeading": true,
+          "replaceMagicType": ["Light", "Darkness"],
+          "magicTypeSkills": {
+            "Light": { "name": "Miracle", "school": "Ascendant" },
+            "Darkness": { "name": "Calamity", "school": "Ascendant" }
+          }
+        },
         { "subtype": "Elder Dragon", "inherits": "Dragon" }
       ]
     },
     {
       "type": "Lupine",
       "subtypes": [
-        { "subtype": "Cub" },
-        { "subtype": "Wolf", "inherits": "Cub" },
+        {
+          "subtype": "Cub",
+          "generateRelationships": false,
+          "naturalAttacksOnly": true,
+          "naturalAttacks": [
+            { "name": "Bite", "damage": 2 },
+            { "name": "Claws", "damage": 2 }
+          ]
+        },
+        { "subtype": "Wolf", "inherits": "Cub", "generateRelationships": false },
         { "subtype": "Werewolf", "inherits": "Cub" },
         { "subtype": "Alpha Werewolf", "inherits": "Werewolf" },
-        { "subtype": "Lesser Wolf", "inherits": "Cub" },
-        { "subtype": "Greater Wolf", "inherits": "Lesser Wolf" },
-        { "subtype": "Horned Wolf", "inherits": "Lesser Wolf" },
+        { "subtype": "Lesser Wolf", "inherits": "Cub", "generateRelationships": false },
+        { "subtype": "Greater Wolf", "inherits": "Lesser Wolf", "generateRelationships": false },
+        { "subtype": "Horned Wolf", "inherits": "Lesser Wolf", "generateRelationships": false },
         { "subtype": "Pegasi Wolf", "inherits": "Horned Wolf" }
       ]
     },
@@ -352,26 +378,25 @@
         { "subtype": "Seductress", "inherits": "Vampire Spawn" },
         { "subtype": "Blood Caster", "inherits": "Vampire Spawn" },
         { "subtype": "Vampire Lord", "inherits": "Blood Caster" },
-        { "subtype": "Monstrous", "inherits": "Vampire Spawn" },
-        { "subtype": "Parasite", "inherits": "Monstrous" },
-        { "subtype": "Phantom", "inherits": "Monstrous" }
+        { "subtype": "Monstrous", "inherits": "Vampire Spawn", "generateRelationships": false },
+        { "subtype": "Parasite", "inherits": "Monstrous", "generateRelationships": false },
+        { "subtype": "Phantom", "inherits": "Monstrous", "generateRelationships": false }
       ]
     },
     {
       "type": "Slime",
       "subtypes": [
-        { "subtype": "Baby Slime" },
-        { "subtype": "Fruit Jelly", "inherits": "Baby Slime" },
-        {
-          "subtype": "Humanoid",
-          "inherits": ["Fruit Jelly", "Blue Slime", "Pink Slime"]
-        },
-        { "subtype": "Black Ooze", "inherits": "Baby Slime" },
-        { "subtype": "Elder Ooze", "inherits": "Black Ooze" },
-        { "subtype": "Blobsucker", "inherits": "Baby Slime" },
-        { "subtype": "Blue Slime", "inherits": "Baby Slime" },
-        { "subtype": "Poison Slime", "inherits": "Baby Slime" },
-        { "subtype": "Pink Slime", "inherits": "Baby Slime" }
+        { "subtype": "Baby Slime", "generateRelationships": false },
+        { "subtype": "Fruit Jelly", "inherits": "Baby Slime", "generateRelationships": false },
+        { "subtype": "Fruit Jelly Humanoid", "inherits": "Fruit Jelly" },
+        { "subtype": "Black Ooze", "inherits": "Baby Slime", "generateRelationships": false },
+        { "subtype": "Elder Ooze", "inherits": "Black Ooze", "generateRelationships": false },
+        { "subtype": "Blobsticker", "inherits": "Baby Slime", "generateRelationships": false },
+        { "subtype": "Blue Slime", "inherits": "Baby Slime", "generateRelationships": false },
+        { "subtype": "Blue Slime Humanoid", "inherits": "Blue Slime" },
+        { "subtype": "Poison Slime", "inherits": "Baby Slime", "generateRelationships": false },
+        { "subtype": "Pink Slime", "inherits": "Baby Slime", "generateRelationships": false },
+        { "subtype": "Pink Slime Humanoid", "inherits": "Pink Slime" }
       ]
     },
     {
@@ -381,9 +406,9 @@
         { "subtype": "Siren", "inherits": "Mermaid" },
         { "subtype": "Dark Siren", "inherits": "Siren" },
         { "subtype": "Enchantress", "inherits": "Siren" },
-        { "subtype": "Sea Serpent", "inherits": "Mermaid" },
-        { "subtype": "Kraken", "inherits": "Sea Serpent" },
-        { "subtype": "Megalodora", "inherits": "Sea Serpent" },
+        { "subtype": "Sea Serpent", "inherits": "Mermaid", "generateRelationships": false },
+        { "subtype": "Kraken", "inherits": "Sea Serpent", "generateRelationships": false },
+        { "subtype": "Megalodon", "inherits": "Sea Serpent", "generateRelationships": false },
         { "subtype": "Elder Mermaid", "inherits": "Mermaid" },
         { "subtype": "Keeper of Beasts", "inherits": "Elder Mermaid" },
         { "subtype": "Witch of the Seas", "inherits": "Elder Mermaid" }
@@ -392,7 +417,7 @@
     {
       "type": "Animal Kin",
       "subtypes": [
-        { "subtype": "Childling" },
+        { "subtype": "Childling", "generateRelationships": false },
         { "subtype": "Kiyone", "inherits": "Childling" },
         { "subtype": "Daimata", "inherits": "Childling" },
         { "subtype": "Guardian Crow", "inherits": "Childling" }
@@ -439,7 +464,7 @@
       "levelRange": [1, 65],
       "base": "+20",
       "pointsOnLevelUp": "1 stat by 1; MAG by 3; INT by 1",
-      "netGainMaxCumulative": "5 (545)",
+      "netGainMaxCumulative": "5 (345) (545)",
       "titleGain": "none",
       "traitGain": "height, education",
       "skillGain": "2 magic skills, 2 skills"
@@ -462,7 +487,7 @@
       "base": "+10",
       "pointsOnLevelUp": "2 stats by 2",
       "netGainMaxCumulative": "4 (50) (90)",
-      "titleGain": "profession (5% skills)",
+      "titleGain": "profession (half skills)",
       "traitGain": "beauty",
       "skillGain": "remove Slow, Bony, Fragile"
     },
@@ -483,7 +508,7 @@
       "levelRange": [1, 80],
       "base": "+50",
       "pointsOnLevelUp": "4 stats by 1; MAG by 2",
-      "netGainMaxCumulative": "6 (330) (785)",
+      "netGainMaxCumulative": "6 (530) (785)",
       "titleGain": "50% special",
       "traitGain": "none",
       "skillGain": "3 magic skills +20%"
@@ -516,7 +541,7 @@
       "levelRange": [1, 20],
       "base": "+15",
       "pointsOnLevelUp": "1 stat by 1; AGI by 1",
-      "netGainMaxCumulative": "2 (135) (125)",
+      "netGainMaxCumulative": "2 (55) (125)",
       "titleGain": "none",
       "traitGain": "none",
       "skillGain": "Fragile, Sniper, one arrow skill, one ranged weapon +30%"
@@ -527,7 +552,7 @@
       "levelRange": [1, 20],
       "base": "+15",
       "pointsOnLevelUp": "CON by 2",
-      "netGainMaxCumulative": "2 (155) (125)",
+      "netGainMaxCumulative": "2 (55) (125)",
       "titleGain": "none",
       "traitGain": "none",
       "skillGain": "Damage, Limb Damage, Poison, Fire, Frost, Electric resistance +30%"
@@ -538,7 +563,7 @@
       "levelRange": [1, 30],
       "base": "+30; minimum INT 15",
       "pointsOnLevelUp": "INT and MAG by 1",
-      "netGainMaxCumulative": "2 (190) (130)",
+      "netGainMaxCumulative": "2 (90) (130)",
       "titleGain": "none",
       "traitGain": "none",
       "skillGain": "Heal (Monster), 1 Light magic skill, 2 skills +20%"
@@ -559,7 +584,7 @@
       "subtype": "Fairy",
       "levelRange": [1, 80],
       "base": "+30",
-      "pointsOnLevelUp": "2 stats by 2; MAG by 1",
+      "pointsOnLevelUp": "2 stats by 1; MAG by 2",
       "netGainMaxCumulative": "4 (350) (450)",
       "titleGain": "none",
       "traitGain": "1 temperament",
@@ -603,7 +628,7 @@
       "subtype": "Elemental Elf",
       "levelRange": [1, 50],
       "base": "+50",
-      "pointsOnLevelUp": "2 stats by 2; MAG by 1",
+      "pointsOnLevelUp": "2 stats by 2; MAG by 2",
       "netGainMaxCumulative": "6 (350) (950)",
       "titleGain": "50% special, profession",
       "traitGain": "height, beauty, education, 2 temperaments",
@@ -650,7 +675,7 @@
       "pointsOnLevelUp": "10 stats by 1",
       "netGainMaxCumulative": "10 (150)",
       "titleGain": "30% special",
-      "traitGain": "2 temperaments",
+      "traitGain": "2 temperaments, Fly (Monster)",
       "skillGain": "2 skills +20%"
     },
     {
@@ -705,8 +730,8 @@
       "pointsOnLevelUp": "all stats by 1; 1 stat by 2",
       "netGainMaxCumulative": "8 (640) (860)",
       "titleGain": "Ascendant",
-      "traitGain": "profession",
-      "skillGain": "Shapeshifting, Soulmate, 1 magic skill, 1 omniscient magic skill, 2 skills +20%"
+      "traitGain": "profession, Shapeshifting, Soulmate",
+      "skillGain": "1 magic skill, 1 omniscient magic skill, 2 skills +20%"
     },
     {
       "type": "Dragon",
@@ -716,8 +741,8 @@
       "pointsOnLevelUp": "CON by 2; 2 stats by 2",
       "netGainMaxCumulative": "6 (700) (1420)",
       "titleGain": "none",
-      "traitGain": "none",
-      "skillGain": "Natural form"
+      "traitGain": "Natural form",
+      "skillGain": "none"
     },
     {
       "type": "Lupine",
@@ -727,8 +752,8 @@
       "pointsOnLevelUp": "CON and STR by 1; 2 stats by 1",
       "netGainMaxCumulative": "20 (80)",
       "titleGain": "none",
-      "traitGain": "1 temperament",
-      "skillGain": "bite and claw +20%, Pack call"
+      "traitGain": "1 temperament, Pack call",
+      "skillGain": "bite and claw +20%"
     },
     {
       "type": "Lupine",
@@ -749,8 +774,8 @@
       "pointsOnLevelUp": "STR by 1; 3 stats by 1",
       "netGainMaxCumulative": "4 (210) (290)",
       "titleGain": "profession, 30% special",
-      "traitGain": "height, beauty, education, 1 temperament",
-      "skillGain": "Shapeshifting, True mate, Pheromone, Heat cycle, 2 skills +20%"
+      "traitGain": "height, beauty, education, 1 temperament, Shapeshifting, True mate, Pheromone, Heat cycle",
+      "skillGain": "2 skills +20%"
     },
     {
       "type": "Lupine",
@@ -760,15 +785,15 @@
       "pointsOnLevelUp": "STR and CON by 1; 3 stats by 1",
       "netGainMaxCumulative": "5 (250) (540)",
       "titleGain": "none",
-      "traitGain": "none",
-      "skillGain": "Pheromone control, Heat cycle (alpha), remove Heat cycle, 2 skills +20%"
+      "traitGain": "remove height, add very tall, Pheromone control, Heat cycle (alpha), remove Heat cycle",
+      "skillGain": "2 skills +20%"
     },
     {
       "type": "Lupine",
       "subtype": "Lesser Wolf",
       "levelRange": [1, 20],
       "base": "+20",
-      "pointsOnLevelUp": "STR and AGI by 1; 1 stat by 2",
+      "pointsOnLevelUp": "STR and CON by 1; 1 stat by 2",
       "netGainMaxCumulative": "4 (100) (180)",
       "titleGain": "none",
       "traitGain": "none",
@@ -777,7 +802,7 @@
     {
       "type": "Lupine",
       "subtype": "Greater Wolf",
-      "levelRange": [1, 30],
+      "levelRange": [1, 20],
       "base": "+25",
       "pointsOnLevelUp": "STR and CON by 2; 1 stat by 1",
       "netGainMaxCumulative": "5 (125) (305)",
@@ -804,8 +829,8 @@
       "pointsOnLevelUp": "3 stats by 1",
       "netGainMaxCumulative": "3 (120) (380)",
       "titleGain": "none",
-      "traitGain": "none",
-      "skillGain": "2 magic skills, Fly"
+      "traitGain": "Fly (Monster)",
+      "skillGain": "2 magic skills"
     },
     {
       "type": "Vampire",
@@ -815,8 +840,8 @@
       "pointsOnLevelUp": "3 stats by 1",
       "netGainMaxCumulative": "3 (225)",
       "titleGain": "30% special, profession",
-      "traitGain": "2 temperaments, beauty, height, education",
-      "skillGain": "Painful bite, HP drain, 1 Blood magic skill +20%"
+      "traitGain": "2 temperaments, beauty, height, education, Painful bite",
+      "skillGain": "HP drain, 1 Blood magic skill +20%"
     },
     {
       "type": "Vampire",
@@ -826,8 +851,8 @@
       "pointsOnLevelUp": "CHA by 1; 3 stats by 1",
       "netGainMaxCumulative": "4 (230) (455)",
       "titleGain": "none",
-      "traitGain": "beautiful",
-      "skillGain": "Lustful bite, Life steal, 2 Emotional Intelligence skills +20%"
+      "traitGain": "beautiful, Lustful bite, Life steal",
+      "skillGain": "2 Emotional Intelligence skills +20%"
     },
     {
       "type": "Vampire",
@@ -859,24 +884,24 @@
       "pointsOnLevelUp": "STR and CON by 1",
       "netGainMaxCumulative": "2 (25) (250)",
       "titleGain": "none",
-      "traitGain": "ugly",
-      "skillGain": "Mute, Bite +4 damage"
+      "traitGain": "monstrous, Mute",
+      "skillGain": "Bite +4 damage"
     },
     {
       "type": "Vampire",
       "subtype": "Parasite",
-      "levelRange": [1, 45],
+      "levelRange": [1, 15],
       "base": "+10",
       "pointsOnLevelUp": "MAG and CON by 1",
       "netGainMaxCumulative": "2 (40) (290)",
       "titleGain": "none",
       "traitGain": "none",
-      "skillGain": "Parasitic"
+      "skillGain": "Parasite"
     },
     {
       "type": "Vampire",
       "subtype": "Phantom",
-      "levelRange": [1, 50],
+      "levelRange": [1, 15],
       "base": "+10",
       "pointsOnLevelUp": "MAG and CON by 1",
       "netGainMaxCumulative": "2 (40) (290)",
@@ -908,23 +933,80 @@
     },
     {
       "type": "Slime",
-      "subtype": "Humanoid",
-      "sourceSubtype": "Pink Slime Humanoid",
+      "subtype": "Fruit Jelly Humanoid",
+      "levelRange": [1, 5],
+      "base": "all stats 30 minimum",
+      "pointsOnLevelUp": "2 stats by 3",
+      "netGainMaxCumulative": "6 (30) (204)",
+      "titleGain": "30% special",
+      "traitGain": "beautiful, 1 temperament, profession, very short, education, Shapeshifting, Coveted body",
+      "skillGain": "Kindness, Soothe, 3 artistic skills +20%"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Pink Slime Humanoid",
       "levelRange": [1, 20],
       "base": "all stats 30 minimum",
       "pointsOnLevelUp": "MAG by 2; 3 stats by 1",
       "netGainMaxCumulative": "5 (148) (284)",
-      "titleGain": "30% special",
-      "traitGain": "1 temperament, beauty, height, education",
-      "skillGain": "Shapeshifting, skills +20%"
+      "titleGain": "30% special, profession",
+      "traitGain": "1 temperament, beauty, very short, education, Shapeshifting",
+      "skillGain": "2 skills +20%"
     },
     {
       "type": "Slime",
       "subtype": "Black Ooze",
       "levelRange": [1, 20],
-      "base": "+10",
+      "base": "+10 CON +10 MAG",
       "pointsOnLevelUp": "MAG by 2; AGI by 1",
-      "netGainMaxCumulative": "3*"
+      "netGainMaxCumulative": "3 (70) (86)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "Decay +40%"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Elder Ooze",
+      "levelRange": [1, 40],
+      "base": "+50 CON +50 MAG",
+      "pointsOnLevelUp": "MAG by 3; AGI by 2",
+      "netGainMaxCumulative": "5 (300) (386)",
+      "titleGain": "none",
+      "traitGain": "none",
+      "skillGain": "none"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Blobsticker",
+      "levelRange": [1, 10],
+      "base": "+10",
+      "pointsOnLevelUp": "2 stats by 1",
+      "netGainMaxCumulative": "2 (30) (46)",
+      "titleGain": "none",
+      "traitGain": "Group sticky",
+      "skillGain": "none"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Blue Slime",
+      "levelRange": [1, 20],
+      "base": "+20 INT +20 MAG",
+      "pointsOnLevelUp": "MAG by 2; 2 stats by 1",
+      "netGainMaxCumulative": "4 (120) (136)",
+      "titleGain": "none",
+      "traitGain": "1 temperament",
+      "skillGain": "Healing slime, Heal +30%"
+    },
+    {
+      "type": "Slime",
+      "subtype": "Blue Slime Humanoid",
+      "levelRange": [1, 20],
+      "base": "all stats 30 minimum",
+      "pointsOnLevelUp": "MAG by 2; 3 stats by 1",
+      "netGainMaxCumulative": "5 (148) (284)",
+      "titleGain": "30% special, profession",
+      "traitGain": "1 temperament, beauty, very short, education, Shapeshifting",
+      "skillGain": "2 skills +20%"
     },
     {
       "type": "Slime",
@@ -957,7 +1039,7 @@
       "netGainMaxCumulative": "7 (190)",
       "titleGain": "30% special, profession",
       "traitGain": "2 temperaments, beauty, education",
-      "skillGain": "three skills, Enchanting Voice, Water ability"
+      "skillGain": "3 skills, Enchanting voice, Water lure +20%"
     },
     {
       "type": "Mermaid",
@@ -967,8 +1049,8 @@
       "pointsOnLevelUp": "CHA by 1; 2 stats by 2",
       "netGainMaxCumulative": "5 (80) (270)",
       "titleGain": "none",
-      "traitGain": "remove beauty, add monstrous",
-      "skillGain": "remove Enchanting Voice, Siren songs, Hypnosis"
+      "traitGain": "remove beauty, add beautiful, Delicacy",
+      "skillGain": "remove Enchanting voice, add Siren song +20%"
     },
     {
       "type": "Mermaid",
@@ -978,8 +1060,8 @@
       "pointsOnLevelUp": "CHA by 1; MAG by 1; 2 stats by 1",
       "netGainMaxCumulative": "4 (250) (520)",
       "titleGain": "Magician (Darkness)",
-      "traitGain": "remove beauty, add monstrous",
-      "skillGain": "Dark Siren songs"
+      "traitGain": "remove beauty, remove beautiful, add monstrous",
+      "skillGain": "remove Siren song, add Siren song (Dark Siren), Hypnosis, 1 Darkness magic skill +20%"
     },
     {
       "type": "Mermaid",
@@ -989,8 +1071,8 @@
       "pointsOnLevelUp": "CHA by 2; 2 stats by 1",
       "netGainMaxCumulative": "4 (120) (390)",
       "titleGain": "Lover Boy",
-      "traitGain": "height",
-      "skillGain": "Shapeshifting, Emotion, Aphrodisiac +20%"
+      "traitGain": "height, Shapeshifting",
+      "skillGain": "Emotion, Aphrodisiac +20%"
     },
     {
       "type": "Mermaid",
@@ -1001,7 +1083,7 @@
       "netGainMaxCumulative": "3 (40) (230)",
       "titleGain": "none",
       "traitGain": "remove beauty, remove education",
-      "skillGain": "two Subterfuge skills +10%, bite and claw attack"
+      "skillGain": "2 Subterfuge skills +20%, bite and claw attack"
     },
     {
       "type": "Mermaid",
@@ -1011,19 +1093,19 @@
       "pointsOnLevelUp": "STR by 2; CON by 1; AGI by 1",
       "netGainMaxCumulative": "4 (210) (440)",
       "titleGain": "none",
-      "traitGain": "none",
-      "skillGain": "Poison breath, Manipulate water, Grapple"
+      "traitGain": "Multiattack",
+      "skillGain": "Poison beak, Grapple suction +20%"
     },
     {
       "type": "Mermaid",
-      "subtype": "Megalodora",
+      "subtype": "Megalodon",
       "levelRange": [1, 40],
       "base": "+50 CON",
       "pointsOnLevelUp": "STR by 2; CON by 2",
-      "netGainMaxCumulative": "4 (240) (440)",
+      "netGainMaxCumulative": "4 (210) (440)",
       "titleGain": "none",
-      "traitGain": "none",
-      "skillGain": "Blood feast, Sleep"
+      "traitGain": "Blood frenzy, Sleepless",
+      "skillGain": "none"
     },
     {
       "type": "Mermaid",
@@ -1034,7 +1116,7 @@
       "netGainMaxCumulative": "6 (140) (230)",
       "titleGain": "none",
       "traitGain": "none",
-      "skillGain": "Gain a Water spell, Commanding Voice +20%"
+      "skillGain": "2 Water spells, Commanding Voice +20%"
     },
     {
       "type": "Mermaid",
@@ -1066,7 +1148,7 @@
       "pointsOnLevelUp": "4 stats by 5",
       "netGainMaxCumulative": "20 (200)",
       "titleGain": "30% special",
-      "traitGain": "1 temperament",
+      "traitGain": "2 temperaments",
       "skillGain": "none"
     },
     {
@@ -1088,8 +1170,8 @@
       "pointsOnLevelUp": "AGI by 1; INT by 1; 2 stats by 1",
       "netGainMaxCumulative": "4 (145) (345)",
       "titleGain": "profession",
-      "traitGain": "beauty, very short, education",
-      "skillGain": "Divine favor, 2 Fire magic skills +20%"
+      "traitGain": "beauty, very short, education, Divine flame",
+      "skillGain": "2 Fire magic skills +20%"
     },
     {
       "type": "Animal Kin",
@@ -1099,8 +1181,8 @@
       "pointsOnLevelUp": "AGI by 1; INT by 1; 2 stats by 1",
       "netGainMaxCumulative": "4 (145) (345)",
       "titleGain": "profession",
-      "traitGain": "beauty, very short, education",
-      "skillGain": "Fly, 3 skills +20%"
+      "traitGain": "beauty, very short, education, Guardian crow",
+      "skillGain": "Fly, 4 skills +20%"
     }
   ]
 }

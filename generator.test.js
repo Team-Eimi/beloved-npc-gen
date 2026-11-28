@@ -103,7 +103,7 @@ test('non-Human types without subtypes output only a type and use shared rules',
     assert.equal(npc.subtype, '');
     assert.equal(npc.level, undefined);
     assert.deepEqual(npc.traits, []);
-    assert.ok(generator.formatType(npc).startsWith('Example | Age: 25'));
+    assert.ok(generator.formatType(npc).startsWith('Example | Level:'));
     assert.ok(generator.formatType(npc).endsWith('Level: Not configured'));
     assert.ok(Object.values(npc.stats).every(Number.isFinite));
   } finally { generator.configure(rolls, types); }
@@ -273,7 +273,7 @@ test('traits are opt-in and education skills reach the final output', () => {
 test('Elemental output shows its automatic magic status and full stat names', () => {
   const npc = generator.generate({ type: 'ELEMENTAL', age: 40, includeMagic: false }, () => 0.5);
   const text = generator.format(npc);
-  assert.ok(text.startsWith('ELEMENTAL | Age: 40'));
+  assert.ok(text.startsWith('ELEMENTAL | Level:'));
   assert.ok(text.includes('Strength:'));
   assert.ok(text.includes('Constitution:'));
   assert.ok(text.includes('Magic:'));
@@ -411,7 +411,7 @@ test('progression chart drives every subtype level and stat bonuses', () => {
 
     const humanoidSlime = generator.generate({
       type: 'Slime',
-      subtype: 'Humanoid',
+      subtype: 'Pink Slime Humanoid',
       age: 25,
       traitCategories: []
     }, () => 0);
@@ -460,7 +460,7 @@ test('Omniscient chart gains include spells, Domain, and a Monster-list animal w
   assert.equal(bear.skills.filter(skill => skill.endsWith('50%')).length, 5);
 });
 
-test('Dragons use Bite or Claws and only Ascendant Dragons can receive combat skills', () => {
+test('Hatchlings use Bite or Claws while Ascendant Dragons can use combat skills and weapons', () => {
   const original = generator.generateStats;
   const cruelIndex = rolls.temperaments.findIndex(item => item.name === 'Cruel');
   const rollCruel = () => sequence([(cruelIndex + 0.5) / rolls.temperaments.length], 0);
@@ -481,9 +481,30 @@ test('Dragons use Bite or Claws and only Ascendant Dragons can receive combat sk
       age: 25,
       traitCategories: ['temperament']
     }, rollCruel());
-    assert.ok(['Bite', 'Claws'].includes(ascendant.attack.name));
+    assert.ok(!['Bite', 'Claws'].includes(ascendant.attack.name));
     assert.ok(ascendant.skills.some(skill => skill.startsWith('Combat: ')));
   } finally { generator.generateStats = original; }
+});
+
+test('Cubs and Hatchlings show only Bite or Claws, even if a skill grants a weapon', () => {
+  const original = generator.generateSkills;
+  try {
+    generator.generateSkills = (selection, stats, random, traits, attacks) => {
+      attacks.weapons.push({ name: 'Longbow', damage: 4, skillPercent: 50 });
+      return ['Combat: Weapon (Longbow) 50%'];
+    };
+    for (const [type, subtype] of [['Lupine', 'Cub'], ['Dragon', 'Dragon Hatchling']]) {
+      for (const [randomValue, name] of [[0, 'Bite'], [0.999, 'Claws']]) {
+        const npc = generator.generate({ type, subtype, age: 25, traitCategories: [] }, () => randomValue);
+        assert.equal(npc.attack.name, name);
+        assert.deepEqual(npc.skillWeapons, []);
+        assert.ok(!generator.formatAttacks(npc).includes('Longbow'));
+        assert.ok(npc.skills.includes('Combat: Weapon (Longbow) 50%'));
+      }
+    }
+    const wolf = generator.generate({ type: 'Lupine', subtype: 'Wolf', age: 25, traitCategories: [] }, () => 0.5);
+    assert.ok(generator.formatAttacks(wolf).includes('Longbow'));
+  } finally { generator.generateSkills = original; }
 });
 
 test('Human subtype magic status is automatic and ignores the former display option', () => {
@@ -527,7 +548,7 @@ test('Aloof applies INT, CHA, and Mana effects and is listed separately as a tem
 });
 
 test('every configured non-Human type enables Magic', () => {
-  for (const type of types.types.filter(value => value.type !== 'HUMAN')) {
+  for (const type of types.types.filter(value => value.type.toUpperCase() !== 'HUMAN')) {
     const subtype = type.subtypes[0];
     const npc = generator.generate({ type: type.type, subtype: subtype.subtype }, () => 0.5);
     assert.equal(npc.magicRequired, true, `${type.type} ${subtype.subtype}`);
@@ -647,14 +668,19 @@ test('Lord and Magician bonus skill thresholds apply strictly above each level',
   }
 });
 
-test('profession requirements reference categories and skill levels are based on age', () => {
-  const profession = generator.generateProfession(30, sequence([0, 0]));
+test('profession levels cap at 20 and add to each profession skill base', () => {
+  const profession = generator.generateProfession(15, sequence([0, 0]));
   assert.equal(profession.name, 'Politician');
-  assert.equal(profession.level, 20);
+  assert.equal(profession.level, 5);
   assert.deepEqual(generator.generateSkills({ profession, rolls: {} }, {}, () => 0), [
-    'Emotional Intelligence: Insight 50%', 'Knowledge: Law 50%', 'Knowledge: Politics 50%'
+    'Emotional Intelligence: Insight 35%', 'Knowledge: Law 35%', 'Knowledge: Politics 35%'
   ]);
-  assert.equal(generator.generateProfession(30, sequence([0, 0.9999])).level, 40);
+  assert.deepEqual(generator.generateSpecialitySkills({
+    profession: { level: 5, skills: [{ name: 'Stealth' }, { category: 'Technical', count: 1, value: 50 }] },
+    rolls: {}
+  }, {}, () => 0), ['Subterfuge: Stealth 5%', 'Technical: Forensics 55%']);
+  assert.equal(generator.generateProfession(15, sequence([0, 0.9999])).level, 20);
+  assert.equal(generator.generateProfession(70, sequence([0, 0])).level, 20);
   const names = rolls.professions.flatMap(entry => entry.names);
   assert.deepEqual(names.map((_, index) => generator.generateProfession(30, sequence([(index + 0.5) / names.length, 0])).name), names);
   for (const entry of rolls.professions) {
@@ -743,7 +769,7 @@ test('Magicians receive distinct elemental spells; Lords show the pending martia
 });
 
 function undeadAtLevel(subtype, age, level, fallback = 0.9) {
-  const type = types.types.find(value => value.type === 'UNDEAD');
+  const type = types.types.find(value => value.type.toUpperCase() === 'UNDEAD');
   const entry = type.subtypes.find(value => value.subtype === subtype);
   let points = 0;
   for (let stage = entry; stage; stage = type.subtypes.find(value => value.subtype === stage.inherits)) points += stage.randomPoints ?? 0;
@@ -775,7 +801,7 @@ test('Undead inherited stat bonuses stack at the selected level', () => {
     ['Skeleton Warrior', 50, 10, 3], ['Archer Skeleton', 50, 25, 5], ['Shield Skeleton', 50, 15, 3]
   ]) {
     const npc = undeadAtLevel(subtype, age, 10);
-    assert.ok(npc.level >= 1 && npc.level <= types.types.find(value => value.type === 'UNDEAD')
+    assert.ok(npc.level >= 1 && npc.level <= types.types.find(value => value.type.toUpperCase() === 'UNDEAD')
       .subtypes.find(value => value.subtype === subtype).levelRange[1], subtype);
     assert.equal(Object.values(npc.stats).reduce((sum, value) => sum + value, 0), 30 + points + npc.level * perLevel, subtype);
   }
@@ -834,16 +860,16 @@ test('Skeleton traits and inherited fixed skills, removals and resistance effect
   assert.equal(skeleton.traitRolls.filter(item => item.category === 'temperament').length, 2);
   assert.notEqual(skeleton.traitRolls[0].effect.name, skeleton.traitRolls[1].effect.name);
   const base = undeadAtLevel('Skeleton', 10, 1);
-  assert.ok(base.skills.some(skill => skill.startsWith('Slow:')));
-  assert.ok(base.skills.some(skill => skill.startsWith('Undead:')));
+  assert.ok(base.traits.some(trait => trait.startsWith('Slow:')));
+  assert.ok(base.traits.some(trait => trait.startsWith('Undead:')));
   assert.deepEqual(generator.visibleResistances(base.resistancesAndVulnerabilities), ['Magical Resistance: 100%', 'Damage Vulnerability']);
   const corpse = undeadAtLevel('Walking Corpse', 10, 1);
-  assert.ok(corpse.skills.some(skill => skill.startsWith('Undead:')));
-  assert.ok(!corpse.skills.some(skill => /^(Slow|Bony|Fragile):/.test(skill)));
+  assert.ok(corpse.traits.some(trait => trait.startsWith('Undead:')));
+  assert.ok(!corpse.traits.some(trait => /^(Slow|Bony|Fragile):/.test(trait)));
   assert.deepEqual(generator.visibleResistances(corpse.resistancesAndVulnerabilities), []);
   const warrior = undeadAtLevel('Skeleton Warrior', 10, 1);
-  assert.ok(warrior.skills.some(skill => skill.startsWith('Bony:')));
-  assert.ok(!warrior.skills.some(skill => skill.startsWith('Fragile:')));
+  assert.ok(warrior.traits.some(trait => trait.startsWith('Bony:')));
+  assert.ok(!warrior.traits.some(trait => trait.startsWith('Fragile:')));
   assert.ok(warrior.skills.some(skill => /^Combat:.*50%/.test(skill)));
 });
 
@@ -856,7 +882,7 @@ test('Archer randomly receives one arrow skill and one ranged weapon at +30%', (
   ]) {
     const npc = undeadAtLevel('Archer Skeleton', 20, 1, random);
     for (const name of ['Slow', 'Bony', 'Undead', 'Fragile', 'Sniper']) {
-      assert.ok(npc.skills.some(skill => skill.startsWith(`${name}:`)), name);
+      assert.ok(npc.traits.some(trait => trait.startsWith(`${name}:`)), name);
     }
     assert.equal(npc.skills.filter(skill => /^(Frost arrow|Poison arrow|Sleep arrow):/.test(skill)).length, 1);
     assert.ok(npc.skills.some(skill => skill.startsWith(`${arrow}:`)));
@@ -891,12 +917,60 @@ test('Corpse Mage and Lich retain spell counts and level-dependent bonuses', () 
   assert.equal(new Set(lich.magicSkills.map(skill => skill.split(' 30%:')[0].split(' 130%:')[0])).size, 5);
 });
 
-test('Monster Magic catalog is assignable separately from elemental Magic Skill rolls', () => {
-  assert.equal(monsters.monsterMagic.length, 53);
+test('reserved monster traits and skills are separate from elemental Magic Skill rolls', () => {
+  const reserved = [...monsters.reservedTraits, ...monsters.reservedSkills];
+  const reservedNames = new Set(reserved.map(entry => entry.name.toLowerCase()));
+  const randomSkills = [
+    ...rolls.skills.standalone,
+    ...Object.values(rolls.skills.categories).flat(),
+    ...Object.values(rolls.specialitySkills).flat()
+  ];
+  assert.ok(randomSkills.every(name => !reservedNames.has(name.toLowerCase())));
+  for (const [school, entries] of Object.entries(monsters.magic)) {
+    if (['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity'].includes(school)) {
+      assert.ok(entries.every(entry => !reservedNames.has(entry.name.toLowerCase())));
+    }
+  }
   const rolled = generator.generateMagicSkills({ rolls: { magicSkills: 38 } }, () => 0);
   assert.equal(rolled.length, 38);
   assert.ok(rolled.every(skill => / \((Light|Darkness|Fire|Water|Earth|Wind|Electricity)\) /.test(skill)));
-  assert.ok(!rolled.some(skill => monsters.monsterMagic.some(entry => skill.startsWith(`${entry.name} (`))));
+  assert.ok(!rolled.some(skill => reserved.some(entry => skill.startsWith(`${entry.name} (`))));
+});
+
+test('reserved abilities are displayed in their respective sections when explicitly granted', () => {
+  const skeleton = generator.generate({ type: 'Undead', subtype: 'Skeleton', age: 25, traitCategories: [] }, () => 0.999);
+  assert.ok(skeleton.traits.some(trait => trait.startsWith('Bony:')));
+  assert.ok(!skeleton.skills.some(skill => skill.startsWith('Bony:')));
+  assert.ok(generator.format(skeleton).includes('Traits:\nSlow:'));
+
+  const slime = generator.generate({ type: 'Slime', subtype: 'Poison Slime', age: 25, traitCategories: [] }, () => 0.999);
+  assert.ok(slime.skills.includes(`Poison slime: ${monsters.reservedSkills.find(skill => skill.name === 'Poison slime').description}`));
+  const siren = generator.generate({ type: 'Mermaid', subtype: 'Dark Siren', age: 25, traitCategories: [] }, () => 0.999);
+  assert.ok(siren.skills.includes(`Hypnosis: ${monsters.reservedSkills.find(skill => skill.name === 'Hypnosis').description}`));
+});
+
+test('Daimata gains Divine flame without unconditional vulnerabilities', () => {
+  const npc = generator.generate({ type: 'Animal Kin', subtype: 'Daimata', age: 25, traitCategories: [] }, () => 0.5);
+  const description = 'You have three flames on each of your tails. So long as one of them is alight, you will live. All damage that would reduce you to 0 reduces you to 1, instead. However, when all three flames are out, gain all Vulnerabilities.';
+  assert.ok(npc.traits.includes(`Divine flame: ${description}`));
+  assert.ok(!npc.skills.some(skill => skill.startsWith('Divine flame')));
+  assert.ok(!npc.resistancesAndVulnerabilities.some(value => value.endsWith('Vulnerability')));
+});
+
+test('character text places titles after the sheet and relationships last', () => {
+  const npc = generator.generate({ type: 'Animal Kin', subtype: 'Daimata', age: 25, traitCategories: [] }, () => 0.5);
+  const text = generator.format(npc);
+  assert.ok(text.indexOf('Mana:') < text.indexOf('Titles:\n'));
+  assert.ok(text.indexOf('Titles:\n') < text.indexOf('Traits:\n'));
+  assert.ok(text.indexOf('Magic Skills:\n') < text.indexOf('Relationships & Organizations:\n'));
+  assert.ok(text.endsWith(npc.relationships.join('\n')));
+});
+
+test('Parasite vampire gains the updated Parasite ability', () => {
+  const npc = generator.generate({ type: 'Vampire', subtype: 'Parasite', age: 25, traitCategories: [] }, () => 0.999);
+  const ability = monsters.reservedSkills.find(skill => skill.name === 'Parasite');
+  assert.ok(npc.skills.includes(`Parasite: ${ability.description}`));
+  assert.ok(!npc.skills.some(skill => skill.startsWith('Parasitic')));
 });
 
 test('elemental spell rolls never exceed available Mana', () => {
@@ -994,18 +1068,20 @@ test('configured type data can be extended without editing the selection algorit
 test('listTypes exposes every type with its subtype names and default for the dropdowns', () => {
   const listed = Object.fromEntries(generator.listTypes().map(value => [value.type, value]));
   assert.deepEqual(Object.keys(listed), types.types.map(value => value.type));
-  assert.deepEqual(listed.HUMAN.subtypes, ['Child', 'Adult', 'Lord', 'Magician']);
-  assert.equal(listed.HUMAN.defaultSubtype, 'Adult');
-  assert.deepEqual(listed.UNDEAD.subtypes, ['Skeleton', 'Walking Corpse', 'Corpse Mage', 'Lich', 'Fierce Corpse', 'Skeleton Warrior', 'Archer Skeleton', 'Shield Skeleton', 'Healer Skeleton']);
-  assert.equal(listed.UNDEAD.defaultSubtype, 'Skeleton');
+  const human = Object.values(listed).find(value => value.type.toUpperCase() === 'HUMAN');
+  const undead = Object.values(listed).find(value => value.type.toUpperCase() === 'UNDEAD');
+  assert.deepEqual(human.subtypes, ['Child', 'Adult', 'Lord', 'Magician']);
+  assert.equal(human.defaultSubtype, 'Adult');
+  assert.deepEqual(undead.subtypes, ['Skeleton', 'Walking Corpse', 'Corpse Mage', 'Lich', 'Fierce Corpse', 'Skeleton Warrior', 'Archer Skeleton', 'Shield Skeleton', 'Healer Skeleton']);
+  assert.equal(undead.defaultSubtype, 'Skeleton');
   for (const [type, subtypes] of Object.entries({
     Elemental: ['Sprite', 'Fairy', 'Elemental', 'Genasi'],
     Omniscient: ['Spark', 'Elemental Elf', 'World Elf', 'Solar/Lunar World Elf', 'Animal God'],
     Dragon: ['Dragon Hatchling', 'Wyrm', 'Fairy Dragon', 'Young Dragon', 'Dragon', 'Ascendant Dragon', 'Elder Dragon'],
     Lupine: ['Cub', 'Wolf', 'Werewolf', 'Alpha Werewolf', 'Lesser Wolf', 'Greater Wolf', 'Horned Wolf', 'Pegasi Wolf'],
     Vampire: ['Vampire Spawn', 'Seductress', 'Blood Caster', 'Vampire Lord', 'Monstrous', 'Parasite', 'Phantom'],
-    Slime: ['Baby Slime', 'Fruit Jelly', 'Humanoid', 'Black Ooze', 'Elder Ooze', 'Blobsucker', 'Blue Slime', 'Poison Slime', 'Pink Slime'],
-    Mermaid: ['Mermaid', 'Siren', 'Dark Siren', 'Enchantress', 'Sea Serpent', 'Kraken', 'Megalodora', 'Elder Mermaid', 'Keeper of Beasts', 'Witch of the Seas'],
+    Slime: ['Baby Slime', 'Fruit Jelly', 'Fruit Jelly Humanoid', 'Black Ooze', 'Elder Ooze', 'Blobsticker', 'Blue Slime', 'Blue Slime Humanoid', 'Poison Slime', 'Pink Slime', 'Pink Slime Humanoid'],
+    Mermaid: ['Mermaid', 'Siren', 'Dark Siren', 'Enchantress', 'Sea Serpent', 'Kraken', 'Megalodon', 'Elder Mermaid', 'Keeper of Beasts', 'Witch of the Seas'],
     'Animal Kin': ['Childling', 'Kiyone', 'Daimata', 'Guardian Crow']
   })) {
     assert.deepEqual(listed[type].subtypes, subtypes, type);
@@ -1016,19 +1092,170 @@ test('listTypes exposes every type with its subtype names and default for the dr
   assert.ok(generator.statKeys.every(key => Number.isFinite(hatchling.stats[key])));
 });
 
-test('progression chart preserves nonblank source columns and multi-parent Slime inheritance', () => {
+test('Guardian Crow gains Fly, four skills at +20%, and Guardian crow', () => {
+  const options = { type: 'Animal Kin', subtype: 'Guardian Crow', age: 25, traitCategories: [] };
+  const lowMana = generator.generate(options, () => 0);
+  assert.deepEqual(lowMana.skills.filter(skill => skill.endsWith('50%')), [
+    'Leadership 50%', 'Survival 50%', 'Athletics 50%', 'Acrobatics 50%'
+  ]);
+  const guardianCrow = 'Guardian crow: Choose a charge to protect and nurture. The charge must not be an adult, and must be entirely alone. You will always know where your charge is.';
+  assert.equal(lowMana.traits.filter(trait => trait.startsWith('Guardian crow')).length, 1);
+  assert.ok(lowMana.traits.includes(guardianCrow));
+  assert.ok(generator.format(lowMana).includes(guardianCrow));
+  assert.ok(lowMana.magicSkills.some(skill => skill.startsWith('Fly (Wind): unavailable')));
+
+  const highMana = generator.generate(options, () => 0.999);
+  assert.ok(highMana.magicSkills.some(skill => skill.startsWith('Fly (Wind) 30%:')));
+});
+
+test('progression chart preserves updated Slime entries and separate Humanoid parents', () => {
   const chart = types.progressionChart;
   assert.ok(chart.length > 40);
   assert.deepEqual(chart.find(row => row.type === 'Slime' && row.subtype === 'Black Ooze'), {
     type: 'Slime',
     subtype: 'Black Ooze',
     levelRange: [1, 20],
-    base: '+10',
+    base: '+10 CON +10 MAG',
     pointsOnLevelUp: 'MAG by 2; AGI by 1',
-    netGainMaxCumulative: '3*'
+    netGainMaxCumulative: '3 (70) (86)',
+    titleGain: 'none',
+    traitGain: 'none',
+    skillGain: 'Decay +40%'
   });
   const slime = types.types.find(value => value.type === 'Slime');
-  assert.deepEqual(slime.subtypes.find(value => value.subtype === 'Humanoid').inherits, ['Fruit Jelly', 'Blue Slime', 'Pink Slime']);
+  for (const parent of ['Fruit Jelly', 'Blue Slime', 'Pink Slime']) {
+    assert.equal(slime.subtypes.find(value => value.subtype === `${parent} Humanoid`).inherits, parent);
+  }
+});
+
+test('type-restricted magic keeps its school and Ascendant Dragons replace inherited magic', () => {
+  for (const [randomValue, school, skill, otherSkill] of [[0, 'Light', 'Miracle', 'Calamity'], [0.999, 'Darkness', 'Calamity', 'Miracle']]) {
+    const npc = generator.generate({ type: 'Dragon', subtype: 'Ascendant Dragon', age: 25, traitCategories: [] }, () => randomValue);
+    assert.equal(npc.magicSchoolRestriction, school);
+    assert.ok(generator.formatType(npc).startsWith(`Dragon - ${school} (Ascendant Dragon)`));
+    assert.equal(npc.titles.filter(title => ['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity'].includes(title)).length, 1);
+    assert.ok(npc.titles.includes(school));
+    assert.equal(npc.magicSkills.length, 3);
+    assert.equal(npc.magicSkills.filter(skill => skill.includes(`(${school})`)).length, 1);
+    assert.equal(npc.magicSkills.filter(skill => skill.includes('(Omniscient)')).length, 1);
+    assert.ok(npc.magicSkills.some(value => value.startsWith(`${skill} (Ascendant) 30%:`)));
+    assert.ok(!npc.magicSkills.some(value => value.startsWith(`${otherSkill} (`)));
+    assert.ok(npc.traits.some(trait => trait.startsWith('Soulmate:')));
+    assert.ok(npc.titles.some(title => title.startsWith('Obsessed (Level 10):')));
+    assert.equal(npc.titleData.find(title => title.name === 'Obsessed').level, 10);
+    assert.ok(npc.traits.includes('Fly (Monster): Enables flight.'));
+    assert.ok(!npc.magicSkills.some(skill => skill.startsWith('Soulmate')));
+  }
+  for (const subtype of ['Fairy', 'Elemental', 'Genasi']) {
+    const npc = generator.generate({ type: 'Elemental', subtype, age: 25, traitCategories: [] }, () => 0.5);
+    assert.ok(npc.magicSkills.every(skill => skill.includes(`(${npc.magicSchoolRestriction})`)));
+    assert.ok(!npc.titles.some(title => ['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity'].includes(title)));
+  }
+  assert.ok(monsters.reservedTraits.some(trait => trait.name === 'Soulmate'));
+  assert.ok(!monsters.magic.Ascendant.some(skill => skill.name === 'Soulmate'));
+});
+
+test('Soulmate sets an already rolled Obsessed title to level 10 without duplicating it', () => {
+  const original = generator.generateTitles;
+  const obsessed = rolls.titles.entries.find(entry => entry.name === 'Obsessed');
+  try {
+    generator.generateTitles = selection => {
+      selection.magicSchoolRestriction = 'Light';
+      selection.titleData = [{ entry: obsessed, name: obsessed.name, level: 3 }];
+      return [`${obsessed.name} (Level 3): ${obsessed.description}`];
+    };
+    const npc = generator.generate({ type: 'Dragon', subtype: 'Ascendant Dragon', age: 25, traitCategories: [] }, () => 0);
+    assert.equal(npc.level, 1);
+    assert.equal(npc.titles.filter(title => title.startsWith('Obsessed (Level ')).length, 1);
+    assert.ok(npc.titles.some(title => title.startsWith('Obsessed (Level 10):')));
+    assert.equal(npc.titleData.find(title => title.name === 'Obsessed').level, 10);
+  } finally { generator.generateTitles = original; }
+});
+
+test('age appears only when the selected subtype specifies an age range', () => {
+  for (const [type, subtype, showAge] of [
+    ['Human', 'Adult', true],
+    ['Undead', 'Walking Corpse', true],
+    ['Elemental', 'Sprite', true],
+    ['Elemental', 'Fairy', false],
+    ['Dragon', 'Ascendant Dragon', false],
+    ['Animal Kin', 'Daimata', false]
+  ]) {
+    const npc = generator.generate({ type, subtype, age: 25, traitCategories: [] }, () => 0.5);
+    assert.equal(npc.age, 25);
+    assert.equal(generator.formatType(npc).includes('Age: 25'), showAge, `${type} ${subtype}`);
+    assert.equal(generator.format(npc).includes('Age: 25'), showAge, `${type} ${subtype}`);
+  }
+});
+
+test('updated subtype grants follow each Slime parent and Mermaid inheritance', () => {
+  const generate = (type, subtype) => generator.generate({ type, subtype, age: 25, traitCategories: [] }, () => 0.5);
+  const fruit = generate('Slime', 'Fruit Jelly Humanoid');
+  const blue = generate('Slime', 'Blue Slime Humanoid');
+  const pink = generate('Slime', 'Pink Slime Humanoid');
+  assert.ok(fruit.skills.some(skill => skill.startsWith('Sweet smell 50%:')));
+  assert.ok(!fruit.skills.some(skill => skill.startsWith('Healing slime:')));
+  assert.ok(blue.skills.some(skill => skill.startsWith('Healing slime:')));
+  assert.ok(blue.magicSkills.some(skill => skill.startsWith('Heal (Light) 60%:')));
+  assert.ok(!blue.skills.some(skill => skill.startsWith('Sweet smell')));
+  assert.ok(pink.skills.some(skill => skill.startsWith('Aphordisiac 50%:')));
+  assert.ok(!pink.skills.some(skill => skill.startsWith('Healing slime')));
+  const ooze = generate('Slime', 'Elder Ooze');
+  assert.ok(ooze.magicSkills.some(skill => skill.startsWith('Decay (Earth) 70%:')));
+  const siren = generate('Mermaid', 'Siren');
+  assert.ok(siren.skills.some(skill => skill.startsWith('Siren song 50%:')));
+  assert.ok(!siren.skills.some(skill => skill.startsWith('Enchanting voice')));
+  const dark = generate('Mermaid', 'Dark Siren');
+  assert.ok(dark.skills.some(skill => skill.startsWith('Siren song (Dark Siren):')));
+  assert.ok(!dark.skills.some(skill => skill.startsWith('Siren song 50%:')));
+  assert.ok(dark.magicSkills.some(skill => skill.includes('(Darkness) 50%:')));
+  const megalodon = generate('Mermaid', 'Megalodon');
+  assert.ok(megalodon.traits.some(trait => trait.startsWith('Sleepless:')));
+  assert.ok(megalodon.resistancesAndVulnerabilities.includes('Insomnia Resistance: 100%'));
+});
+
+test('fixed chart appearance traits apply their normal modifiers', () => {
+  const example = {
+    types: [{ type: 'Example', baseStats: 20, subtypes: [{ subtype: 'Fixed' }] }],
+    progressionChart: [{ type: 'Example', subtype: 'Fixed', traitGain: 'beautiful, very short' }]
+  };
+  try {
+    generator.configure(rolls, example, monsters);
+    const npc = generator.generate({ type: 'Example', subtype: 'Fixed', age: 25, traitCategories: [] }, () => 0.5);
+    assert.equal(npc.stats.CHA, 28);
+    assert.equal(npc.stats.STR, 15);
+    assert.equal(npc.stats.AGI, 25);
+    assert.ok(npc.traits.includes('Beauty: Beautiful'));
+    assert.ok(npc.traits.includes('Height: Very short'));
+  } finally { generator.configure(rolls, types, monsters); }
+});
+
+test('updated level ranges and Fly (Monster) apply to their subtypes', () => {
+  for (const [type, subtype, maximum] of [
+    ['Lupine', 'Greater Wolf', 20],
+    ['Vampire', 'Parasite', 15],
+    ['Vampire', 'Phantom', 15],
+    ['Slime', 'Fruit Jelly Humanoid', 5],
+    ['Slime', 'Elder Ooze', 40]
+  ]) {
+    const npc = generator.generate({ type, subtype, age: 25, traitCategories: [] }, () => 0.999);
+    assert.equal(npc.level, maximum, subtype);
+  }
+  const wolf = generator.generate({ type: 'Lupine', subtype: 'Pegasi Wolf', age: 25, traitCategories: [] }, () => 0.5);
+  assert.ok(wolf.traits.includes('Fly (Monster): Enables flight.'));
+  assert.ok(!wolf.magicSkills.some(skill => skill.startsWith('Fly (Wind): unavailable')));
+});
+
+test('Walking Corpse halves only profession skill percentages', () => {
+  const selection = {
+    profession: { level: 20, skills: [{ name: 'Leadership' }, { name: 'Stealth' }, { name: 'Survival', value: 55 }] },
+    halfProfessionSkills: true,
+    rolls: { skills: 1 }
+  };
+  assert.deepEqual(generator.generateSkills(selection, {}, () => 0.5), ['Leadership 25%', 'Survival 37%', 'Art: Performance 30%']);
+  assert.deepEqual(generator.generateSpecialitySkills(selection, {}, () => 0.5), ['Subterfuge: Stealth 10%']);
+  const corpse = generator.generate({ type: 'Undead', subtype: 'Walking Corpse', age: 25, traitCategories: [] }, () => 0.5);
+  assert.equal(corpse.halfProfessionSkills, true);
 });
 
 test('magic type titles come from the supplied table and are distinct', () => {
@@ -1049,6 +1276,37 @@ test('relationship tables cover every level and retain boundary outcomes', () =>
   assert.ok(at(1)[2].includes('an ex not worth mentioning'));
   assert.ok(at(2)[1].includes('a normal family'));
   assert.ok(at(2)[3].includes('a new member'));
+});
+
+test('specified subtypes omit relationships and organizations without suppressing their descendants', () => {
+  const excluded = {
+    Elemental: ['Sprite', 'Elemental'],
+    Omniscient: ['Spark'],
+    Lupine: ['Cub', 'Wolf', 'Lesser Wolf', 'Greater Wolf', 'Horned Wolf'],
+    Vampire: ['Monstrous', 'Parasite', 'Phantom'],
+    Slime: ['Baby Slime', 'Fruit Jelly', 'Black Ooze', 'Elder Ooze', 'Blobsticker', 'Blue Slime', 'Poison Slime', 'Pink Slime'],
+    Mermaid: ['Sea Serpent', 'Kraken', 'Megalodon'],
+    Undead: ['Skeleton', 'Skeleton Warrior', 'Archer Skeleton', 'Shield Skeleton', 'Healer Skeleton'],
+    'Animal Kin': ['Childling']
+  };
+  for (const [type, subtypes] of Object.entries(excluded)) {
+    for (const subtype of subtypes) {
+      const npc = generator.generate({ type, subtype, age: 25, traitCategories: [] }, () => 0.5);
+      assert.deepEqual(npc.relationships, [], `${type} ${subtype}`);
+      assert.ok(!generator.format(npc).includes('Relationships & Organizations:'), `${type} ${subtype}`);
+    }
+  }
+  for (const [type, subtype] of [
+    ['Elemental', 'Fairy'], ['Omniscient', 'Elemental Elf'],
+    ['Lupine', 'Werewolf'], ['Lupine', 'Pegasi Wolf'],
+    ['Slime', 'Fruit Jelly Humanoid'], ['Slime', 'Blue Slime Humanoid'],
+    ['Slime', 'Pink Slime Humanoid'], ['Mermaid', 'Siren'],
+    ['Undead', 'Walking Corpse'], ['Animal Kin', 'Guardian Crow']
+  ]) {
+    const npc = generator.generate({ type, subtype, age: 25, traitCategories: [] }, () => 0.5);
+    assert.equal(npc.relationships.length, 4, `${type} ${subtype}`);
+    assert.ok(generator.format(npc).includes('Relationships & Organizations:'), `${type} ${subtype}`);
+  }
 });
 
 test('generic title rolls split at 50% and use the supplied title descriptions', () => {

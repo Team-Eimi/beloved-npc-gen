@@ -131,7 +131,7 @@ Trait List: Output trait and modify stats.
 46) insatiable appetite
 47) playful
 48) stalker
-49) parasite. Decrease all Stats by LEVEL x 5, for a minimum of 1. Add Skill: Parasitic. This creature roots into its host, slowly killing it.
+49) parasite. Decrease all Stats by LEVEL x 5, for a minimum of 1. Add Skill: Parasite. Plant a parasite within another on a successful attack. Anyone with a parasite within them must obey commands, from any distance, with a Power vs Resist roll. The parasite dies when the creature that implanted it or host dies. Costs 5 Mana.
 50) burrower
 51) poisoner. Add Skill: Poison. When this creature successfully attacks, they poison the target. Poisoned targets take 1 damage every turn for a # of turns = to the poisoner's Defense
 52) Tortures to kill

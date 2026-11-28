@@ -60,11 +60,17 @@
     const extras = rollExtras(random);
     const magical = true;
     let magicSkillCount = 0;
+    const traits = [];
     const skills = [];
     for (const extra of extras) {
       applyModifiers(stats, extra.modifiers, level);
       magicSkillCount += extra.magicSkills ?? 0;
-      skills.push(...(extra.skills ?? []));
+      for (const ability of extra.skills ?? []) {
+        const trait = rules.reservedTraits?.find(entry => entry.name === ability.name);
+        const skill = rules.reservedSkills?.find(entry => entry.name === ability.name);
+        if (trait) traits.push(trait);
+        else skills.push(skill ?? ability);
+      }
     }
     for (const key of statKeys) stats[key] = Math.max(1, stats[key]);
     const substats = Object.fromEntries(rules.substats.map(substat => [
@@ -85,6 +91,7 @@
       stats,
       substats,
       extras: extras.map(extra => ({ category: extra.category, name: extra.name })),
+      traits,
       skills,
       magicSkills: sample(affordableMagicSkills, magicSkillCount, random),
       resistancesAndVulnerabilities: generateResistancesAndVulnerabilities(),
@@ -132,6 +139,7 @@
       { label: 'Extras:', text: monster.extras.map(formatExtra).join(', ') },
       ...(resistances.length ? [{ label: 'Resistances & Vulnerabilities:', text: resistances.join('\n') }] : []),
       { label: 'Attack:', text: formatAttack(monster.attack) },
+      ...(monster.traits?.length ? [{ label: 'Traits:', text: monster.traits.map(trait => `${trait.name}: ${trait.description}`).join('\n') }] : []),
       { label: 'Skills:', text: monster.skills.map(skill => `${skill.name}: ${skill.description}`).join('\n') },
       ...(monster.magicSkills.length ? [{ label: 'Magic Skills:', text: monster.magicSkills.map(skill => `${skill.name} (${skill.school}): ${skill.description}`).join('\n') }] : [])
     ];

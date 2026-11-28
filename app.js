@@ -2,14 +2,14 @@
   const { generate, format, formatType, formatSection, statLabels, visibleStatKeys } = NPCGenerator;
   const byId = id => document.getElementById(id);
   const npcSections = [
+    ['titles', 'Titles:'],
     ['temperaments', 'Temperaments:'],
     ['traits', 'Traits:'],
     ['attack', 'Attack:'],
-    ['relationships', 'Relationships & Organizations:'],
-    ['titles', 'Titles:'],
     ['skills', 'Skills:'],
     ['specialitySkills', 'Speciality Skills:'],
-    ['magicSkills', 'Magic Skills:']
+    ['magicSkills', 'Magic Skills:'],
+    ['relationships', 'Relationships & Organizations:']
   ];
   let current;
   let statusTimer;

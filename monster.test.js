@@ -24,7 +24,7 @@ test('monster data lists match the supplied tables', () => {
   assert.equal(data.trait.length, 71);
   assert.deepEqual(Object.fromEntries(Object.entries(data.magic).map(([school, skills]) => [school, skills.length])), {
     Light: 8, Darkness: 8, Fire: 10, Water: 12, Earth: 11, Wind: 10, Electricity: 10,
-    Blood: 11, Martial: 11, Omniscient: 5, Ascendant: 3
+    Blood: 11, Martial: 11, Omniscient: 5, Ascendant: 2
   });
   assert.equal(monster.magicSkillList().length, 69);
   assert.ok(monster.magicSkillList().every(skill => ['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity'].includes(skill.school)));
@@ -82,7 +82,7 @@ test('boss substat bonuses apply after derivation when magic is globally enabled
   assert.equal(immortal.magical, true);
   assert.equal(immortal.substats.Defense, 9);
   assert.equal(immortal.substats.HP, 9 + 23 * 5);
-  assert.deepEqual(immortal.skills.map(skill => skill.name), ['Revive']);
+  assert.deepEqual(immortal.traits.map(trait => trait.name), ['Revive']);
   const sheds = monster.generate({ level: 20 }, sequence([LEVEL_23, ...Array(6).fill(0), BOSS, pick(5, 13), ...cannibalistic]));
   assert.equal(sheds.magical, true);
   assert.deepEqual(sheds.stats, { STR: 1, CON: 1, AGI: 46, INT: 46, CHA: 46, MAG: 276 });
@@ -131,6 +131,28 @@ test('trait minimums raise INT to 50 and reductions never drop a stat below 1', 
   const useless = monster.generate({ level: 5 }, sequence([0, ...Array(6).fill(0), TRAIT, pick(13, 71), TRAIT, pick(4, 70)]));
   assert.deepEqual(useless.extras.map(extra => extra.name), ['Useless', 'Cannibalistic']);
   assert.deepEqual(useless.stats, { STR: 1, CON: 1, AGI: 1, INT: 1, CHA: 1, MAG: 1 });
+});
+
+test('Parasite trait grants the updated Parasite ability and retains its stat penalty', () => {
+  const index = data.trait.findIndex(trait => trait.name === 'Parasite');
+  const result = monster.generate({ level: 20 }, sequence([
+    LEVEL_23, ...Array(6).fill(0), TRAIT, pick(index, data.trait.length), ANIMAL, pick(7, data.animal.length)
+  ]));
+  const ability = data.reservedSkills.find(skill => skill.name === 'Parasite');
+  assert.deepEqual(result.skills, [ability]);
+  assert.ok(Object.values(result.stats).every(value => value === 1));
+  assert.ok(monster.format(result).includes(`Parasite: ${ability.description}`));
+});
+
+test('explicit monster extras grant reserved traits and skills in separate sections', () => {
+  const hypnotic = data.trait.findIndex(trait => trait.name === 'Hypnotic');
+  const result = monster.generate({ level: 20 }, sequence([
+    LEVEL_23, ...Array(6).fill(0), BOSS, pick(0, data.boss.length), TRAIT, pick(hypnotic, data.trait.length)
+  ]));
+  assert.deepEqual(result.traits, [data.reservedTraits.find(trait => trait.name === 'Revive')]);
+  assert.deepEqual(result.skills, [data.reservedSkills.find(skill => skill.name === 'Hypnosis')]);
+  assert.ok(monster.sections(result).some(section => section.label === 'Traits:' && section.text.startsWith('Revive:')));
+  assert.ok(monster.sections(result).some(section => section.label === 'Skills:' && section.text.startsWith('Hypnosis:')));
 });
 
 test('only the specified extras show CHA and EXP always includes MAG', () => {

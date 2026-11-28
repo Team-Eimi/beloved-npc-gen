@@ -7,6 +7,7 @@
   let progressionRules = new Map();
   let magicRules;
   let monsterSkills;
+  let reservedTraitNames = new Set();
   let animalRules = [];
   let substatDivisor = 5;
 
@@ -126,7 +127,7 @@
   }
 
   function parseChartTitleGain(value) {
-    const result = { specialChances: [], fixedTitles: [], customTitles: [], profession: false, magicType: false };
+    const result = { specialChances: [], fixedTitles: [], customTitles: [], profession: false, halfProfessionSkills: false, magicType: false };
     if (!value || value.toLowerCase() === 'none') return result;
     for (const part of value.split(',').map(item => item.trim()).filter(Boolean)) {
       const chance = part.match(/^(\d+)%\s+special$/i);
@@ -134,6 +135,7 @@
         result.specialChances.push(Number(chance[1]) / 100);
       } else if (/^profession(?:\s+\(.+\))?$/i.test(part)) {
         result.profession = true;
+        result.halfProfessionSkills = /\(half skills\)/i.test(part);
       } else if (/^magical type$/i.test(part)) {
         result.magicType = true;
       } else if (/^elemental$/i.test(part)) {
@@ -201,6 +203,7 @@
         result.magicRolls.push({
           magicSkills: Number(count),
           ...(school ? { magicSchool: school } : {}),
+          ...(typeQualifier && !typeQualifier.toLowerCase().startsWith('each') ? { typeRestricted: true } : {}),
           ...(bonus ? { magicSkillBonus: Number(bonus) } : {}),
           ...(stage.rolls?.magicBonusPerLevel ? { magicBonusPerLevel: stage.rolls.magicBonusPerLevel } : {})
         });
@@ -278,20 +281,22 @@
       skills.map(skill => ({ ...skill, school }))).sort((a, b) => b.name.length - a.name.length);
     for (const skill of fixedMagicNames) {
       const escaped = skill.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const pattern = new RegExp(`(^|[^\\w])${escaped}(?=$|[^\\w])`, 'i');
+      const pattern = new RegExp(`(^|[^\\w])${escaped}(?=$|[^\\w])(?:\\s*\\+(\\d+)\\s*%)?`, 'i');
       if (skill.name === 'Heal' && /Heal\s*\(Monster\)/i.test(remaining)) continue;
       if (!pattern.test(remaining)) continue;
+      const found = remaining.match(pattern);
       if (!result.fixedMagicSkills.some(item => item.name === skill.name && item.school === skill.school)) {
-        result.fixedMagicSkills.push({ name: skill.name, school: skill.school, bonusIfOwned: /\+\s*\d+%\s*if already owned/i.test(value) ? 20 : 0 });
+        result.fixedMagicSkills.push({ name: skill.name, school: skill.school, bonus: Number(found[2] ?? 0), bonusIfOwned: /\+\s*\d+%\s*if already owned/i.test(value) ? 20 : 0 });
       }
       remaining = remaining.replace(pattern, ' ');
     }
 
     for (const skill of [...(monsterSkills ?? [])].sort((a, b) => b.name.length - a.name.length)) {
       const escaped = skill.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const pattern = new RegExp(`(^|[^\\w])${escaped}(?=$|[^\\w])`, 'i');
+      const pattern = new RegExp(`(^|[^\\w])${escaped}(?=$|[^\\w])(?:\\s*\\+(\\d+)\\s*%)?`, 'i');
       if (!pattern.test(remaining)) continue;
-      if (!currentSkills.some(item => item.name === skill.name)) currentSkills.push(skill);
+      const found = remaining.match(pattern);
+      if (!currentSkills.some(item => item.name === skill.name)) currentSkills.push({ ...skill, ...(found[2] ? { value: 30 + Number(found[2]) } : {}) });
       remaining = remaining.replace(pattern, ' ');
     }
 
@@ -326,7 +331,8 @@
     if (monsters) {
       substatDivisor = monsters.substatDivisor ?? 5;
       magicRules = monsters.magic;
-      monsterSkills = [...(monsters.monsterMagic ?? []), ...monsters.boss.flatMap(boss => boss.skills ?? [])];
+      reservedTraitNames = new Set((monsters.reservedTraits ?? []).map(trait => trait.name.toLowerCase()));
+      monsterSkills = [...(monsters.reservedTraits ?? []), ...(monsters.reservedSkills ?? []), ...monsters.boss.flatMap(boss => boss.skills ?? [])];
       animalRules = monsters.animal ?? [];
     }
   }
@@ -514,7 +520,7 @@
   }
   function generateTitles(selection, stats, random = Math.random) {
     const count = selection.rolls?.magicTypeTitles ?? 0;
-    const magicTypes = rules.titles?.magicTypes ?? [];
+    const magicTypes = selection.allowedMagicTypes ?? rules.titles?.magicTypes ?? [];
     const selectedMagicTypes = sample(magicTypes, count, random);
     if (selection.chartMagicTypeTitle && selectedMagicTypes.length) {
       const school = Object.keys(magicRules ?? {}).find(value => value.toLowerCase() === selectedMagicTypes[0].toLowerCase());
@@ -635,7 +641,10 @@
       const available = candidates.filter(skill => pool.some(item => item.name === skill.name && item.category === skill.category));
       if (!available.length) continue;
       if (available.length !== candidates.length) throw new Error('Profession choices cannot mix skill types.');
-      choose(available, request.count ?? 1, request.value === undefined ? selection.profession.level : 0, request.value);
+      const value = selection.halfProfessionSkills
+        ? Math.floor(((request.value ?? (speciality ? 0 : 30)) + selection.profession.level) / 2)
+        : request.value;
+      choose(available, request.count ?? 1, selection.halfProfessionSkills ? 0 : selection.profession.level, value);
     }
     const requests = speciality
       ? [{ count: selection.rolls?.specialitySkills ?? 0 }]
@@ -664,7 +673,7 @@
     const professions = rules.professions.flatMap(entry => entry.names.map(name => ({ name, skills: entry.skills })));
     const profession = professions[roll([0, professions.length - 1], random)];
     if (!profession) throw new Error('No professions are configured.');
-    return { ...profession, level: roll([age - 10, age + 10], random) };
+    return { ...profession, level: Math.min(20, roll([age - 10, age + 10], random)) };
   }
   function generateMagicSkills(selection, random = Math.random) {
     const groups = [...(selection.magicRolls ?? [selection.rolls ?? {}]), ...(selection.titleMagicRolls ?? [])];
@@ -675,7 +684,7 @@
       const available = Object.entries(magicRules).flatMap(([school, entries]) => entries.map(entry => ({ school, ...entry })));
       for (const group of groups) {
         for (const [count, school] of [[group.lightMagicSkills ?? 0, 'Light'], [group.magicSkills ?? 0, group.magicSchool]]) {
-          const requestedSchool = selection.magicSchoolRestriction ?? school;
+          const requestedSchool = school && !elementalMagicSchools.has(school) ? school : selection.magicSchoolRestriction ?? school;
           const eligible = available.filter(skill => requestedSchool
             ? skill.school === requestedSchool
             : elementalMagicSchools.has(skill.school));
@@ -835,9 +844,12 @@
     const magicEnabled = Boolean(type) && !(humanType && ['Child', 'Adult'].includes(subtype?.subtype));
     const stages = subtype ? subtypeStages(type, subtype).map(stage => applyProgression(type, stage)) : [];
     selection.subtype = subtype?.subtype ?? selection.subtype;
+    selection.showMagicTypeInHeading = Boolean(subtype?.showMagicTypeInHeading);
     selection.combatSkillsEnabled = type?.type.toUpperCase() !== 'DRAGON'
       || stages.some(stage => stage.subtype === 'Ascendant Dragon');
-    selection.age = options.age ?? roll(subtype?.ageRange ?? rules.age.range, random);
+    const ageRange = subtype?.ageRange ?? type?.ageRange;
+    selection.age = options.age ?? roll(ageRange ?? rules.age.range, random);
+    selection.showAge = Boolean(ageRange);
     if (fixedBase && (!Number.isInteger(selection.age) || selection.age < subtype.ageRange[0] || selection.age > subtype.ageRange[1])) {
       throw new RangeError(`Age for ${type.type} ${subtype.subtype} must be between ${subtype.ageRange[0]} and ${subtype.ageRange[1]}.`);
     }
@@ -858,6 +870,12 @@
     const traitResult = api.generateTraits(selection, stats, random) ?? [];
     const traitData = typeof traitResult === 'string' || Array.isArray(traitResult) ? { traits: traitResult } : traitResult;
     traitData.rolls ??= [];
+    for (const name of selection.chartTraits ?? []) {
+      for (const rule of Object.values(rules.traits)) {
+        const outcome = rule.outcomes?.find(item => item.output?.toLowerCase() === name.toLowerCase());
+        if (outcome) applyModifiers(stats, outcome.modifiers, random);
+      }
+    }
     let childLevel;
     if (human && subtype.subtype !== 'Child') {
       const child = type.subtypes.find(value => value.subtype === 'Child');
@@ -898,6 +916,12 @@
     selection.pendingChartSkills = [];
     selection.chartTitles = [];
     for (const stage of stages) {
+      if (stage.replaceMagicType) {
+        selection.magicRolls = selection.magicRolls.filter(group => !group.typeRestricted);
+        selection.rolls.magicTypeTitles = 1;
+        selection.chartMagicTypeTitle = true;
+        selection.allowedMagicTypes = stage.replaceMagicType;
+      }
       for (const name of stage.removeSkills ?? []) {
         const index = fixedSkills.findIndex(skill => skill.name === name);
         if (index < 0) throw new Error(`Cannot remove unknown skill: ${name}`);
@@ -924,7 +948,9 @@
         }
         if (parsed.magicType) {
           selection.chartMagicTypeTitle = true;
-          selection.rolls.magicTypeTitles = (selection.rolls.magicTypeTitles ?? 0) + 1;
+          if (!selection.rolls.magicTypeTitles && !rules.titles?.raceTitles?.some(entry => entry.race === selection.type.toUpperCase())) {
+            selection.rolls.magicTypeTitles = 1;
+          }
         }
       }
       if (stage.replaceRolls?.combatSkills !== undefined) {
@@ -953,13 +979,14 @@
       if (stageRolls.skillBonusLevels) selection.rolls.skillBonusLevels = stageRolls.skillBonusLevels;
       const titleGain = parseChartTitleGain(stage.progressionTitleGain);
       if (titleGain.profession) selection.chartProfession = true;
+      if (titleGain.halfProfessionSkills) selection.halfProfessionSkills = true;
       for (const chance of titleGain.specialChances) {
         if (humanType && type.titleChance !== undefined) continue;
         if (random() < chance) selection.rolls.titles = (selection.rolls.titles ?? 0) + 1;
       }
       if (titleGain.magicType) {
         selection.chartMagicTypeTitle = true;
-        selection.rolls.magicTypeTitles = (selection.rolls.magicTypeTitles ?? 0) + 1;
+        selection.rolls.magicTypeTitles = 1;
       }
       for (const name of titleGain.fixedTitles) traitData.rolls.push({ effect: { title: name } });
       selection.chartTitles.push(...titleGain.customTitles);
@@ -977,7 +1004,14 @@
       const [name] = sample(choice.names, 1, random);
       fixedSkills.push(monsterSkills.find(skill => skill.name === name));
     }
-    traitData.traits.push(...(selection.chartTraits ?? []));
+    for (const name of selection.chartTraits ?? []) {
+      const ability = monsterSkills?.find(skill => skill.name.toLowerCase() === name.toLowerCase());
+      const rule = Object.values(rules.traits).find(item =>
+        item.outcomes?.some(outcome => outcome.output?.toLowerCase() === name.toLowerCase()));
+      const outcome = rule?.outcomes.find(item => item.output?.toLowerCase() === name.toLowerCase());
+      traitData.traits.push(ability?.description ? `${ability.name}: ${ability.description}` : outcome ? `${rule.label}: ${outcome.output}` : name);
+      if (ability?.resistances || ability?.vulnerabilities || ability?.title) traitData.rolls.push({ effect: ability });
+    }
     if (animal) traitData.traits.push(`Animal: ${animal.name}`);
     const weapons = rules.weapons.groups.flatMap(({ names, ...properties }) => names.map(name => ({ name, ...properties })));
     for (const choice of selection.fixedWeaponChoices) {
@@ -986,9 +1020,11 @@
       const [weapon] = sample(choice.weapons, 1, random);
       selection.fixedWeaponSkills.push({ weapon, bonus: choice.bonus ?? 0 });
     }
-    selection.typeSkills = fixedSkills.map(skill => skill.description ? `${skill.name}: ${skill.description}` : skill.name);
+    const formatFixed = skill => `${skill.name}${skill.value !== undefined ? ` ${skill.value}%` : ''}${skill.description ? `: ${skill.description}` : ''}`;
+    traitData.traits.push(...fixedSkills.filter(skill => reservedTraitNames.has(skill.name.toLowerCase())).map(formatFixed));
+    selection.typeSkills = fixedSkills.filter(skill => !reservedTraitNames.has(skill.name.toLowerCase())).map(formatFixed);
     for (const skill of fixedSkills) {
-      if (skill.resistances || skill.vulnerabilities) traitData.rolls.push({ effect: skill });
+      if (skill.resistances || skill.vulnerabilities || skill.title) traitData.rolls.push({ effect: skill });
     }
     if (subtype?.ageBonus && level > subtype.ageBonus.levelAbove) {
       selection.age += roll(subtype.ageBonus.amount, random);
@@ -1001,14 +1037,25 @@
     }
     selection.level = level;
     const titles = [...(api.generateTitles(selection, stats, random) ?? []), ...(selection.chartTitles ?? [])];
+    for (const stage of stages) {
+      if (!stage.magicTypeSkills) continue;
+      const skill = stage.magicTypeSkills[selection.magicSchoolRestriction];
+      if (!skill) throw new Error(`No magic skill configured for magic type: ${selection.magicSchoolRestriction}.`);
+      selection.fixedMagicSkills.push(skill);
+    }
     selection.titleData ??= [];
     if (selection.profession) titles.push(`${selection.profession.name} (Profession, level ${selection.profession.level})`);
     for (const result of traitData.rolls ?? []) {
       if (result.effect?.title) {
         const title = rules.titles.entries.find(entry => entry.name === result.effect.title);
         if (!title) throw new Error(`Unknown title: ${result.effect.title}`);
-        if (!(selection.titleData ?? []).some(item => item.entry === title)) {
-          const level = rollTitleLevel(title, selection.age, random);
+        const existing = selection.titleData.find(item => item.entry === title);
+        if (existing && result.effect.titleLevel !== undefined) {
+          existing.level = result.effect.titleLevel;
+          const index = titles.findIndex(text => text.startsWith(`${existing.name} (Level `));
+          if (index >= 0) titles[index] = `${existing.name} (Level ${existing.level}): ${title.description}`;
+        } else if (!existing) {
+          const level = result.effect.titleLevel ?? rollTitleLevel(title, selection.age, random);
           selection.titleData.push({ entry: title, name: title.name, level });
           titles.push(`${title.name} (Level ${level}): ${title.description}`);
         }
@@ -1050,6 +1097,7 @@
       + traitData.rolls.reduce((sum, result) => sum + (result.effect?.manaBonus ?? 0), 0);
     const attackSkills = { weapons: [] };
     const generatedSkills = api.generateSkills(selection, stats, random, traitData, attackSkills) ?? [];
+    const naturalAttacks = subtype?.naturalAttacks ?? type?.naturalAttacks;
     return {
       ...selection,
       level,
@@ -1066,18 +1114,20 @@
       specialitySkills: api.generateSpecialitySkills(selection, stats, random, traitData) ?? [],
       magicSkills: magicEnabled ? generateMagicSkills(selection, random) : [],
       ...(animal ? { animal: animal.name } : {}),
-      attack: type?.naturalAttacks?.length
-        ? { ...type.naturalAttacks[roll([0, type.naturalAttacks.length - 1], random)] }
+      attack: naturalAttacks?.length
+        ? { ...naturalAttacks[roll([0, naturalAttacks.length - 1], random)] }
         : generateWeapon(random),
-      skillWeapons: attackSkills.weapons,
+      skillWeapons: subtype?.naturalAttacksOnly ? [] : attackSkills.weapons,
       brawlSkill: attackSkills.brawl,
-      relationships: generateRelationships(random)
+      relationships: subtype?.generateRelationships === false ? [] : generateRelationships(random)
     };
   }
 
   function formatType(npc) {
-    const type = !npc.type && !npc.subtype ? 'TYPE (Subtype)' : `${npc.type || 'TYPE'}${npc.subtype ? ` (${npc.subtype})` : ''}`;
-    return `${type}${npc.age !== undefined ? ` | Age: ${npc.age}` : ''} | Level: ${npc.level ?? 'Not configured'}`;
+    const type = !npc.type && !npc.subtype
+      ? 'TYPE (Subtype)'
+      : `${npc.type || 'TYPE'}${npc.showMagicTypeInHeading && npc.magicSchoolRestriction ? ` - ${npc.magicSchoolRestriction}` : ''}${npc.subtype ? ` (${npc.subtype})` : ''}`;
+    return `${type}${npc.showAge !== false && npc.age !== undefined ? ` | Age: ${npc.age}` : ''} | Level: ${npc.level ?? 'Not configured'}`;
   }
 
   function formatSection(value) {
@@ -1119,17 +1169,17 @@
         ? [`${statLabels.MAG}: ${npc.stats.MAG} | Power: ${combat.Power}`]
         : [`Power: ${combat.Power}`]),
       `Hit Points Max: ${hitPoints(npc)}`,
+      `Mana: ${npc.mana}`,
+      ...(resistances.length ? [`Resistances & Vulnerabilities:\n${resistances.join('\n')}`] : []),
       '',
+      `Titles:\n${formatSection(npc.titles)}`,
       ...(temperaments.length ? [`Temperaments:\n${formatSection(temperaments)}`] : []),
       ...(formatSection(traits) ? [`Traits:\n${formatSection(traits)}`] : []),
-      ...(resistances.length ? [`Resistances & Vulnerabilities:\n${resistances.join('\n')}`] : []),
-      `Mana: ${npc.mana}`,
       `Attack:\n${formatAttacks(npc)}`,
-      `Relationships & Organizations:\n${npc.relationships.join('\n')}`,
-      `Titles:\n${formatSection(npc.titles)}`,
       `Skills:\n${formatSection(npc.skills)}`,
       `Speciality Skills:\n${formatSection(npc.specialitySkills)}`,
-      ...(npc.magicSkills.length ? [`Magic Skills:\n${npc.magicSkills.join('\n')}`] : [])
+      ...(npc.magicSkills.length ? [`Magic Skills:\n${npc.magicSkills.join('\n')}`] : []),
+      ...(npc.relationships.length ? [`Relationships & Organizations:\n${npc.relationships.join('\n')}`] : [])
     ].join('\n');
   }
 
