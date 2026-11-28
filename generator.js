@@ -296,7 +296,9 @@
       const pattern = new RegExp(`(^|[^\\w])${escaped}(?=$|[^\\w])(?:\\s*\\+(\\d+)\\s*%)?`, 'i');
       if (!pattern.test(remaining)) continue;
       const found = remaining.match(pattern);
-      if (!currentSkills.some(item => item.name === skill.name)) currentSkills.push({ ...skill, ...(found[2] ? { value: 30 + Number(found[2]) } : {}) });
+      if (!currentSkills.some(item => item.name === skill.name)) {
+        currentSkills.push({ ...skill, ...(found[2] ? { value: Number(found[2]) } : {}) });
+      }
       remaining = remaining.replace(pattern, ' ');
     }
 
@@ -498,12 +500,15 @@
     if (random() < rules.weapons.unarmedChance) return { name: 'Unarmed', damage: 0 };
     return generateArmedWeapon(random);
   }
+  function formatSkillBonus(value) {
+    return `${value < 0 ? '' : '+'}${value}%`;
+  }
   function formatAttack(attack, skill) {
     const properties = [
       `+${attack.damage} damage`,
       ...(attack.twoHanded ? ['two-handed'] : []),
       ...(attack.radius ? [`${attack.radius} ft radius`] : []),
-      ...(skill ? [`${skill.name}: ${skill.value}%`] : [])
+      ...(skill ? [`${skill.name}: ${formatSkillBonus(skill.value)}`] : [])
     ];
     return `${attack.name} (${properties.join(', ')})`;
   }
@@ -599,7 +604,7 @@
         existing.rolls++;
         if (value !== undefined) existing.value = Math.max(existing.value, value);
       } else {
-        existing = { ...skill, value: value ?? (speciality ? 0 : 30), rolls: 1 };
+        existing = { ...skill, value: value ?? 0, rolls: 1 };
         results.push(existing);
       }
       existing.value += bonus;
@@ -642,7 +647,7 @@
       if (!available.length) continue;
       if (available.length !== candidates.length) throw new Error('Profession choices cannot mix skill types.');
       const value = selection.halfProfessionSkills
-        ? Math.floor(((request.value ?? (speciality ? 0 : 30)) + selection.profession.level) / 2)
+        ? Math.floor(((request.value ?? 0) + selection.profession.level) / 2)
         : request.value;
       choose(available, request.count ?? 1, selection.halfProfessionSkills ? 0 : selection.profession.level, value);
     }
@@ -661,7 +666,7 @@
       if (skill.weapon) attackSkills.weapons.push({ ...skill.weapon, skillPercent: skill.value });
       if (skill.category === 'Combat' && skill.name === 'Brawl') attackSkills.brawl = skill.value;
     }
-    return results.map(skill => `${skill.category ? `${skill.category}: ` : ''}${skill.name} ${skill.value}%${skill.rolls > 1 ? ` (rolled ${skill.rolls === 2 ? 'twice' : `${skill.rolls} times`})` : ''}`);
+    return results.map(skill => `${skill.category ? `${skill.category}: ` : ''}${skill.name} ${formatSkillBonus(skill.value)}${skill.rolls > 1 ? ` (rolled ${skill.rolls === 2 ? 'twice' : `${skill.rolls} times`})` : ''}`);
   }
   function generateSkills(selection, stats, random = Math.random, traitData = {}, attackSkills = { weapons: [] }) {
     return generateSkillResults(selection, traitData, false, random, attackSkills);
@@ -690,7 +695,7 @@
             : elementalMagicSchools.has(skill.school));
           for (const skill of sampleAffordableMagicSkills(eligible, count, selection.mana ?? Number.POSITIVE_INFINITY, random)) {
             available.splice(available.indexOf(skill), 1);
-            const value = 30 + (group.magicSkillBonus ?? 0)
+            const value = (group.magicSkillBonus ?? 0)
               + (group.magicBonusPerLevel ?? 0) * (group.titleLevel ?? selection.level ?? 0)
               + (selection.magicSchoolBonuses?.[skill.school] ?? 0);
             skills.push({ ...skill, value });
@@ -709,18 +714,18 @@
             skills.push(`${skill.name} (${request.school}): unavailable (costs ${cost} Mana; only ${selection.mana} Mana available)`);
             continue;
           }
-          skills.push({ ...skill, school: request.school, value: 30 + (request.bonus ?? 0) });
+          skills.push({ ...skill, school: request.school, value: request.bonus ?? 0 });
         }
       }
     }
     if (selection.rolls?.martialMagicSkills) skills.push(`Martial magic skills: ${selection.rolls.martialMagicSkills} pending (skill list not supplied)`);
     if (selection.rolls?.martialSkills) {
-      const value = 30 + selection.rolls.martialBonus + Math.floor(selection.level / 10) * selection.rolls.martialBonusPerTenLevels;
-      skills.push(`Martial skills: ${selection.rolls.martialSkills} pending at ${value}% (skill list not supplied)`);
+      const value = selection.rolls.martialBonus + Math.floor(selection.level / 10) * selection.rolls.martialBonusPerTenLevels;
+      skills.push(`Martial skills: ${selection.rolls.martialSkills} pending at ${formatSkillBonus(value)} (skill list not supplied)`);
     }
     return skills.map(skill => typeof skill === 'string'
       ? skill
-      : `${skill.name} (${skill.school}) ${skill.value}%: ${skill.description}`);
+      : `${skill.name} (${skill.school}) ${formatSkillBonus(skill.value)}: ${skill.description}`);
   }
   function subtypeStages(type, subtype) {
     const stages = [];
@@ -1020,9 +1025,9 @@
       const [weapon] = sample(choice.weapons, 1, random);
       selection.fixedWeaponSkills.push({ weapon, bonus: choice.bonus ?? 0 });
     }
-    const formatFixed = skill => `${skill.name}${skill.value !== undefined ? ` ${skill.value}%` : ''}${skill.description ? `: ${skill.description}` : ''}`;
-    traitData.traits.push(...fixedSkills.filter(skill => reservedTraitNames.has(skill.name.toLowerCase())).map(formatFixed));
-    selection.typeSkills = fixedSkills.filter(skill => !reservedTraitNames.has(skill.name.toLowerCase())).map(formatFixed);
+    const formatFixed = (skill, isTrait) => `${skill.name}${!isTrait ? ` ${formatSkillBonus(skill.value ?? 0)}` : ''}${skill.description ? `: ${skill.description}` : ''}`;
+    traitData.traits.push(...fixedSkills.filter(skill => reservedTraitNames.has(skill.name.toLowerCase())).map(skill => formatFixed(skill, true)));
+    selection.typeSkills = fixedSkills.filter(skill => !reservedTraitNames.has(skill.name.toLowerCase())).map(skill => formatFixed(skill, false));
     for (const skill of fixedSkills) {
       if (skill.resistances || skill.vulnerabilities || skill.title) traitData.rolls.push({ effect: skill });
     }
@@ -1190,7 +1195,7 @@
   const api = {
     statKeys, statLabels, configure, roll, rollLevel, sample, weighted, applyModifiers, rollTrait, visibleStatKeys,
     selectType, listTypes, generateStats, generateTraits, substats, hitPoints,
-    generateResistancesAndVulnerabilities, visibleResistances, generateWeapon, formatAttack, formatAttacks, generateTitles, generateRelationships,
+    generateResistancesAndVulnerabilities, visibleResistances, generateWeapon, formatSkillBonus, formatAttack, formatAttacks, generateTitles, generateRelationships,
     generateSkills, generateSpecialitySkills, generateProfession, magicManaCost, sampleAffordableMagicSkills, generateMagicSkills, generate, formatType, formatSection, format
   };
   if (typeof module !== 'undefined' && module.exports) {

@@ -1,6 +1,6 @@
 (function (root) {
   const core = typeof module !== 'undefined' && module.exports ? require('./generator.js') : root.NPCGenerator;
-  const { roll, sample, weighted, generateWeapon, formatAttack, generateResistancesAndVulnerabilities, visibleResistances } = core;
+  const { roll, sample, weighted, generateWeapon, formatSkillBonus, formatAttack, generateResistancesAndVulnerabilities, visibleResistances } = core;
   const statKeys = ['STR', 'CON', 'AGI', 'INT', 'CHA', 'MAG'];
   const elementalMagicSchools = new Set(['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity']);
   const statLabels = { STR: 'Strength', CON: 'Constitution', AGI: 'Agility', INT: 'Intelligence', CHA: 'Charm', MAG: 'Magic' };
@@ -69,7 +69,7 @@
         const trait = rules.reservedTraits?.find(entry => entry.name === ability.name);
         const skill = rules.reservedSkills?.find(entry => entry.name === ability.name);
         if (trait) traits.push(trait);
-        else skills.push(skill ?? ability);
+        else skills.push(skill ? { ...skill, value: skill.value ?? 0 } : ability);
       }
     }
     for (const key of statKeys) stats[key] = Math.max(1, stats[key]);
@@ -140,8 +140,8 @@
       ...(resistances.length ? [{ label: 'Resistances & Vulnerabilities:', text: resistances.join('\n') }] : []),
       { label: 'Attack:', text: formatAttack(monster.attack) },
       ...(monster.traits?.length ? [{ label: 'Traits:', text: monster.traits.map(trait => `${trait.name}: ${trait.description}`).join('\n') }] : []),
-      { label: 'Skills:', text: monster.skills.map(skill => `${skill.name}: ${skill.description}`).join('\n') },
-      ...(monster.magicSkills.length ? [{ label: 'Magic Skills:', text: monster.magicSkills.map(skill => `${skill.name} (${skill.school}): ${skill.description}`).join('\n') }] : [])
+      { label: 'Skills:', text: monster.skills.map(skill => `${skill.name} ${formatSkillBonus(skill.value ?? 0)}: ${skill.description}`).join('\n') },
+      ...(monster.magicSkills.length ? [{ label: 'Magic Skills:', text: monster.magicSkills.map(skill => `${skill.name} (${skill.school}) ${formatSkillBonus(skill.value ?? 0)}: ${skill.description}`).join('\n') }] : [])
     ];
   }
 

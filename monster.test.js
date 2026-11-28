@@ -103,7 +103,7 @@ test('Spellcaster plus the Magical extra grant three distinct magic skills', () 
     return cost <= result.substats.Mana;
   }));
   assert.ok(monster.format(result).includes('Extras: Boss: Spellcaster, Magical'));
-  assert.ok(monster.format(result).includes('Magic Skills: Heal (Light): Heal an amount of HP'));
+  assert.ok(monster.format(result).includes('Magic Skills: Heal (Light) +0%: Heal an amount of HP'));
 });
 
 test('Weaponmaster rolls a character weapon and adds LEVEL x 2 to STR', () => {
@@ -139,9 +139,9 @@ test('Parasite trait grants the updated Parasite ability and retains its stat pe
     LEVEL_23, ...Array(6).fill(0), TRAIT, pick(index, data.trait.length), ANIMAL, pick(7, data.animal.length)
   ]));
   const ability = data.reservedSkills.find(skill => skill.name === 'Parasite');
-  assert.deepEqual(result.skills, [ability]);
+  assert.deepEqual(result.skills, [{ ...ability, value: 0 }]);
   assert.ok(Object.values(result.stats).every(value => value === 1));
-  assert.ok(monster.format(result).includes(`Parasite: ${ability.description}`));
+  assert.ok(monster.format(result).includes(`Parasite +0%: ${ability.description}`));
 });
 
 test('explicit monster extras grant reserved traits and skills in separate sections', () => {
@@ -150,9 +150,9 @@ test('explicit monster extras grant reserved traits and skills in separate secti
     LEVEL_23, ...Array(6).fill(0), BOSS, pick(0, data.boss.length), TRAIT, pick(hypnotic, data.trait.length)
   ]));
   assert.deepEqual(result.traits, [data.reservedTraits.find(trait => trait.name === 'Revive')]);
-  assert.deepEqual(result.skills, [data.reservedSkills.find(skill => skill.name === 'Hypnosis')]);
+  assert.deepEqual(result.skills, [{ ...data.reservedSkills.find(skill => skill.name === 'Hypnosis'), value: 0 }]);
   assert.ok(monster.sections(result).some(section => section.label === 'Traits:' && section.text.startsWith('Revive:')));
-  assert.ok(monster.sections(result).some(section => section.label === 'Skills:' && section.text.startsWith('Hypnosis:')));
+  assert.ok(monster.sections(result).some(section => section.label === 'Skills:' && section.text.startsWith('Hypnosis +0%:')));
 });
 
 test('only the specified extras show CHA and EXP always includes MAG', () => {

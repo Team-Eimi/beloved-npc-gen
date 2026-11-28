@@ -264,7 +264,7 @@ test('traits are opt-in and education skills reach the final output', () => {
     generator.generateStats = () => Object.fromEntries(generator.statKeys.map(key => [key, 30]));
     const npc = generator.generate({ type: 'DRAGON', age: 25, traitCategories: ['education'] }, () => 0);
     assert.deepEqual(npc.traits, ['Education: Uneducated']);
-    assert.deepEqual(npc.skills, ['Knowledge: Street smarts 30%']);
+    assert.deepEqual(npc.skills, ['Knowledge: Street smarts +0%']);
     assert.equal(npc.stats.INT, 25);
     assert.ok(generator.format(generator.generate({ type: 'ELEMENTAL', age: 25 })).includes('Temperaments:\n'));
   } finally { generator.generateStats = original; }
@@ -435,7 +435,7 @@ test('Omniscient chart gains include spells, Domain, and a Monster-list animal w
     traitCategories: []
   }, () => 0);
   assert.equal(spark.magicSkills.length, 2);
-  assert.ok(spark.magicSkills.every(skill => skill.includes('(Omniscient) 50%:')));
+  assert.ok(spark.magicSkills.every(skill => skill.includes('(Omniscient) +20%:')));
 
   const bird = generator.generate({
     type: 'Omniscient',
@@ -456,8 +456,8 @@ test('Omniscient chart gains include spells, Domain, and a Monster-list animal w
   assert.equal(bear.stats.STR, bird.stats.STR + 1);
   assert.equal(bear.stats.CON, bird.stats.CON + 1);
   assert.equal(bear.magicSkills.filter(skill => skill.includes('(Omniscient)')).length, 3);
-  assert.ok(bear.magicSkills.some(skill => skill.startsWith('Domain (Omniscient) 30%:')));
-  assert.equal(bear.skills.filter(skill => skill.endsWith('50%')).length, 5);
+  assert.ok(bear.magicSkills.some(skill => skill.startsWith('Domain (Omniscient) +0%:')));
+  assert.equal(bear.skills.filter(skill => skill.endsWith('+20%')).length, 5);
 });
 
 test('Hatchlings use Bite or Claws while Ascendant Dragons can use combat skills and weapons', () => {
@@ -663,22 +663,22 @@ test('Lord and Magician bonus skill thresholds apply strictly above each level',
       const npc = generator.generate({ type: 'HUMAN', subtype, age: 25, traitCategories: [] }, sequence([...Array(5).fill(0), ...Array(points).fill(0), (level - 0.5) / max], 0.9999));
       assert.equal(npc.level, level);
       assert.equal(npc.skillBonus, bonus);
-      assert.equal(npc.skills.filter(skill => skill.endsWith(`${30 + bonus}%`)).length, 2);
+      assert.equal(npc.skills.filter(skill => skill.endsWith(`+${bonus}%`)).length, 2);
     }
   }
 });
 
-test('profession levels cap at 20 and add to each profession skill base', () => {
+test('profession levels cap at 20 and add to each profession skill bonus', () => {
   const profession = generator.generateProfession(15, sequence([0, 0]));
   assert.equal(profession.name, 'Politician');
   assert.equal(profession.level, 5);
   assert.deepEqual(generator.generateSkills({ profession, rolls: {} }, {}, () => 0), [
-    'Emotional Intelligence: Insight 35%', 'Knowledge: Law 35%', 'Knowledge: Politics 35%'
+    'Emotional Intelligence: Insight +5%', 'Knowledge: Law +5%', 'Knowledge: Politics +5%'
   ]);
   assert.deepEqual(generator.generateSpecialitySkills({
     profession: { level: 5, skills: [{ name: 'Stealth' }, { category: 'Technical', count: 1, value: 50 }] },
     rolls: {}
-  }, {}, () => 0), ['Subterfuge: Stealth 5%', 'Technical: Forensics 55%']);
+  }, {}, () => 0), ['Subterfuge: Stealth +5%', 'Technical: Forensics +55%']);
   assert.equal(generator.generateProfession(15, sequence([0, 0.9999])).level, 20);
   assert.equal(generator.generateProfession(70, sequence([0, 0])).level, 20);
   const names = rolls.professions.flatMap(entry => entry.names);
@@ -696,7 +696,7 @@ test('bonus skills stack with existing profession skills and report repeated rol
     rolls: { bonusSkills: 2 },
     skillBonus: 20
   };
-  assert.deepEqual(generator.generateSkills(selection, {}, () => 0), ['Leadership 70% (rolled twice)', 'Survival 50%']);
+  assert.deepEqual(generator.generateSkills(selection, {}, () => 0), ['Leadership +40% (rolled twice)', 'Survival +20%']);
 });
 
 test('Weapon combat skills add the selected weapon alongside an unarmed attack', () => {
@@ -704,7 +704,7 @@ test('Weapon combat skills add the selected weapon alongside an unarmed attack',
   assert.ok(npc.skills.some(skill => skill.startsWith('Combat: Weapon (')));
   assert.equal(npc.skillWeapons.length, 1);
   const formattedAttacks = generator.formatAttacks({ ...npc, attack: { name: 'Unarmed', damage: 0 } });
-  const formattedWeapon = generator.formatAttack(npc.skillWeapons[0], { name: 'Weapon skill', value: 30 });
+  const formattedWeapon = generator.formatAttack(npc.skillWeapons[0], { name: 'Weapon skill', value: 0 });
   assert.equal(formattedAttacks, `Unarmed (+0 damage)\n${formattedWeapon}`);
 });
 
@@ -714,22 +714,22 @@ test('multiple weapon skills preserve damage and properties without duplicate at
   const random = sequence([0, 0, 0, 29.5 / 36, 0, 0.9999, 0, 0]);
   const traits = { rolls: [{ effect: { categoryBonuses: { Combat: 5 } } }] };
   const skills = generator.generateSkills({ profession, rolls: {} }, {}, random, traits, attackSkills);
-  assert.ok(skills.includes('Combat: Weapon (Dagger) 55% (rolled twice)'));
+  assert.ok(skills.includes('Combat: Weapon (Dagger) +25% (rolled twice)'));
   assert.deepEqual(attackSkills.weapons, [
-    { name: 'Dagger', damage: 2, skillPercent: 55 },
-    { name: 'Greatsword', damage: 8, twoHanded: true, skillPercent: 45 },
-    { name: 'Molotov cocktail', damage: 4, radius: 50, skillPercent: 45 }
+    { name: 'Dagger', damage: 2, skillPercent: 25 },
+    { name: 'Greatsword', damage: 8, twoHanded: true, skillPercent: 15 },
+    { name: 'Molotov cocktail', damage: 4, radius: 50, skillPercent: 15 }
   ]);
   assert.equal(generator.formatAttacks({ attack: { name: 'Dagger', damage: 2 }, skillWeapons: attackSkills.weapons }),
-    'Dagger (+2 damage, Weapon skill: 55%)\nGreatsword (+8 damage, two-handed, Weapon skill: 45%)\nMolotov cocktail (+4 damage, 50 ft radius, Weapon skill: 45%)');
+    'Dagger (+2 damage, Weapon skill: +25%)\nGreatsword (+8 damage, two-handed, Weapon skill: +15%)\nMolotov cocktail (+4 damage, 50 ft radius, Weapon skill: +15%)');
 });
 
 test('Brawl and Grapple do not add weapons', () => {
   const attackSkills = { weapons: [] };
   const skills = generator.generateSkills({ rolls: { combatSkills: 2 } }, {}, sequence([0, 0]), {}, attackSkills);
-  assert.deepEqual(skills, ['Combat: Brawl 30%', 'Combat: Grapple 30%']);
+  assert.deepEqual(skills, ['Combat: Brawl +0%', 'Combat: Grapple +0%']);
   assert.deepEqual(attackSkills.weapons, []);
-  assert.equal(attackSkills.brawl, 30);
+  assert.equal(attackSkills.brawl, 0);
 });
 
 test('Unarmed displays the final Brawl percentage but never Grapple', () => {
@@ -737,8 +737,8 @@ test('Unarmed displays the final Brawl percentage but never Grapple', () => {
   const profession = { level: 20, skills: [{ name: 'Brawl' }, { name: 'Brawl' }, { name: 'Grapple' }] };
   const traits = { rolls: [{ effect: { categoryBonuses: { Combat: 5 } } }] };
   const skills = generator.generateSkills({ profession, rolls: {} }, {}, () => 0, traits, attackSkills);
-  assert.ok(skills.includes('Combat: Brawl 75% (rolled twice)'));
-  assert.equal(generator.formatAttacks({ attack: { name: 'Unarmed', damage: 0 }, skillWeapons: [], brawlSkill: attackSkills.brawl }), 'Unarmed (+0 damage, Brawl: 75%)');
+  assert.ok(skills.includes('Combat: Brawl +45% (rolled twice)'));
+  assert.equal(generator.formatAttacks({ attack: { name: 'Unarmed', damage: 0 }, skillWeapons: [], brawlSkill: attackSkills.brawl }), 'Unarmed (+0 damage, Brawl: +45%)');
   assert.equal(generator.formatAttacks({ attack: { name: 'Unarmed', damage: 0 }, skillWeapons: [] }), 'Unarmed (+0 damage)');
   assert.equal(generator.formatAttacks({ attack: { name: 'Mace', damage: 4 }, skillWeapons: [], brawlSkill: attackSkills.brawl }), 'Mace (+4 damage)');
 });
@@ -746,13 +746,13 @@ test('Unarmed displays the final Brawl percentage but never Grapple', () => {
 test('generated unarmed characters include their rolled Brawl percentage in the attack', () => {
   const random = sequence([...Array(5).fill(0), ...Array(30).fill(0), 0, 0, 0, 0.99, 0, 0, 0, 0], 0.5);
   const npc = generator.generate({ type: 'HUMAN', subtype: 'Lord', age: 25, traitCategories: [] }, random);
-  assert.ok(npc.skills.includes('Combat: Brawl 30%'));
-  assert.ok(generator.format(npc).includes('Attack:\nUnarmed (+0 damage, Brawl: 30%)'));
+  assert.ok(npc.skills.includes('Combat: Brawl +0%'));
+  assert.ok(generator.format(npc).includes('Attack:\nUnarmed (+0 damage, Brawl: +0%)'));
 });
 
 test('Weapon combat skills remain available through direct skill generation', () => {
   const skills = generator.generateSkills({ rolls: { combatSkills: 1 } }, {}, sequence([0.9, 0]));
-  assert.deepEqual(skills, ['Combat: Weapon (Dagger) 30%']);
+  assert.deepEqual(skills, ['Combat: Weapon (Dagger) +0%']);
 });
 
 test('Magicians receive distinct elemental spells; Lords show the pending martial skill', () => {
@@ -870,7 +870,7 @@ test('Skeleton traits and inherited fixed skills, removals and resistance effect
   const warrior = undeadAtLevel('Skeleton Warrior', 10, 1);
   assert.ok(warrior.traits.some(trait => trait.startsWith('Bony:')));
   assert.ok(!warrior.traits.some(trait => trait.startsWith('Fragile:')));
-  assert.ok(warrior.skills.some(skill => /^Combat:.*50%/.test(skill)));
+  assert.ok(warrior.skills.some(skill => /^Combat:.*\+20%/.test(skill)));
 });
 
 test('Archer randomly receives one arrow skill and one ranged weapon at +30%', () => {
@@ -884,11 +884,11 @@ test('Archer randomly receives one arrow skill and one ranged weapon at +30%', (
     for (const name of ['Slow', 'Bony', 'Undead', 'Fragile', 'Sniper']) {
       assert.ok(npc.traits.some(trait => trait.startsWith(`${name}:`)), name);
     }
-    assert.equal(npc.skills.filter(skill => /^(Frost arrow|Poison arrow|Sleep arrow):/.test(skill)).length, 1);
-    assert.ok(npc.skills.some(skill => skill.startsWith(`${arrow}:`)));
-    assert.deepEqual(npc.skillWeapons.map(value => [value.name, value.skillPercent]), [[weapon, 60]]);
-    assert.deepEqual(npc.skills.filter(skill => skill.startsWith('Combat:')), [`Combat: Weapon (${weapon}) 60%`]);
-    assert.ok(generator.format(npc).includes(`${weapon} (+${damage} damage, Weapon skill: 60%)`));
+    assert.equal(npc.skills.filter(skill => /^(Frost arrow|Poison arrow|Sleep arrow) \+0%:/.test(skill)).length, 1);
+    assert.ok(npc.skills.some(skill => skill.startsWith(`${arrow} +0%:`)));
+    assert.deepEqual(npc.skillWeapons.map(value => [value.name, value.skillPercent]), [[weapon, 30]]);
+    assert.deepEqual(npc.skills.filter(skill => skill.startsWith('Combat:')), [`Combat: Weapon (${weapon}) +30%`]);
+    assert.ok(generator.format(npc).includes(`${weapon} (+${damage} damage, Weapon skill: +30%)`));
     assert.ok(generator.visibleResistances(npc.resistancesAndVulnerabilities).includes('Damage Vulnerability'));
   }
 });
@@ -904,17 +904,17 @@ test('Shield resistances increase strictly above level 15 and retain Skeleton de
 });
 
 test('Corpse Mage and Lich retain spell counts and level-dependent bonuses', () => {
-  for (const [level, expected] of [[20, 50], [21, 60], [35, 60], [36, 70], [45, 70], [46, 80]]) {
+  for (const [level, expected] of [[20, 20], [21, 30], [35, 30], [36, 40], [45, 40], [46, 50]]) {
     const mage = undeadAtLevel('Corpse Mage', 50, level);
     assert.equal(mage.magicSkills.length, 2);
-    assert.ok(mage.magicSkills.every(skill => skill.includes(' 30%:')));
-    assert.ok(mage.skills.some(skill => skill.endsWith(`${expected}%`)));
+    assert.ok(mage.magicSkills.every(skill => skill.includes(' +0%:')));
+    assert.ok(mage.skills.some(skill => skill.endsWith(`+${expected}%`)));
   }
   const lich = undeadAtLevel('Lich', 100, 80);
   assert.equal(lich.magicSkills.length, 5);
-  assert.ok(lich.magicSkills.slice(0, 2).every(skill => skill.includes(' 30%:')));
-  assert.ok(lich.magicSkills.slice(2).every(skill => skill.includes(' 130%:')));
-  assert.equal(new Set(lich.magicSkills.map(skill => skill.split(' 30%:')[0].split(' 130%:')[0])).size, 5);
+  assert.ok(lich.magicSkills.slice(0, 2).every(skill => skill.includes(' +0%:')));
+  assert.ok(lich.magicSkills.slice(2).every(skill => skill.includes(' +100%:')));
+  assert.equal(new Set(lich.magicSkills.map(skill => skill.split(' +0%:')[0].split(' +100%:')[0])).size, 5);
 });
 
 test('reserved monster traits and skills are separate from elemental Magic Skill rolls', () => {
@@ -944,9 +944,9 @@ test('reserved abilities are displayed in their respective sections when explici
   assert.ok(generator.format(skeleton).includes('Traits:\nSlow:'));
 
   const slime = generator.generate({ type: 'Slime', subtype: 'Poison Slime', age: 25, traitCategories: [] }, () => 0.999);
-  assert.ok(slime.skills.includes(`Poison slime: ${monsters.reservedSkills.find(skill => skill.name === 'Poison slime').description}`));
+  assert.ok(slime.skills.includes(`Poison slime +0%: ${monsters.reservedSkills.find(skill => skill.name === 'Poison slime').description}`));
   const siren = generator.generate({ type: 'Mermaid', subtype: 'Dark Siren', age: 25, traitCategories: [] }, () => 0.999);
-  assert.ok(siren.skills.includes(`Hypnosis: ${monsters.reservedSkills.find(skill => skill.name === 'Hypnosis').description}`));
+  assert.ok(siren.skills.includes(`Hypnosis +0%: ${monsters.reservedSkills.find(skill => skill.name === 'Hypnosis').description}`));
 });
 
 test('Daimata gains Divine flame without unconditional vulnerabilities', () => {
@@ -969,7 +969,7 @@ test('character text places titles after the sheet and relationships last', () =
 test('Parasite vampire gains the updated Parasite ability', () => {
   const npc = generator.generate({ type: 'Vampire', subtype: 'Parasite', age: 25, traitCategories: [] }, () => 0.999);
   const ability = monsters.reservedSkills.find(skill => skill.name === 'Parasite');
-  assert.ok(npc.skills.includes(`Parasite: ${ability.description}`));
+  assert.ok(npc.skills.includes(`Parasite +0%: ${ability.description}`));
   assert.ok(!npc.skills.some(skill => skill.startsWith('Parasitic')));
 });
 
@@ -1040,7 +1040,7 @@ test('Elemental race titles restrict generated spells to their chosen school', (
   const title = elemental.titleData.find(item => item.entry.race?.toLowerCase() === 'elemental');
   assert.ok(title);
   assert.ok(elemental.magicSkills.every(skill => skill.includes(`(${title.school})`)));
-  assert.ok(elemental.magicSkills.every(skill => skill.includes(` ${30 + title.level * 2}%:`)));
+  assert.ok(elemental.magicSkills.every(skill => skill.includes(` +${title.level * 2}%:`)));
 });
 
 test('race title lookup is case-insensitive for both configuration and subtype spell rolls', () => {
@@ -1060,17 +1060,17 @@ test('race title lookup is case-insensitive for both configuration and subtype s
 });
 
 test('Fierce Corpse martial bonus and Healer light spell and intelligence floor', () => {
-  for (const [level, percent] of [[1, 50], [9, 50], [10, 60], [80, 130]]) {
+  for (const [level, percent] of [[1, 20], [9, 20], [10, 30], [80, 100]]) {
     const npc = undeadAtLevel('Fierce Corpse', 50, level);
-    assert.ok(npc.magicSkills.includes(`Martial skills: 1 pending at ${percent}% (skill list not supplied)`));
+    assert.ok(npc.magicSkills.includes(`Martial skills: 1 pending at +${percent}% (skill list not supplied)`));
     assert.equal(npc.skills.filter(skill => skill.startsWith('Combat:')).length, 2);
   }
   const healer = undeadAtLevel('Healer Skeleton', 50, 1);
   assert.equal(healer.stats.INT, 15);
-  assert.ok(healer.skills.some(skill => skill.startsWith('Heal (Monster):')));
+  assert.ok(healer.skills.some(skill => skill.startsWith('Heal (Monster) +0%:')));
   assert.equal(healer.magicSkills.length, 1);
-  assert.ok(healer.magicSkills[0].includes('(Light) 30%:'));
-  assert.equal(healer.skills.filter(skill => skill.endsWith('50%')).length, 2);
+  assert.ok(healer.magicSkills[0].includes('(Light) +0%:'));
+  assert.equal(healer.skills.filter(skill => skill.endsWith('+20%')).length, 2);
   assert.equal(healer.magical, true);
 });
 
@@ -1111,8 +1111,8 @@ test('listTypes exposes every type with its subtype names and default for the dr
 test('Guardian Crow gains Fly, four skills at +20%, and Guardian crow', () => {
   const options = { type: 'Animal Kin', subtype: 'Guardian Crow', age: 25, traitCategories: [] };
   const lowMana = generator.generate(options, () => 0);
-  assert.deepEqual(lowMana.skills.filter(skill => skill.endsWith('50%')), [
-    'Leadership 50%', 'Survival 50%', 'Athletics 50%', 'Acrobatics 50%'
+  assert.deepEqual(lowMana.skills.filter(skill => skill.endsWith('+20%')), [
+    'Leadership +20%', 'Survival +20%', 'Athletics +20%', 'Acrobatics +20%'
   ]);
   const guardianCrow = 'Guardian crow: Choose a charge to protect and nurture. The charge must not be an adult, and must be entirely alone. You will always know where your charge is.';
   assert.equal(lowMana.traits.filter(trait => trait.startsWith('Guardian crow')).length, 1);
@@ -1121,7 +1121,7 @@ test('Guardian Crow gains Fly, four skills at +20%, and Guardian crow', () => {
   assert.ok(lowMana.magicSkills.some(skill => skill.startsWith('Fly (Wind): unavailable')));
 
   const highMana = generator.generate(options, () => 0.999);
-  assert.ok(highMana.magicSkills.some(skill => skill.startsWith('Fly (Wind) 30%:')));
+  assert.ok(highMana.magicSkills.some(skill => skill.startsWith('Fly (Wind) +0%:')));
 });
 
 test('progression chart preserves updated Slime entries and separate Humanoid parents', () => {
@@ -1154,7 +1154,7 @@ test('type-restricted magic keeps its school and Ascendant Dragons replace inher
     assert.equal(npc.magicSkills.length, 3);
     assert.equal(npc.magicSkills.filter(skill => skill.includes(`(${school})`)).length, 1);
     assert.equal(npc.magicSkills.filter(skill => skill.includes('(Omniscient)')).length, 1);
-    assert.ok(npc.magicSkills.some(value => value.startsWith(`${skill} (Ascendant) 30%:`)));
+    assert.ok(npc.magicSkills.some(value => value.startsWith(`${skill} (Ascendant) +0%:`)));
     assert.ok(!npc.magicSkills.some(value => value.startsWith(`${otherSkill} (`)));
     assert.ok(npc.traits.some(trait => trait.startsWith('Soulmate:')));
     assert.ok(npc.titles.some(title => title.startsWith('Obsessed (Level 10):')));
@@ -1209,22 +1209,22 @@ test('updated subtype grants follow each Slime parent and Mermaid inheritance', 
   const fruit = generate('Slime', 'Fruit Jelly Humanoid');
   const blue = generate('Slime', 'Blue Slime Humanoid');
   const pink = generate('Slime', 'Pink Slime Humanoid');
-  assert.ok(fruit.skills.some(skill => skill.startsWith('Sweet smell 50%:')));
-  assert.ok(!fruit.skills.some(skill => skill.startsWith('Healing slime:')));
-  assert.ok(blue.skills.some(skill => skill.startsWith('Healing slime:')));
-  assert.ok(blue.magicSkills.some(skill => skill.startsWith('Heal (Light) 60%:')));
+  assert.ok(fruit.skills.some(skill => skill.startsWith('Sweet smell +20%:')));
+  assert.ok(!fruit.skills.some(skill => skill.startsWith('Healing slime')));
+  assert.ok(blue.skills.some(skill => skill.startsWith('Healing slime +0%:')));
+  assert.ok(blue.magicSkills.some(skill => skill.startsWith('Heal (Light) +30%:')));
   assert.ok(!blue.skills.some(skill => skill.startsWith('Sweet smell')));
-  assert.ok(pink.skills.some(skill => skill.startsWith('Aphordisiac 50%:')));
+  assert.ok(pink.skills.some(skill => skill.startsWith('Aphordisiac +20%:')));
   assert.ok(!pink.skills.some(skill => skill.startsWith('Healing slime')));
   const ooze = generate('Slime', 'Elder Ooze');
-  assert.ok(ooze.magicSkills.some(skill => skill.startsWith('Decay (Earth) 70%:')));
+  assert.ok(ooze.magicSkills.some(skill => skill.startsWith('Decay (Earth) +40%:')));
   const siren = generate('Mermaid', 'Siren');
-  assert.ok(siren.skills.some(skill => skill.startsWith('Siren song 50%:')));
+  assert.ok(siren.skills.some(skill => skill.startsWith('Siren song +20%:')));
   assert.ok(!siren.skills.some(skill => skill.startsWith('Enchanting voice')));
   const dark = generate('Mermaid', 'Dark Siren');
-  assert.ok(dark.skills.some(skill => skill.startsWith('Siren song (Dark Siren):')));
-  assert.ok(!dark.skills.some(skill => skill.startsWith('Siren song 50%:')));
-  assert.ok(dark.magicSkills.some(skill => skill.includes('(Darkness) 50%:')));
+  assert.ok(dark.skills.some(skill => skill.startsWith('Siren song (Dark Siren) +0%:')));
+  assert.ok(!dark.skills.some(skill => skill.startsWith('Siren song +20%:')));
+  assert.ok(dark.magicSkills.some(skill => skill.includes('(Darkness) +20%:')));
   const megalodon = generate('Mermaid', 'Megalodon');
   assert.ok(megalodon.traits.some(trait => trait.startsWith('Sleepless:')));
   assert.ok(megalodon.resistancesAndVulnerabilities.includes('Insomnia Resistance: 100%'));
@@ -1268,8 +1268,8 @@ test('Walking Corpse halves only profession skill percentages', () => {
     halfProfessionSkills: true,
     rolls: { skills: 1 }
   };
-  assert.deepEqual(generator.generateSkills(selection, {}, () => 0.5), ['Leadership 25%', 'Survival 37%', 'Art: Performance 30%']);
-  assert.deepEqual(generator.generateSpecialitySkills(selection, {}, () => 0.5), ['Subterfuge: Stealth 10%']);
+  assert.deepEqual(generator.generateSkills(selection, {}, () => 0.5), ['Leadership +10%', 'Survival +37%', 'Art: Performance +0%']);
+  assert.deepEqual(generator.generateSpecialitySkills(selection, {}, () => 0.5), ['Subterfuge: Stealth +10%']);
   const corpse = generator.generate({ type: 'Undead', subtype: 'Walking Corpse', age: 25, traitCategories: [] }, () => 0.5);
   assert.equal(corpse.halfProfessionSkills, true);
 });
@@ -1348,10 +1348,14 @@ test('generic title rolls split at 50% and use the supplied title descriptions',
   }
 });
 
-test('skill rolls retain categories and use the regular and speciality base values', () => {
+test('skill rolls retain categories and display bonuses without a base percentage', () => {
   const selection = { rolls: { skills: 2, combatSkills: 1, specialitySkills: 2 } };
-  assert.deepEqual(generator.generateSkills(selection, {}, () => 0), ['Leadership 30%', 'Survival 30%', 'Combat: Brawl 30%']);
-  assert.deepEqual(generator.generateSpecialitySkills(selection, {}, () => 0), ['Subterfuge: Stealth 0%', 'Subterfuge: Sleight of Hand 0%']);
+  assert.deepEqual(generator.generateSkills(selection, {}, () => 0), ['Leadership +0%', 'Survival +0%', 'Combat: Brawl +0%']);
+  assert.deepEqual(generator.generateSpecialitySkills(selection, {}, () => 0), ['Subterfuge: Stealth +0%', 'Subterfuge: Sleight of Hand +0%']);
+  assert.deepEqual(generator.generateSpecialitySkills({
+    chartSpecialitySkillRolls: [{ count: 1, category: 'Subterfuge', bonus: 20 }]
+  }, {}, () => 0), ['Subterfuge: Stealth +20%']);
+  assert.deepEqual(generator.generateSkills({ chartSkillRolls: [{ count: 1, bonus: -10 }] }, {}, () => 0), ['Leadership -10%']);
   assert.deepEqual(rolls.skills.categories.Art, ['Performance', 'Dance', 'Fine arts', 'Fiber arts', 'Cooking']);
   assert.ok(rolls.skills.standalone.includes('Driving'));
   assert.ok(rolls.specialitySkills.Science.includes('Psychology'));
@@ -1364,7 +1368,7 @@ test('temperament applies immediate stats, category skill bonuses, and vulnerabi
     const index = rolls.temperaments.findIndex(item => item.name === 'Heartfelt');
     const npc = generator.generate({ type: 'DRAGON', age: 25, traitCategories: ['temperament'] }, sequence([(index + 0.5) / rolls.temperaments.length], 0));
     assert.equal(npc.stats.CHA, 35);
-    assert.deepEqual(npc.skills, ['Emotional Intelligence: Insight 32%', 'Emotional Intelligence: Deception 32%']);
+    assert.deepEqual(npc.skills, ['Emotional Intelligence: Insight +2%', 'Emotional Intelligence: Deception +2%']);
     assert.deepEqual(generator.visibleResistances(npc.resistancesAndVulnerabilities), ['Charm Vulnerability']);
     assert.ok(generator.format(npc).includes('Temperaments:\nHeartfelt:'));
     const sturdyIndex = rolls.temperaments.findIndex(item => item.name === 'Sturdy');
@@ -1383,7 +1387,7 @@ test('all temperament entries generate successfully and sensitive grants ten ski
       if (temperament.name === 'Sensitive') {
         assert.equal(npc.skills.length, 10);
         assert.equal(new Set(npc.skills).size, 10);
-        assert.ok(npc.skills.every(skill => skill.endsWith('40%')));
+        assert.ok(npc.skills.every(skill => skill.endsWith('+10%')));
         assert.equal(generator.visibleResistances(npc.resistancesAndVulnerabilities).length, 12);
       }
     }
@@ -1407,7 +1411,7 @@ test('new temperament entries apply immediate effects and scale Iron will resist
     const curious = generator.generate({ type: 'DRAGON', age: 25, traitCategories: ['temperament'] },
       sequence([(curiousIndex + 0.5) / rolls.temperaments.length, 0], 0));
     assert.equal(curious.stats.INT, 35);
-    assert.ok(curious.skills.some(skill => skill.startsWith('Perception:') && skill.endsWith('40%')));
+    assert.ok(curious.skills.some(skill => skill.startsWith('Perception:') && skill.endsWith('+10%')));
 
     const ironWillIndex = rolls.temperaments.findIndex(item => item.name === 'Iron will');
     const ironWill = generator.generate({ type: 'HUMAN', subtype: 'Child', age: 12, traitCategories: ['temperament'] },
