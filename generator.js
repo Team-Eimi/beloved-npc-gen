@@ -566,7 +566,7 @@
         }
       }
     }
-    const raceTitle = rules.titles?.raceTitles?.find(entry => entry.race === selection.type?.toUpperCase());
+    const raceTitle = rules.titles?.raceTitles?.find(entry => entry.race.toLowerCase() === selection.type?.toLowerCase());
     if (raceTitle) {
       const [element] = sample(raceTitle.elements, 1, random);
       if (!element) throw new Error(`No elements are configured for the ${raceTitle.name} race title.`);
@@ -948,7 +948,7 @@
         }
         if (parsed.magicType) {
           selection.chartMagicTypeTitle = true;
-          if (!selection.rolls.magicTypeTitles && !rules.titles?.raceTitles?.some(entry => entry.race === selection.type.toUpperCase())) {
+          if (!selection.rolls.magicTypeTitles && !rules.titles?.raceTitles?.some(entry => entry.race.toLowerCase() === selection.type.toLowerCase())) {
             selection.rolls.magicTypeTitles = 1;
           }
         }

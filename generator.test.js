@@ -1037,10 +1037,26 @@ test('titles roll configured levels and Peculiar redistributes the same stat tot
 
 test('Elemental race titles restrict generated spells to their chosen school', () => {
   const elemental = generator.generate({ type: 'ELEMENTAL', age: 40 }, () => 0.5);
-  const title = elemental.titleData.find(item => item.entry.race === 'ELEMENTAL');
+  const title = elemental.titleData.find(item => item.entry.race?.toLowerCase() === 'elemental');
   assert.ok(title);
   assert.ok(elemental.magicSkills.every(skill => skill.includes(`(${title.school})`)));
   assert.ok(elemental.magicSkills.every(skill => skill.includes(` ${30 + title.level * 2}%:`)));
+});
+
+test('race title lookup is case-insensitive for both configuration and subtype spell rolls', () => {
+  try {
+    for (const race of ['ELEMENTAL', 'Elemental', 'elemental']) {
+      const configured = structuredClone(rolls);
+      configured.titles.raceTitles.find(entry => entry.name === 'Elemental').race = race;
+      generator.configure(configured, types, monsters);
+      const npc = generator.generate({ type: 'ElEmEnTaL', subtype: 'Fairy', age: 25, traitCategories: [] }, () => 0.5);
+      const title = npc.titleData.find(item => item.entry.race === race);
+      assert.ok(title, race);
+      assert.ok(npc.magicSkills.length >= 2, race);
+      assert.ok(npc.magicSkills.every(skill => skill.includes(`(${title.school})`)), race);
+      assert.ok(!npc.titles.some(value => ['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity'].includes(value)), race);
+    }
+  } finally { generator.configure(rolls, types, monsters); }
 });
 
 test('Fierce Corpse martial bonus and Healer light spell and intelligence floor', () => {
