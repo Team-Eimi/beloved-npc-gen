@@ -1,6 +1,6 @@
 (function (root) {
   const core = typeof module !== 'undefined' && module.exports ? require('./generator.js') : root.NPCGenerator;
-  const { roll, sample, weighted, generateWeapon, formatSkillBonus, formatAttack, generateResistancesAndVulnerabilities, visibleResistances } = core;
+  const { roll, sample, weighted, generateWeapon, formatMagicValue, formatSkillBonus, formatAttack, generateResistancesAndVulnerabilities, visibleResistances } = core;
   const statKeys = ['STR', 'CON', 'AGI', 'INT', 'CHA', 'MAG'];
   const elementalMagicSchools = new Set(['Light', 'Darkness', 'Fire', 'Water', 'Earth', 'Wind', 'Electricity']);
   const statLabels = { STR: 'Strength', CON: 'Constitution', AGI: 'Agility', INT: 'Intelligence', CHA: 'Charm', MAG: 'Magic' };
@@ -58,7 +58,7 @@
     const level = rollLevel(area, random);
     const stats = Object.fromEntries(statKeys.map(key => [key, level + roll(rules.statDie, random) * level]));
     const extras = rollExtras(random);
-    const magical = true;
+    const magical = extras.some(extra => extra.enableMagic);
     let magicSkillCount = 0;
     const traits = [];
     const skills = [];
@@ -78,6 +78,7 @@
       substat.from.reduce((sum, key) => sum + Math.floor(stats[key] / rules.substatDivisor), 0)
     ]));
     for (const extra of extras) applyModifiers(substats, extra.modifiers, level);
+    substats.HP = Math.max(1, substats.HP);
     const affordableMagicSkills = magicSkillList().filter(skill => magicManaCost(skill) <= substats.Mana);
     if (affordableMagicSkills.length < magicSkillCount) {
       throw new Error(`Not enough distinct monster spells affordable with ${substats.Mana} Mana.`);
@@ -101,17 +102,20 @@
     };
   }
 
-  function showsMagic() {
-    return true;
+  function showsMagic(monster) {
+    return monster.magical;
   }
 
   function statTotal(monster) {
-    const total = statKeys.filter(key => key !== 'CHA' || monster.showCharm).reduce((sum, key) => sum + monster.stats[key], 0);
+    const total = statKeys.filter(key => key !== 'MAG' || showsMagic(monster)).reduce((sum, key) => sum + monster.stats[key], 0);
     return Math.floor(total / rules.substatDivisor);
   }
 
   function sheet(monster) {
-    const cell = (key, label, value) => ({ key, label, value: String(value), muted: false });
+    const cell = (key, label, value) => {
+      const muted = !showsMagic(monster) && (key === 'MAG' || rules.substats.some(substat => substat.key === key && substat.from.includes('MAG')));
+      return { key, label, value: formatMagicValue(value, !muted), muted };
+    };
     return {
       stats: rules.sheet.stats.map(key => key === 'CHA' && !monster.showCharm
         ? { key, label: '', value: '', muted: false }
@@ -126,7 +130,7 @@
   }
 
   function formatHeading(monster) {
-    return `MONSTER | Level: ${monster.level} (Level ${monster.area} area) | MAGICAL`;
+    return `MONSTER | Level: ${monster.level} (Level ${monster.area} area)${showsMagic(monster) ? ' | MAGICAL' : ''}`;
   }
 
   function formatExtra(extra) {

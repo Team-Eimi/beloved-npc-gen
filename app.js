@@ -1,5 +1,5 @@
 (() => {
-  const { generate, format, formatType, formatSection, statLabels, visibleStatKeys } = NPCGenerator;
+  const { generate, format, formatType, formatSection } = NPCGenerator;
   const byId = id => document.getElementById(id);
   const npcSections = [
     ['titles', 'Titles:'],
@@ -19,11 +19,9 @@
     statusTimer = setTimeout(() => { byId('status').textContent = ''; }, 4500);
   }
   function npcView(npc) {
-    const keys = visibleStatKeys(npc);
     const temperaments = npc.temperaments
       ?? (npc.traitRolls ?? []).filter(result => result.category === 'temperament').map(result => result.output);
     const traits = npc.traits.filter(trait => !trait.startsWith('Temperament: '));
-    const resistances = NPCGenerator.visibleResistances(npc.resistancesAndVulnerabilities);
     const attacks = NPCGenerator.formatAttacks(npc);
     const values = {
       temperaments,
@@ -38,16 +36,7 @@
     return {
       heading: formatType(npc),
       layout: 'sheet',
-      sheet: {
-        stats: keys.map(key => ({ label: statLabels[key], value: String(npc.stats[key]), muted: false })),
-        combat: Object.entries(NPCGenerator.substats(npc))
-          .map(([label, value]) => ({ label, value: String(value), muted: false })),
-        side: [
-          { label: 'Hit Points', prefix: 'Max: ', value: String(NPCGenerator.hitPoints(npc)), muted: false },
-          { label: 'Mana', prefix: 'Max: ', value: String(npc.mana), muted: false },
-          { label: 'Resistances & Vulnerabilities', prefix: '', value: resistances.join('\n') || 'None', muted: false }
-        ]
-      },
+      sheet: NPCGenerator.sheet(npc),
       sections: npcSections
         .filter(([field]) => formatSection(values[field]))
         .map(([field, label]) => ({ label, text: formatSection(values[field]) })),

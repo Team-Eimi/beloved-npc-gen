@@ -73,6 +73,19 @@ test('NPC combat substats use the same floored stat derivations as monsters', ()
   assert.ok(text.includes('Hit Points Max: 10'));
 });
 
+test('NPC hit points have a minimum of one without changing Defense', () => {
+  const npc = generator.generate({ type: 'DRAGON', age: 25 }, () => 0);
+  for (const con of [-5, 0, 4, 5, 10]) {
+    npc.stats.CON = con;
+    const expected = Math.max(1, Math.floor(con / 5));
+    assert.equal(generator.hitPoints(npc), expected);
+    assert.equal(generator.sheet(npc).side.find(entry => entry.label === 'Hit Points').value, String(expected));
+    assert.ok(generator.format(npc).includes(`Hit Points Max: ${expected}`));
+  }
+  npc.stats.CON = 4;
+  assert.equal(generator.substats(npc).Defense, 0);
+});
+
 test('unconfigured type weights do not silently select Human', () => {
   try {
     generator.configure(rolls, { types: [{ type: 'HUMAN', weight: null }] });
@@ -512,13 +525,18 @@ test('Human subtype magic status is automatic and ignores the former display opt
     const npc = generator.generate({ type: 'HUMAN', subtype, age: subtype === 'Child' ? 12 : 25, includeMagic: true }, () => 0.5);
     assert.equal(npc.magical, false);
     assert.equal(npc.magicRequired, false);
-    assert.ok(!generator.format(npc).includes('Magic:'));
+    assert.ok(generator.format(npc).includes(`Magic: ${npc.stats.MAG} (Not Applicable)`));
+    assert.deepEqual([...generator.sheet(npc).stats, ...generator.sheet(npc).combat, ...generator.sheet(npc).side]
+      .filter(entry => entry.muted).map(entry => entry.label), ['Magic', 'Power', 'Mana']);
+    assert.ok(generator.format(npc).includes(`Power: ${generator.substats(npc).Power} (Not Applicable)`));
+    assert.ok(generator.format(npc).includes(`Mana: ${npc.mana} (Not Applicable)`));
   }
   for (const subtype of ['Lord', 'Magician']) {
     const npc = generator.generate({ type: 'HUMAN', subtype, age: 25, includeMagic: false }, () => 0.5);
     assert.equal(npc.magical, true);
     assert.equal(npc.magicRequired, true);
     assert.ok(generator.format(npc).includes('Magic:'));
+    assert.ok(!generator.format(npc).includes('Not Applicable'));
   }
 });
 
@@ -1454,7 +1472,7 @@ test('title effects apply automatically without overriding the Human magic excep
     };
     const humanChild = generator.generate({ type: 'HUMAN', subtype: 'Child', age: 12 }, () => 0.5);
     assert.equal(humanChild.magical, false);
-    assert.ok(!generator.format(humanChild).includes('Magic:'));
+    assert.ok(generator.format(humanChild).includes(`Magic: ${humanChild.stats.MAG} (Not Applicable)`));
     assert.deepEqual(humanChild.magicSkills, []);
     generator.generateTitles = () => title('Lover Boy');
     const romanticIndex = rolls.temperaments.findIndex(item => item.name === 'Romantic');

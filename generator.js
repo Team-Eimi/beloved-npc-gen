@@ -1152,7 +1152,27 @@
   }
 
   function hitPoints(npc) {
-    return Math.floor(npc.stats.CON / substatDivisor);
+    return Math.max(1, Math.floor(npc.stats.CON / substatDivisor));
+  }
+
+  function formatMagicValue(value, magical) {
+    return magical ? String(value) : `${value} (Not Applicable)`;
+  }
+
+  function sheet(npc) {
+    const magicCell = (label, value, isMagic) => ({
+      label, value: formatMagicValue(value, !isMagic || npc.magical), muted: Boolean(isMagic && !npc.magical)
+    });
+    const resistances = visibleResistances(npc.resistancesAndVulnerabilities);
+    return {
+      stats: statKeys.map(key => magicCell(statLabels[key], npc.stats[key], key === 'MAG')),
+      combat: Object.entries(substats(npc)).map(([label, value]) => magicCell(label, value, label === 'Power')),
+      side: [
+        { ...magicCell('Hit Points', hitPoints(npc), false), prefix: 'Max: ' },
+        { ...magicCell('Mana', npc.mana, true), prefix: 'Max: ' },
+        { label: 'Resistances & Vulnerabilities', prefix: '', value: resistances.join('\n') || 'None', muted: false }
+      ]
+    };
   }
 
   function format(npc) {
@@ -1166,15 +1186,13 @@
       formatType(npc),
       `${statLabels.STR}: ${npc.stats.STR} | Attack: ${combat.Attack}`,
       `${statLabels.CON}: ${npc.stats.CON} | Defense: ${combat.Defense}`,
-      ...(visibleStatKeys(npc).includes('CHA') ? [`${statLabels.CHA}: ${npc.stats.CHA}`] : []),
+      `${statLabels.CHA}: ${npc.stats.CHA}`,
       `Resist: ${combat.Resist}`,
       `${statLabels.INT}: ${npc.stats.INT} | Accuracy: ${combat.Accuracy}`,
       `${statLabels.AGI}: ${npc.stats.AGI} | Dodge: ${combat.Dodge}`,
-      ...(visibleStatKeys(npc).includes('MAG')
-        ? [`${statLabels.MAG}: ${npc.stats.MAG} | Power: ${combat.Power}`]
-        : [`Power: ${combat.Power}`]),
+      `${statLabels.MAG}: ${formatMagicValue(npc.stats.MAG, npc.magical)} | Power: ${formatMagicValue(combat.Power, npc.magical)}`,
       `Hit Points Max: ${hitPoints(npc)}`,
-      `Mana: ${npc.mana}`,
+      `Mana: ${formatMagicValue(npc.mana, npc.magical)}`,
       ...(resistances.length ? [`Resistances & Vulnerabilities:\n${resistances.join('\n')}`] : []),
       '',
       `Titles:\n${formatSection(npc.titles)}`,
@@ -1188,13 +1206,9 @@
     ].join('\n');
   }
 
-  function visibleStatKeys(npc) {
-    return statKeys.filter(key => key !== 'MAG' || npc.magical);
-  }
-
   const api = {
-    statKeys, statLabels, configure, roll, rollLevel, sample, weighted, applyModifiers, rollTrait, visibleStatKeys,
-    selectType, listTypes, generateStats, generateTraits, substats, hitPoints,
+    statKeys, statLabels, configure, roll, rollLevel, sample, weighted, applyModifiers, rollTrait, formatMagicValue,
+    selectType, listTypes, generateStats, generateTraits, substats, hitPoints, sheet,
     generateResistancesAndVulnerabilities, visibleResistances, generateWeapon, formatSkillBonus, formatAttack, formatAttacks, generateTitles, generateRelationships,
     generateSkills, generateSpecialitySkills, generateProfession, magicManaCost, sampleAffordableMagicSkills, generateMagicSkills, generate, formatType, formatSection, format
   };

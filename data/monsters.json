@@ -35,7 +35,7 @@
       { "category": "Boss", "weight": 1, "list": "boss" },
       { "category": "Animal", "weight": 3, "list": "animal" },
       { "category": "Trait", "weight": 2, "list": "trait" },
-      { "category": "Magical", "weight": 1, "entry": { "name": "Magical", "magicSkills": 1 } }
+      { "category": "Magical", "weight": 1, "entry": { "name": "Magical", "enableMagic": true, "magicSkills": 1 } }
     ]
   },
   "boss": [
@@ -52,6 +52,7 @@
     {
       "name": "Gamemaster",
       "skills": [{ "name": "Gamemaster", "description": "This creature puppets others to its will." }],
+      "enableMagic": true,
       "modifiers": [{ "key": "INT", "perLevel": 2 }, { "key": "MAG", "perLevel": 2 }]
     },
     {
@@ -73,11 +74,13 @@
     {
       "name": "Healer",
       "skills": [{ "name": "Heal (Monster)", "description": "Heal an amount of HP = to 1/5 of your MAG stat within a radius of ft = to your MAG. Costs 5 Mana." }],
+      "enableMagic": true,
       "modifiers": [{ "key": "MAG", "perLevel": 5 }]
     },
     {
       "name": "Antimagic",
       "skills": [{ "name": "Antimagic", "description": "All Magic cast within a radius = to this creature's MAG is invalidated, unless the Power of the caster is twice this creature's Power." }],
+      "enableMagic": true,
       "modifiers": [{ "key": "MAG", "perLevel": 2 }]
     },
     {
@@ -88,6 +91,7 @@
     },
     {
       "name": "Spellcaster",
+      "enableMagic": true,
       "magicSkills": 2
     },
     {

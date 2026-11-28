@@ -17,7 +17,7 @@ MAG
 Power
 Mana
 All stats are determined by: LEVEL = 1d4xLEVEL (you can RNG 1-4). All substats are stat/5, except for Accuracy, which is INT/5 + AGI/5
-All monsters have magic enabled; always display Magic, Power, and Mana.
+Magic is enabled only by an extra that explicitly enables MAG. Otherwise show MAG, Power, and Mana as Not Applicable and exclude MAG from EXP. EXP is (STR + CON + INT + AGI + CHA + MAG if magical) / 5, rounded down. Minimum HP is 1.
 
 **Extra**: Randomly selected, modifies Outputs. Roll 2 extras
 1) Boss
@@ -26,20 +26,20 @@ All monsters have magic enabled; always display Magic, Power, and Mana.
 4) Animal
 5) Trait
 6) Trait
-7) Magical (grant one Magic skill)
+7) Magical (enable MAG and grant one Magic skill)
 
 Boss list:
 1) Immortal. Add Skill: Revive. When this creature hits 0 HP, if >DM created condition<, it is revived at 50% HP. Add Level x 5 to HP.
 2) Dweller. Add Skill: Tunneler. This creature lives deep, deep beneath, and attacks from the earth. Add LEVEL x 2 to CON.
-3) Gamemaster. Add Skill: Gamemaster. This creature puppets others to its will. Add LEVEL x 2 to INT and MAG.
+3) Gamemaster. Add Skill: Gamemaster. This creature puppets others to its will. Enable MAG. Add LEVEL x 2 to INT and MAG.
 4) Pretends to be human. Add Skill: Shapeshifting. Has a human form. Add LEVEL x 2 to CHA.
 5) Lair. Add Skill: Terraforming. Create traps in the creature's territory. Each one costs 1 Mana. Add Level x 5 to Mana.
 6) Sheds magic. Add Skill: Magical tap. All creatures associated with this creature have MAG enabled. Add LEVEL x 10 to MAG. Decrease CON and STR by LEVEL x 2, for a minimum of 1.
-7) Healer. Add Skill: Heal (Monster). Heal an amount of HP = to ⅕ of your MAG stat within a radius of ft = to your MAG. Costs 5 Mana. Add LEVEL x 5 to MAG.
-8) Antimagic. Add Skill: Antimagic. All Magic cast within a radius = to this creature's MAG is invalidated, unless the Power of the caster is twice this creature's Power. Add LEVEL x 2 to MAG.
+7) Healer. Add Skill: Heal (Monster). Heal an amount of HP = to ⅕ of your MAG stat within a radius of ft = to your MAG. Costs 5 Mana. Enable MAG. Add LEVEL x 5 to MAG.
+8) Antimagic. Enable MAG. Add Skill: Antimagic. All Magic cast within a radius = to this creature's MAG is invalidated, unless the Power of the caster is twice this creature's Power. Add LEVEL x 2 to MAG.
 9) Weaponmaster. Add Skill: Boss Weapon. +40% to skill. Drops special loot. Add LEVEL x 2 to STR.
 - weapons: Fists, Dagger, Sword, Spear, Ranged (RNG it). 
-10) Spellcaster. Add two Magic skills.
+10) Spellcaster. Enable MAG. Add two Magic skills.
 11) Emotion manipulator. Add Skill: Manipulator. This creature will do all it can to manipulate its targets using their emotions. Add LEVEL x 2 to CHA and INT, subtract LEVEL x 2 to STR.
 12) Multiattack. Add Skill: Multiattack. This creature acts twice per turn if the action is an attack.
 13) Petrifier. Add Skill: Petrification. When this creature's attack hits, make a Resist roll or become petrified.
