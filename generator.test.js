@@ -1265,6 +1265,15 @@ test('magic type titles come from the supplied table and are distinct', () => {
   assert.deepEqual(generator.generateTitles({}, {}, () => 0), []);
 });
 
+test('Forsaken is available as a title and always starts at level 1', () => {
+  const index = rolls.titles.entries.findIndex(entry => entry.name === 'Forsaken');
+  for (const randomValue of [0, 0.999]) {
+    const selection = { age: 40, rolls: { titles: 1 } };
+    const output = generator.generateTitles(selection, {}, sequence([0.5, (index + 0.5) / rolls.titles.entries.length, randomValue]));
+    assert.deepEqual(output, ['Forsaken (Level 1): This creature has been forsaken by the Gods.']);
+  }
+});
+
 test('relationship tables cover every level and retain boundary outcomes', () => {
   for (let level = -50; level <= 50; level++) {
     const results = generator.generateRelationships(() => (level + 50.5) / 101);

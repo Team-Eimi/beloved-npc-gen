@@ -155,13 +155,7 @@
         "Magic",
         "Politics"
       ],
-      "Art": [
-        "Performance", 
-        "Dance", 
-        "Fine arts", 
-        "Fiber arts", 
-        "Cooking"
-      ],
+      "Art": ["Performance", "Dance", "Fine arts", "Fiber arts", "Cooking"],
       "Perception": ["Listen", "Spot", "Senses", "Sixth sense"],
       "Combat": ["Brawl", "Grapple", "Weapon (specific)"],
       "Emotional Intelligence": [
@@ -214,32 +208,153 @@
     ]
   },
   "professions": [
-    { "names": ["Politician", "Lawyer", "Judge"], "skills": [{ "category": "Emotional Intelligence", "count": 1 }, { "name": "Law" }, { "name": "Politics" }] },
-    { "names": ["Noble"], "skills": [{ "name": "Etiquette" }, { "category": "Knowledge", "count": 1 }, { "category": "Emotional Intelligence", "count": 1 }] },
-    { "names": ["Commander", "Strategist"], "skills": [{ "category": "Knowledge", "count": 1 }, { "category": "Perception", "count": 1 }, { "name": "Leadership" }, { "category": "Combat", "count": 1 }] },
-    { "names": ["Soldier"], "skills": [{ "name": "Survival" }, { "category": "Combat", "count": 1 }, { "category": "Perception", "count": 1 }] },
-    { "names": ["Mafia"], "skills": [{ "category": "Combat", "count": 1 }, { "category": "Emotional Intelligence", "count": 1 }, { "category": "Subterfuge", "count": 1 }] },
-    { "names": ["Advisor", "Secretary"], "skills": [{ "category": "Knowledge", "count": 2 }] },
-    { "names": ["Fed", "Cop", "Detective", "Spy"], "skills": [{ "category": "Subterfuge", "count": 1 }, { "category": "Knowledge", "count": 1 }, { "name": "Athletics" }] },
-    { "names": ["Oracle", "Psychic", "Occultist"], "skills": [{ "category": "Emotional Intelligence", "count": 1 }, { "name": "Astronomy" }, { "name": "Occultism" }] },
-    { "names": ["Mercenary", "Bodyguard", "Assassin"], "skills": [{ "category": "Combat", "count": 2 }, { "category": "Perception", "count": 1 }] },
-    { "names": ["Hunter", "Bounty hunter"], "skills": [{ "name": "Tracking" }, { "category": "Combat", "count": 1 }, { "category": "Perception", "count": 1 }] },
-    { "names": ["Athlete", "Martial artist", "Acrobat"], "skills": [{ "choices": ["Athletics", "Acrobatics"] }] },
-    { "names": ["Firefighter"], "skills": [{ "name": "Athletics" }, { "name": "Survival" }] },
+    {
+      "names": ["Politician", "Lawyer", "Judge"],
+      "skills": [
+        { "category": "Emotional Intelligence", "count": 1 },
+        { "name": "Law" },
+        { "name": "Politics" }
+      ]
+    },
+    {
+      "names": ["Noble"],
+      "skills": [
+        { "name": "Etiquette" },
+        { "category": "Knowledge", "count": 1 },
+        { "category": "Emotional Intelligence", "count": 1 }
+      ]
+    },
+    {
+      "names": ["Commander", "Strategist"],
+      "skills": [
+        { "category": "Knowledge", "count": 1 },
+        { "category": "Perception", "count": 1 },
+        { "name": "Leadership" },
+        { "category": "Combat", "count": 1 }
+      ]
+    },
+    {
+      "names": ["Soldier"],
+      "skills": [
+        { "name": "Survival" },
+        { "category": "Combat", "count": 1 },
+        { "category": "Perception", "count": 1 }
+      ]
+    },
+    {
+      "names": ["Mafia"],
+      "skills": [
+        { "category": "Combat", "count": 1 },
+        { "category": "Emotional Intelligence", "count": 1 },
+        { "category": "Subterfuge", "count": 1 }
+      ]
+    },
+    {
+      "names": ["Advisor", "Secretary"],
+      "skills": [{ "category": "Knowledge", "count": 2 }]
+    },
+    {
+      "names": ["Fed", "Cop", "Detective", "Spy"],
+      "skills": [
+        { "category": "Subterfuge", "count": 1 },
+        { "category": "Knowledge", "count": 1 },
+        { "name": "Athletics" }
+      ]
+    },
+    {
+      "names": ["Oracle", "Psychic", "Occultist"],
+      "skills": [
+        { "category": "Emotional Intelligence", "count": 1 },
+        { "name": "Astronomy" },
+        { "name": "Occultism" }
+      ]
+    },
+    {
+      "names": ["Mercenary", "Bodyguard", "Assassin"],
+      "skills": [
+        { "category": "Combat", "count": 2 },
+        { "category": "Perception", "count": 1 }
+      ]
+    },
+    {
+      "names": ["Hunter", "Bounty hunter"],
+      "skills": [
+        { "name": "Tracking" },
+        { "category": "Combat", "count": 1 },
+        { "category": "Perception", "count": 1 }
+      ]
+    },
+    {
+      "names": ["Athlete", "Martial artist", "Acrobat"],
+      "skills": [{ "choices": ["Athletics", "Acrobatics"] }]
+    },
+    {
+      "names": ["Firefighter"],
+      "skills": [{ "name": "Athletics" }, { "name": "Survival" }]
+    },
     { "names": ["Tradesman"], "skills": [{ "category": "Trade", "count": 1 }] },
     { "names": ["Craftsman"], "skills": [{ "category": "Craft", "count": 1 }] },
-    { "names": ["Scientist"], "skills": [{ "category": "Science", "count": 1 }] },
-    { "names": ["Psychiatrist", "Therapist", "Priest"], "skills": [{ "category": "Emotional Intelligence", "count": 2 }] },
-    { "names": ["Homemaker"], "skills": [{ "name": "Cooking" }, { "category": "Emotional Intelligence", "count": 1 }] },
-    { "names": ["Technical specialist"], "skills": [{ "category": "Technical", "count": 1, "value": 50 }] },
-    { "names": ["Professor", "Teacher", "Librarian"], "skills": [{ "category": "Knowledge", "count": 1 }, { "category": "Science", "count": 1 }] },
-    { "names": ["Journalist"], "skills": [{ "category": "Subterfuge", "count": 1 }] },
-    { "names": ["Unemployed", "Cashier", "Retail worker", "Waiter", "Small business owner"], "skills": [] },
+    {
+      "names": ["Scientist"],
+      "skills": [{ "category": "Science", "count": 1 }]
+    },
+    {
+      "names": ["Psychiatrist", "Therapist", "Priest"],
+      "skills": [{ "category": "Emotional Intelligence", "count": 2 }]
+    },
+    {
+      "names": ["Homemaker"],
+      "skills": [
+        { "name": "Cooking" },
+        { "category": "Emotional Intelligence", "count": 1 }
+      ]
+    },
+    {
+      "names": ["Technical specialist"],
+      "skills": [{ "category": "Technical", "count": 1, "value": 50 }]
+    },
+    {
+      "names": ["Professor", "Teacher", "Librarian"],
+      "skills": [
+        { "category": "Knowledge", "count": 1 },
+        { "category": "Science", "count": 1 }
+      ]
+    },
+    {
+      "names": ["Journalist"],
+      "skills": [{ "category": "Subterfuge", "count": 1 }]
+    },
+    {
+      "names": [
+        "Unemployed",
+        "Cashier",
+        "Retail worker",
+        "Waiter",
+        "Small business owner"
+      ],
+      "skills": []
+    },
     { "names": ["Cook"], "skills": [{ "name": "Cooking" }] },
     { "names": ["Artist"], "skills": [{ "category": "Art", "count": 1 }] },
-    { "names": ["Criminal"], "skills": [{ "choices": ["Athletics", "Acrobatics"] }, { "category": "Subterfuge", "count": 2 }] },
-    { "names": ["Transportation expert"], "skills": [{ "choices": ["Driving", "Riding", "Piloting"] }] },
-    { "names": ["Businessman"], "skills": [{ "category": "Emotional Intelligence", "count": 1 }, { "name": "Appraise" }, { "name": "Leadership" }] }
+    {
+      "names": ["Criminal"],
+      "skills": [
+        { "choices": ["Athletics", "Acrobatics"] },
+        { "category": "Subterfuge", "count": 2 }
+      ]
+    },
+    {
+      "names": ["Transportation expert"],
+      "skills": [{ "choices": ["Driving", "Riding", "Piloting"] }]
+    },
+    {
+      "names": ["Businessman"],
+      "skills": [
+        { "category": "Emotional Intelligence", "count": 1 },
+        { "name": "Appraise" },
+        { "name": "Leadership" }
+      ]
+    }
   ],
   "temperaments": [
     {
@@ -560,33 +675,127 @@
     ],
     "newTitleChance": 0.5,
     "entries": [
-      { "name": "Risk Taker", "description": "Gain +1% per level when doing something risky.", "levelRange": [1, 20] },
-      { "name": "Lover Boy", "description": "Gain +1% per level when doing something romantic or sexual.", "levelRange": [1, 40] },
-      { "name": "Idiot Savant", "description": "Choose a stat. All skills using that stat gain +1% per level in this title.", "levelFormula": "age/5" },
-      { "name": "Obsessed", "description": "Choose an object of obsession. When you are not acting towards it, or physically around it, gain -1% x the level of this title. When you are acting towards it, or are physically around it, gain +1% x level of this title.", "levelRange": [1, 30] },
-      { "name": "Prince/ss", "description": "Gain one additional stat point per title level every time you level up.", "levelRange": [1, 1] },
-      { "name": "Weak", "description": "-1 STR and CON for every level.", "levelFormula": "age/5" },
-      { "name": "Idiot", "description": "Lose 1 random stat point per title level every time you level up.", "levelRange": [1, 5] },
-      { "name": "Bloodthirsty", "description": "Gain 10 EXP every time you kill something sentient.", "levelRange": [1, 1] },
-      { "name": "Criminal (Guild)", "description": "Gain a marking on your forehead. All stats decreased by 10.", "allStats": -10, "levelRange": [1, 1] },
-      { "name": "Protector", "description": "Gain light magic and one light magic spell. If magic was unavailable, MAGIC starts at 15.", "enableMagic": true, "lightMagicSkills": 1, "levelRange": [1, 1] },
-      { "name": "Lucky", "description": "Add the percentage of this title's level to all rolls. Levels up when luck makes the difference.", "levelRange": [1, 25] },
-      { "name": "Unlucky", "description": "Inverse the title Lucky.", "levelRange": [1, 25] },
-      { "name": "Coward", "description": "Gain +1% per level to skills when running away.", "levelRange": [1, 30] },
-      { "name": "Prodigy", "description": "Pick a stat. All values added to that stat are doubled, for a maximum of 4.", "levelRange": [1, 1] },
-      { "name": "Beloved", "description": "A Goddess grants you use of a skill.", "levelRange": [1, 1] },
-      { "name": "Hero", "description": "All EXP gain is multiplied by 5.", "levelRange": [1, 1] },
-      { "name": "Student", "description": "All EXP gain is doubled; level up an additional skill at level up.", "levelRange": [1, 1] },
-      { "name": "(Type) Magician", "description": "Gain a magic spell of this type. Add +1% per title level to all spells of this type.", "levelFormula": "age/5", "magicTypeTemplate": true, "magicSkills": 1, "magicBonusPerLevel": 1 },
-      { "name": "Ascendent", "description": "Gain light or dark magic and Miracle or Calamity. For every title level, increase a stat of your choice by 2.", "levelRange": [1, 20] },
-      { "name": "Resilient", "description": "Every time you level up, gain 4 levels in a resistance of your choice.", "levelRange": [1, 1] },
-      { "name": "Normal person", "description": "All EXP gain is multiplied by 0.5.", "levelRange": [1, 1] },
-      { "name": "Normal", "description": "This creature is terrifically normal. All EXP gain is multiplied by 0.5.", "levelRange": [1, 1] },
-      { "name": "Peculiar", "description": "All stat gain for this creature is randomized.", "levelRange": [1, 1], "redistributeStats": true }
+      {
+        "name": "Risk Taker",
+        "description": "Gain +1% per level when doing something risky.",
+        "levelRange": [1, 20]
+      },
+      {
+        "name": "Lover Boy",
+        "description": "Gain +1% per level when doing something romantic or sexual.",
+        "levelRange": [1, 40]
+      },
+      {
+        "name": "Idiot Savant",
+        "description": "Choose a stat. All skills using that stat gain +1% per level in this title.",
+        "levelFormula": "age/5"
+      },
+      {
+        "name": "Obsessed",
+        "description": "Choose an object of obsession. When you are not acting towards it, or physically around it, gain -1% x the level of this title. When you are acting towards it, or are physically around it, gain +1% x level of this title.",
+        "levelRange": [1, 30]
+      },
+      {
+        "name": "Weak",
+        "description": "-1 STR and CON for every level.",
+        "levelFormula": "age/5"
+      },
+      {
+        "name": "Idiot",
+        "description": "Lose 1 random stat point per title level every time you level up.",
+        "levelRange": [1, 5]
+      },
+      {
+        "name": "Bloodthirsty",
+        "description": "Gain 10 EXP every time you kill something sentient.",
+        "levelRange": [1, 1]
+      },
+      {
+        "name": "Criminal (Guild)",
+        "description": "Gain a marking on your forehead. All stats decreased by 10.",
+        "allStats": -10,
+        "levelRange": [1, 1]
+      },
+      {
+        "name": "Protector",
+        "description": "Gain light magic and one light magic spell. If magic was unavailable, MAGIC starts at 15.",
+        "enableMagic": true,
+        "lightMagicSkills": 1,
+        "levelRange": [1, 1]
+      },
+      {
+        "name": "Lucky",
+        "description": "Add the percentage of this title's level to all rolls. Levels up when luck makes the difference.",
+        "levelRange": [1, 25]
+      },
+      {
+        "name": "Unlucky",
+        "description": "Inverse the title Lucky.",
+        "levelRange": [1, 25]
+      },
+      {
+        "name": "Coward",
+        "description": "Gain +1% per level to skills when running away.",
+        "levelRange": [1, 30]
+      },
+      {
+        "name": "Prodigy",
+        "description": "Pick a stat. All values added to that stat are doubled, for a maximum of 4.",
+        "levelRange": [1, 1]
+      },
+      {
+        "name": "Beloved",
+        "description": "A Goddess grants you use of a skill.",
+        "levelRange": [1, 1]
+      },
+      {
+        "name": "Hero",
+        "description": "All EXP gain is multiplied by 5.",
+        "levelRange": [1, 1]
+      },
+      {
+        "name": "Student",
+        "description": "All EXP gain is doubled; level up an additional skill at level up.",
+        "levelRange": [1, 1]
+      },
+      {
+        "name": "(Type) Magician",
+        "description": "Gain a magic spell of this type. Add +1% per title level to all spells of this type.",
+        "levelFormula": "age/5",
+        "magicTypeTemplate": true,
+        "magicSkills": 1,
+        "magicBonusPerLevel": 1
+      },
+      {
+        "name": "Ascendent",
+        "description": "Gain light or dark magic and Miracle or Calamity. For every title level, increase a stat of your choice by 2.",
+        "levelRange": [1, 20]
+      },
+      {
+        "name": "Resilient",
+        "description": "Every time you level up, gain 4 levels in a resistance of your choice.",
+        "levelRange": [1, 1]
+      },
+      {
+        "name": "Normal",
+        "description": "This creature is terrifically normal. All EXP gain is multiplied by 0.5.",
+        "levelRange": [1, 1]
+      },
+      {
+        "name": "Peculiar",
+        "description": "All stat gain for this creature is randomized.",
+        "levelRange": [1, 1],
+        "redistributeStats": true
+      },
+      {
+        "name": "Forsaken",
+        "description": "This creature has been forsaken by the Gods.",
+        "levelRange": [1, 1]
+      }
     ],
     "raceTitles": [
       {
-        "race": "ELEMENTAL",
+        "race": "Elemental",
         "name": "Elemental",
         "description": "Choose an element. You may only cast spells of this type, but gain +2% per level of this title to spellcasting.",
         "levelFormula": "age/5",
